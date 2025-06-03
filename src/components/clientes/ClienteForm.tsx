@@ -59,16 +59,17 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ isOpen, onClose, clienteToEdi
 
   function onSubmit(values: FormData) {
     try {
-      // Since FormData is inferred from the schema and all fields are required,
-      // we can safely pass it to the functions that expect required fields
+      // Cast values to the required type since Zod validation ensures all fields are present
+      const clienteData = values as Required<FormData>;
+      
       if (isEditing && clienteToEdit) {
-        updateCliente(clienteToEdit.id, values);
+        updateCliente(clienteToEdit.id, clienteData);
         toast({
           title: 'Cliente atualizado',
           description: 'O cliente foi atualizado com sucesso!',
         });
       } else {
-        addCliente(values);
+        addCliente(clienteData);
         toast({
           title: 'Cliente adicionado',
           description: 'O cliente foi adicionado com sucesso!',
