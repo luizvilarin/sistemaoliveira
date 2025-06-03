@@ -70,7 +70,7 @@ const StatCard: React.FC<StatCardProps> = ({
   return (
     <Card className={cn("p-6 shadow-sm hover:shadow transition-shadow", bg)}>
       <div className="flex items-center">
-        <div className="flex items-center justify-center rounded-lg p-2 mr-4" className={iconBg}>
+        <div className={cn("flex items-center justify-center rounded-lg p-2 mr-4", iconBg)}>
           <Icon className={cn("h-8 w-8", text)} />
         </div>
         <div>

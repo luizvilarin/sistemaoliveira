@@ -28,6 +28,8 @@ const formSchema = z.object({
   }),
 });
 
+type FormData = z.infer<typeof formSchema>;
+
 interface ClienteFormProps {
   isOpen: boolean;
   onClose: () => void;
@@ -45,7 +47,7 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ isOpen, onClose, clienteToEdi
   const { toast } = useToast();
   const isEditing = !!clienteToEdit;
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       nome: clienteToEdit?.nome || '',
@@ -55,7 +57,7 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ isOpen, onClose, clienteToEdi
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  function onSubmit(values: FormData) {
     try {
       if (isEditing && clienteToEdit) {
         updateCliente(clienteToEdit.id, values);
