@@ -51,12 +51,6 @@ const TarefasPage = () => {
     }
   };
 
-  const tarefasPorStatus = {
-    todo: tarefas.filter(t => t.status === 'todo').length,
-    inProgress: tarefas.filter(t => t.status === 'inProgress').length,
-    done: tarefas.filter(t => t.status === 'done').length,
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
