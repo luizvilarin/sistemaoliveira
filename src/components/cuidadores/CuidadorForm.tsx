@@ -39,7 +39,8 @@ const CuidadorForm: React.FC<CuidadorFormProps> = ({ isOpen, onClose, cuidadorTo
   function onSubmit(values: FormData) {
     try {
       const cuidadorData = {
-        ...values,
+        nome: values.nome,
+        especializacao: values.especializacao,
         disponibilidade: { seg: true, ter: true, qua: true, qui: true, sex: true }
       };
       

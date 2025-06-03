@@ -24,7 +24,7 @@ const TarefasPage = () => {
     setEditingTarefa(null);
   };
 
-  const handleStatusChange = (tarefaId: string, newStatus: string) => {
+  const handleStatusChange = (tarefaId: string, newStatus: 'todo' | 'inProgress' | 'done') => {
     updateTarefa(tarefaId, { status: newStatus });
   };
 
@@ -64,6 +64,12 @@ const TarefasPage = () => {
       </div>
     );
   }
+
+  const tarefasPorStatus = {
+    todo: tarefas.filter(t => t.status === 'todo').length,
+    inProgress: tarefas.filter(t => t.status === 'inProgress').length,
+    done: tarefas.filter(t => t.status === 'done').length,
+  };
 
   return (
     <div className="space-y-6">
