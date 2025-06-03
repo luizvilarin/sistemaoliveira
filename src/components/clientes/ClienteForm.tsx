@@ -59,6 +59,8 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ isOpen, onClose, clienteToEdi
 
   function onSubmit(values: FormData) {
     try {
+      // Since FormData is inferred from the schema and all fields are required,
+      // we can safely pass it to the functions that expect required fields
       if (isEditing && clienteToEdit) {
         updateCliente(clienteToEdit.id, values);
         toast({
