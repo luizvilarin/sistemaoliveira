@@ -13,7 +13,8 @@ import {
   FileText,
   DollarSign,
   LogOut,
-  List
+  List,
+  Settings
 } from 'lucide-react';
 
 interface SidebarLinkProps {
@@ -78,6 +79,7 @@ const DashboardSidebar = () => {
         <SidebarLink to="/mensagens" icon={<MessageSquare size={18} />} label="Mensagens" />
         <SidebarLink to="/relatorios" icon={<FileText size={18} />} label="Relatórios" />
         <SidebarLink to="/transacoes" icon={<DollarSign size={18} />} label="Transações" adminOnly={true} />
+        <SidebarLink to="/configuracoes" icon={<Settings size={18} />} label="Configurações" />
       </nav>
       
       <div className="p-4 border-t border-border">

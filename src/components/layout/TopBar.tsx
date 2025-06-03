@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Bell, Search, MessageSquare } from 'lucide-react';
+import { Bell, Search } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
+import MensagensDropdown from './MensagensDropdown';
 
 const TopBar = () => {
   const { notificacoes } = useData();
@@ -31,10 +32,7 @@ const TopBar = () => {
       </div>
       
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" className="relative">
-          <MessageSquare className="h-5 w-5" />
-          <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0">2</Badge>
-        </Button>
+        <MensagensDropdown />
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

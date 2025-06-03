@@ -19,6 +19,7 @@ import CalendarioPage from "./pages/CalendarioPage";
 import TarefasPage from "./pages/TarefasPage";
 import MensagensPage from "./pages/MensagensPage";
 import RelatoriosPage from "./pages/RelatoriosPage";
+import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
                 <Route path="/tarefas" element={<TarefasPage />} />
                 <Route path="/mensagens" element={<MensagensPage />} />
                 <Route path="/relatorios" element={<RelatoriosPage />} />
+                <Route path="/configuracoes" element={<ConfiguracoesPage />} />
               </Route>
               
               {/* Redirecionar para a página not found */}
