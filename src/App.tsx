@@ -13,6 +13,12 @@ import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import TransacoesPage from "./pages/TransacoesPage";
 import ClientesPage from "./pages/ClientesPage";
+import PacientesPage from "./pages/PacientesPage";
+import CuidadoresPage from "./pages/CuidadoresPage";
+import CalendarioPage from "./pages/CalendarioPage";
+import TarefasPage from "./pages/TarefasPage";
+import MensagensPage from "./pages/MensagensPage";
+import RelatoriosPage from "./pages/RelatoriosPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,14 +40,12 @@ const App = () => (
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/transacoes" element={<TransacoesPage />} />
                 <Route path="/clientes" element={<ClientesPage />} />
-                
-                {/* Rotas que serão implementadas futuramente */}
-                <Route path="/pacientes" element={<DashboardPage />} />
-                <Route path="/cuidadores" element={<DashboardPage />} />
-                <Route path="/calendario" element={<DashboardPage />} />
-                <Route path="/tarefas" element={<DashboardPage />} />
-                <Route path="/mensagens" element={<DashboardPage />} />
-                <Route path="/relatorios" element={<DashboardPage />} />
+                <Route path="/pacientes" element={<PacientesPage />} />
+                <Route path="/cuidadores" element={<CuidadoresPage />} />
+                <Route path="/calendario" element={<CalendarioPage />} />
+                <Route path="/tarefas" element={<TarefasPage />} />
+                <Route path="/mensagens" element={<MensagensPage />} />
+                <Route path="/relatorios" element={<RelatoriosPage />} />
               </Route>
               
               {/* Redirecionar para a página not found */}
