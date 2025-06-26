@@ -7,11 +7,21 @@ import { useToast } from '@/components/ui/use-toast';
 
 // Type definitions based on Supabase schema
 type Cliente = Tables<'clientes'>;
-type Cuidador = Tables<'cuidadores'>;
-type Paciente = Tables<'pacientes'>;
-type Transacao = Tables<'transacoes'>;
+type Cuidador = Tables<'cuidadores'> & {
+  cliente?: Cliente | null;
+};
+type Paciente = Tables<'pacientes'> & {
+  cliente?: Cliente | null;
+  cuidador?: Cuidador | null;
+};
+type Transacao = Tables<'transacoes'> & {
+  cliente?: Cliente | null;
+};
 type Tarefa = Tables<'tarefas'>;
-type Lembrete = Tables<'lembretes'>;
+type Lembrete = Tables<'lembretes'> & {
+  cliente?: Cliente | null;
+  cuidador?: Cuidador | null;
+};
 type Mensagem = Tables<'mensagens'>;
 type Notificacao = Tables<'notificacoes'>;
 
@@ -87,7 +97,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       
-      // Fetch all data in parallel
+      // Fetch data with joins to get related information
       const [
         clientesRes,
         cuidadoresRes,
@@ -99,11 +109,25 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         notificacoesRes
       ] = await Promise.all([
         supabase.from('clientes').select('*'),
-        supabase.from('cuidadores').select('*'),
-        supabase.from('pacientes').select('*'),
-        supabase.from('transacoes').select('*'),
+        supabase.from('cuidadores').select(`
+          *,
+          cliente:clientes(*)
+        `),
+        supabase.from('pacientes').select(`
+          *,
+          cliente:clientes(*),
+          cuidador:cuidadores(*)
+        `),
+        supabase.from('transacoes').select(`
+          *,
+          cliente:clientes(*)
+        `),
         supabase.from('tarefas').select('*'),
-        supabase.from('lembretes').select('*'),
+        supabase.from('lembretes').select(`
+          *,
+          cliente:clientes(*),
+          cuidador:cuidadores(*)
+        `),
         supabase.from('mensagens').select('*').eq('destinatario_id', user.id),
         supabase.from('notificacoes').select('*').eq('usuario_id', user.id)
       ]);
