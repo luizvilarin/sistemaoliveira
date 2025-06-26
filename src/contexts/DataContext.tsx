@@ -1,102 +1,30 @@
-
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
+import { Database } from '@/integrations/supabase/types';
 
-// Interfaces para os dados
-interface Cliente {
-  id: string;
-  nome: string;
-  contato: string;
-  tipo: 'fixo' | 'temporario';
-  status: 'ativo' | 'pausado' | 'terceirizado';
-  endereco?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Paciente {
-  id: string;
-  nome: string;
-  cliente_id: string;
-  cuidador_id?: string;
-  historico_medico?: string;
-  contrato_ativo: boolean;
-  valor_contrato?: number;
-  created_at: string;
-  updated_at: string;
+// Use database types directly
+type Cliente = Database['public']['Tables']['clientes']['Row'];
+type Cuidador = Database['public']['Tables']['cuidadores']['Row'] & {
+  cliente?: Cliente;
+};
+type Paciente = Database['public']['Tables']['pacientes']['Row'] & {
   cliente?: Cliente;
   cuidador?: Cuidador;
-}
-
-interface Cuidador {
-  id: string;
-  nome: string;
-  especializacao: string;
-  telefone?: string;
-  email?: string;
-  cliente_id?: string;
-  disponibilidade: Record<string, any>;
-  created_at: string;
-  updated_at: string;
+};
+type Transacao = Database['public']['Tables']['transacoes']['Row'] & {
   cliente?: Cliente;
-  pacientes?: Paciente[];
-}
-
-interface Transacao {
-  id: string;
-  cliente_id: string;
-  valor: number;
-  status: 'confirmado' | 'aguardando' | 'expirado';
-  data: string;
-  created_at: string;
-  cliente?: Cliente;
-}
-
-interface Tarefa {
-  id: string;
-  titulo: string;
-  descricao?: string;
-  status: 'todo' | 'inProgress' | 'done';
-  cliente_id: string;
-  cuidador_id: string;
-  created_at: string;
-  updated_at: string;
+};
+type Tarefa = Database['public']['Tables']['tarefas']['Row'] & {
   cliente?: Cliente;
   cuidador?: Cuidador;
-}
-
-interface Lembrete {
-  id: string;
-  titulo: string;
-  descricao?: string;
-  dia: string;
-  residencia: string;
-  responsavel_id: string;
-  cliente_id?: string;
-  cuidador_id?: string;
-  created_at: string;
+};
+type Lembrete = Database['public']['Tables']['lembretes']['Row'] & {
   cliente?: Cliente;
   cuidador?: Cuidador;
-}
-
-interface Notificacao {
-  id: string;
-  mensagem: string;
-  usuario_id: string;
-  lida: boolean;
-  created_at: string;
-}
-
-interface Mensagem {
-  id: string;
-  remetente_id: string;
-  destinatario_id?: string;
-  assunto: string;
-  conteudo: string;
-  lida: boolean;
-  created_at: string;
-}
+};
+type Notificacao = Database['public']['Tables']['notificacoes']['Row'];
+type Mensagem = Database['public']['Tables']['mensagens']['Row'];
 
 interface DataContextType {
   clientes: Cliente[];
@@ -107,18 +35,18 @@ interface DataContextType {
   lembretes: Lembrete[];
   notificacoes: Notificacao[];
   mensagens: Mensagem[];
-  addCliente: (cliente: Omit<Cliente, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
-  addPaciente: (paciente: Omit<Paciente, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
-  addCuidador: (cuidador: Omit<Cuidador, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
-  addTransacao: (transacao: Omit<Transacao, 'id' | 'created_at'>) => Promise<void>;
-  addTarefa: (tarefa: Omit<Tarefa, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
-  addLembrete: (lembrete: Omit<Lembrete, 'id' | 'created_at'>) => Promise<void>;
-  addNotificacao: (notificacao: Omit<Notificacao, 'id' | 'created_at'>) => Promise<void>;
-  updateTransacao: (id: string, data: Partial<Transacao>) => Promise<void>;
-  updateCliente: (id: string, data: Partial<Cliente>) => Promise<void>;
-  updateTarefa: (id: string, data: Partial<Tarefa>) => Promise<void>;
-  updatePaciente: (id: string, data: Partial<Paciente>) => Promise<void>;
-  updateCuidador: (id: string, data: Partial<Cuidador>) => Promise<void>;
+  addCliente: (cliente: Database['public']['Tables']['clientes']['Insert']) => Promise<void>;
+  addPaciente: (paciente: Database['public']['Tables']['pacientes']['Insert']) => Promise<void>;
+  addCuidador: (cuidador: Database['public']['Tables']['cuidadores']['Insert']) => Promise<void>;
+  addTransacao: (transacao: Database['public']['Tables']['transacoes']['Insert']) => Promise<void>;
+  addTarefa: (tarefa: Database['public']['Tables']['tarefas']['Insert']) => Promise<void>;
+  addLembrete: (lembrete: Database['public']['Tables']['lembretes']['Insert']) => Promise<void>;
+  addNotificacao: (notificacao: Database['public']['Tables']['notificacoes']['Insert']) => Promise<void>;
+  updateTransacao: (id: string, data: Database['public']['Tables']['transacoes']['Update']) => Promise<void>;
+  updateCliente: (id: string, data: Database['public']['Tables']['clientes']['Update']) => Promise<void>;
+  updateTarefa: (id: string, data: Database['public']['Tables']['tarefas']['Update']) => Promise<void>;
+  updatePaciente: (id: string, data: Database['public']['Tables']['pacientes']['Update']) => Promise<void>;
+  updateCuidador: (id: string, data: Database['public']['Tables']['cuidadores']['Update']) => Promise<void>;
   getClienteById: (id: string) => Cliente | undefined;
   isLoading: boolean;
   refetchData: () => Promise<void>;
@@ -217,12 +145,12 @@ export function DataProvider({ children }: DataProviderProps) {
         .or(`remetente_id.eq.${user?.id},destinatario_id.eq.${user?.id}`)
         .order('created_at', { ascending: false });
 
-      setClientes(clientesData || []);
-      setCuidadores(cuidadoresData || []);
-      setPacientes(pacientesData || []);
-      setTransacoes(transacoesData || []);
-      setTarefas(tarefasData || []);
-      setLembretes(lembretesData || []);
+      setClientes(clientesData as Cliente[] || []);
+      setCuidadores(cuidadoresData as Cuidador[] || []);
+      setPacientes(pacientesData as Paciente[] || []);
+      setTransacoes(transacoesData as Transacao[] || []);
+      setTarefas(tarefasData as Tarefa[] || []);
+      setLembretes(lembretesData as Lembrete[] || []);
       setNotificacoes(notificacoesData || []);
       setMensagens(mensagensData || []);
     } catch (error) {
@@ -236,7 +164,7 @@ export function DataProvider({ children }: DataProviderProps) {
     fetchData();
   }, [session, user]);
 
-  const addCliente = async (cliente: Omit<Cliente, 'id' | 'created_at' | 'updated_at'>) => {
+  const addCliente = async (cliente: Database['public']['Tables']['clientes']['Insert']) => {
     const { data, error } = await supabase
       .from('clientes')
       .insert(cliente)
@@ -245,11 +173,11 @@ export function DataProvider({ children }: DataProviderProps) {
 
     if (error) throw error;
     if (data) {
-      setClientes(prev => [data, ...prev]);
+      setClientes(prev => [data as Cliente, ...prev]);
     }
   };
 
-  const addPaciente = async (paciente: Omit<Paciente, 'id' | 'created_at' | 'updated_at'>) => {
+  const addPaciente = async (paciente: Database['public']['Tables']['pacientes']['Insert']) => {
     const { data, error } = await supabase
       .from('pacientes')
       .insert(paciente)
@@ -262,11 +190,11 @@ export function DataProvider({ children }: DataProviderProps) {
 
     if (error) throw error;
     if (data) {
-      setPacientes(prev => [data, ...prev]);
+      setPacientes(prev => [data as Paciente, ...prev]);
     }
   };
 
-  const addCuidador = async (cuidador: Omit<Cuidador, 'id' | 'created_at' | 'updated_at'>) => {
+  const addCuidador = async (cuidador: Database['public']['Tables']['cuidadores']['Insert']) => {
     const { data, error } = await supabase
       .from('cuidadores')
       .insert(cuidador)
@@ -278,11 +206,11 @@ export function DataProvider({ children }: DataProviderProps) {
 
     if (error) throw error;
     if (data) {
-      setCuidadores(prev => [data, ...prev]);
+      setCuidadores(prev => [data as Cuidador, ...prev]);
     }
   };
 
-  const addTransacao = async (transacao: Omit<Transacao, 'id' | 'created_at'>) => {
+  const addTransacao = async (transacao: Database['public']['Tables']['transacoes']['Insert']) => {
     const { data, error } = await supabase
       .from('transacoes')
       .insert(transacao)
@@ -294,11 +222,11 @@ export function DataProvider({ children }: DataProviderProps) {
 
     if (error) throw error;
     if (data) {
-      setTransacoes(prev => [data, ...prev]);
+      setTransacoes(prev => [data as Transacao, ...prev]);
     }
   };
 
-  const addTarefa = async (tarefa: Omit<Tarefa, 'id' | 'created_at' | 'updated_at'>) => {
+  const addTarefa = async (tarefa: Database['public']['Tables']['tarefas']['Insert']) => {
     const { data, error } = await supabase
       .from('tarefas')
       .insert(tarefa)
@@ -311,11 +239,11 @@ export function DataProvider({ children }: DataProviderProps) {
 
     if (error) throw error;
     if (data) {
-      setTarefas(prev => [data, ...prev]);
+      setTarefas(prev => [data as Tarefa, ...prev]);
     }
   };
 
-  const addLembrete = async (lembrete: Omit<Lembrete, 'id' | 'created_at'>) => {
+  const addLembrete = async (lembrete: Database['public']['Tables']['lembretes']['Insert']) => {
     const lembreteData = {
       ...lembrete,
       responsavel_id: user?.id || '',
@@ -333,11 +261,11 @@ export function DataProvider({ children }: DataProviderProps) {
 
     if (error) throw error;
     if (data) {
-      setLembretes(prev => [data, ...prev]);
+      setLembretes(prev => [data as Lembrete, ...prev]);
     }
   };
 
-  const addNotificacao = async (notificacao: Omit<Notificacao, 'id' | 'created_at'>) => {
+  const addNotificacao = async (notificacao: Database['public']['Tables']['notificacoes']['Insert']) => {
     const notificacaoData = {
       ...notificacao,
       usuario_id: user?.id || '',
@@ -368,7 +296,7 @@ export function DataProvider({ children }: DataProviderProps) {
 
     if (error) throw error;
     if (data) {
-      setTransacoes(prev => prev.map(t => t.id === id ? data : t));
+      setTransacoes(prev => prev.map(t => t.id === id ? data as Transacao : t));
     }
   };
 
@@ -382,7 +310,7 @@ export function DataProvider({ children }: DataProviderProps) {
 
     if (error) throw error;
     if (data) {
-      setClientes(prev => prev.map(c => c.id === id ? data : c));
+      setClientes(prev => prev.map(c => c.id === id ? data as Cliente : c));
     }
   };
 
@@ -400,7 +328,7 @@ export function DataProvider({ children }: DataProviderProps) {
 
     if (error) throw error;
     if (data) {
-      setTarefas(prev => prev.map(t => t.id === id ? data : t));
+      setTarefas(prev => prev.map(t => t.id === id ? data as Tarefa : t));
     }
   };
 
@@ -418,7 +346,7 @@ export function DataProvider({ children }: DataProviderProps) {
 
     if (error) throw error;
     if (data) {
-      setPacientes(prev => prev.map(p => p.id === id ? data : p));
+      setPacientes(prev => prev.map(p => p.id === id ? data as Paciente : p));
     }
   };
 
@@ -435,7 +363,7 @@ export function DataProvider({ children }: DataProviderProps) {
 
     if (error) throw error;
     if (data) {
-      setCuidadores(prev => prev.map(c => c.id === id ? data : c));
+      setCuidadores(prev => prev.map(c => c.id === id ? data as Cuidador : c));
     }
   };
 

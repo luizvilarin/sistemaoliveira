@@ -4,14 +4,25 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
+interface UserProfile {
+  id: string;
+  nome: string;
+  email: string;
+  perfil: string;
+  avatar_url?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
+  userProfile: UserProfile | null;
   isAdmin: boolean;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, nome: string, perfil: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  login: (email: string, password: string) => Promise<{ error: any }>;
+  logout: () => Promise<void>;
   updateProfile: (data: any) => Promise<{ error: any }>;
 }
 
@@ -20,8 +31,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -84,6 +95,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const login = signIn; // Alias for compatibility
+
   const signUp = async (email: string, password: string, nome: string, perfil: string) => {
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -131,6 +144,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const logout = signOut; // Alias for compatibility
+
   const updateProfile = async (profileData: any) => {
     if (!user) return { error: 'Usuário não autenticado' };
     
@@ -165,11 +180,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         session,
+        userProfile,
         isAdmin,
         isLoading,
         signIn,
         signUp,
         signOut,
+        login,
+        logout,
         updateProfile,
       }}
     >

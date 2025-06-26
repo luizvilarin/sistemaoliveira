@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useData } from '@/contexts/DataContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Textarea } from '@/components/ui/textarea';
 import { 
   Select,
@@ -36,6 +37,7 @@ interface LembreteFormProps {
 
 const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose }) => {
   const { addLembrete, clientes, cuidadores } = useData();
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const form = useForm<FormData>({
@@ -54,11 +56,12 @@ const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose }) => {
     try {
       const lembreteData = {
         titulo: values.titulo,
-        descricao: values.descricao || undefined,
+        descricao: values.descricao || null,
         dia: values.dia,
         residencia: values.residencia,
-        cliente_id: values.cliente_id || undefined,
-        cuidador_id: values.cuidador_id || undefined,
+        responsavel_id: user?.id || '',
+        cliente_id: values.cliente_id || null,
+        cuidador_id: values.cuidador_id || null,
       };
 
       await addLembrete(lembreteData);

@@ -58,7 +58,7 @@ const TopBar = () => {
                     )}
                   </div>
                   <span className="text-xs text-muted-foreground mt-1">
-                    {new Date(notificacao.criado_em).toLocaleString()}
+                    {new Date(notificacao.created_at).toLocaleString()}
                   </span>
                 </DropdownMenuItem>
               ))

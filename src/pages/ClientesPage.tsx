@@ -130,7 +130,7 @@ const ClientesPage = () => {
                       <TableCell>
                         <ClientStatusBadge status={cliente.status} />
                       </TableCell>
-                      <TableCell>{formatDate(cliente.criado_em)}</TableCell>
+                      <TableCell>{formatDate(cliente.created_at)}</TableCell>
                       <TableCell className="text-right">
                         <Button variant="outline" size="sm" onClick={() => handleEditCliente(cliente)}>
                           <Edit className="h-4 w-4" />

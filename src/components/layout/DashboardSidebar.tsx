@@ -48,7 +48,7 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({ to, icon, label, adminOnly = 
 };
 
 const DashboardSidebar = () => {
-  const { user, logout } = useAuth();
+  const { userProfile, logout } = useAuth();
 
   return (
     <div className="h-screen w-64 bg-sidebar border-r border-border flex flex-col">
@@ -63,8 +63,8 @@ const DashboardSidebar = () => {
             <User size={20} />
           </div>
           <div className="ml-3">
-            <p className="text-sm font-medium">{user?.nome}</p>
-            <p className="text-xs text-gray-500 capitalize">{user?.perfil}</p>
+            <p className="text-sm font-medium">{userProfile?.nome || 'Usuário'}</p>
+            <p className="text-xs text-gray-500 capitalize">{userProfile?.perfil || 'cuidador'}</p>
           </div>
         </div>
       </div>

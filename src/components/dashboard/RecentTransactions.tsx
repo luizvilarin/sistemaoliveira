@@ -50,9 +50,9 @@ const RecentTransactions = () => {
                 </div>
                 <div className="flex flex-col flex-1 min-w-0">
                   <div className="flex justify-between items-center">
-                    <p className="text-sm font-medium truncate">{transaction.cliente_nome}</p>
+                    <p className="text-sm font-medium truncate">{transaction.cliente?.nome || 'Cliente não encontrado'}</p>
                     <p className="text-sm font-bold">
-                      {formatMoney(transaction.valor)}
+                      {formatMoney(Number(transaction.valor))}
                     </p>
                   </div>
                   <div className="flex justify-between items-center">
