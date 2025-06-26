@@ -23,23 +23,11 @@ import {
 } from 'lucide-react';
 import { formatMoney } from '@/lib/utils';
 
-// Mock data para usuários do sistema
-const mockUsuarios = [
-  { id: '1', nome: 'Administrador', email: 'admin@sgc.com', perfil: 'admin', ativo: true },
-  { id: '2', nome: 'Gestor Silva', email: 'gestor@sgc.com', perfil: 'gestor', ativo: true },
-  { id: '3', nome: 'Cuidador Santos', email: 'cuidador@sgc.com', perfil: 'cuidador', ativo: true },
-  { id: '4', nome: 'Maria Oliveira', email: 'maria@sgc.com', perfil: 'cuidador', ativo: false },
-];
-
 const DashboardPage = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, userProfile } = useAuth();
   const { clientes, pacientes, cuidadores, transacoes } = useData();
   const [isUsuarioFormOpen, setIsUsuarioFormOpen] = useState(false);
   const [editingUsuario, setEditingUsuario] = useState(null);
-  
-  // Calcular o número de clientes fixos e temporários
-  const clientesFixos = clientes.filter(c => c.tipo === 'fixo').length;
-  const clientesTemporarios = clientes.filter(c => c.tipo === 'temporario').length;
   
   // Calcular o faturamento diário (apenas para administradores)
   const today = new Date();
@@ -163,40 +151,42 @@ const DashboardPage = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Perfil</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {mockUsuarios.map((usuario) => (
-                  <TableRow key={usuario.id}>
-                    <TableCell className="font-medium">{usuario.nome}</TableCell>
-                    <TableCell>{usuario.email}</TableCell>
-                    <TableCell>{getPerfilBadge(usuario.perfil)}</TableCell>
+            {userProfile ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Perfil</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium">{userProfile.nome}</TableCell>
+                    <TableCell>{userProfile.email}</TableCell>
+                    <TableCell>{getPerfilBadge(userProfile.perfil)}</TableCell>
                     <TableCell>
-                      <Badge variant={usuario.ativo ? "default" : "secondary"}>
-                        {usuario.ativo ? 'Ativo' : 'Inativo'}
-                      </Badge>
+                      <Badge variant="default">Ativo</Badge>
                     </TableCell>
                     <TableCell>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleEditUsuario(usuario)}
+                        onClick={() => handleEditUsuario(userProfile)}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center py-4 text-sm text-muted-foreground">
+                Nenhum usuário encontrado
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

@@ -1,407 +1,355 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
-import { Database } from '@/integrations/supabase/types';
-
-// Use database types directly
-type Cliente = Database['public']['Tables']['clientes']['Row'];
-type Cuidador = Database['public']['Tables']['cuidadores']['Row'] & {
-  cliente?: Cliente;
-};
-type Paciente = Database['public']['Tables']['pacientes']['Row'] & {
-  cliente?: Cliente;
-  cuidador?: Cuidador;
-};
-type Transacao = Database['public']['Tables']['transacoes']['Row'] & {
-  cliente?: Cliente;
-};
-type Tarefa = Database['public']['Tables']['tarefas']['Row'] & {
-  cliente?: Cliente;
-  cuidador?: Cuidador;
-};
-type Lembrete = Database['public']['Tables']['lembretes']['Row'] & {
-  cliente?: Cliente;
-  cuidador?: Cuidador;
-};
-type Notificacao = Database['public']['Tables']['notificacoes']['Row'];
-type Mensagem = Database['public']['Tables']['mensagens']['Row'];
+import { Cliente, Cuidador, Paciente, Transacao, Tarefa, Lembrete, Mensagem, Notificacao } from '@/integrations/supabase/types';
+import { useToast } from '@/components/ui/use-toast';
 
 interface DataContextType {
+  // Data
   clientes: Cliente[];
-  pacientes: Paciente[];
   cuidadores: Cuidador[];
+  pacientes: Paciente[];
   transacoes: Transacao[];
   tarefas: Tarefa[];
   lembretes: Lembrete[];
-  notificacoes: Notificacao[];
   mensagens: Mensagem[];
-  addCliente: (cliente: Database['public']['Tables']['clientes']['Insert']) => Promise<void>;
-  addPaciente: (paciente: Database['public']['Tables']['pacientes']['Insert']) => Promise<void>;
-  addCuidador: (cuidador: Database['public']['Tables']['cuidadores']['Insert']) => Promise<void>;
-  addTransacao: (transacao: Database['public']['Tables']['transacoes']['Insert']) => Promise<void>;
-  addTarefa: (tarefa: Database['public']['Tables']['tarefas']['Insert']) => Promise<void>;
-  addLembrete: (lembrete: Database['public']['Tables']['lembretes']['Insert']) => Promise<void>;
-  addNotificacao: (notificacao: Database['public']['Tables']['notificacoes']['Insert']) => Promise<void>;
-  updateTransacao: (id: string, data: Database['public']['Tables']['transacoes']['Update']) => Promise<void>;
-  updateCliente: (id: string, data: Database['public']['Tables']['clientes']['Update']) => Promise<void>;
-  updateTarefa: (id: string, data: Database['public']['Tables']['tarefas']['Update']) => Promise<void>;
-  updatePaciente: (id: string, data: Database['public']['Tables']['pacientes']['Update']) => Promise<void>;
-  updateCuidador: (id: string, data: Database['public']['Tables']['cuidadores']['Update']) => Promise<void>;
-  getClienteById: (id: string) => Cliente | undefined;
+  notificacoes: Notificacao[];
+  
+  // Loading states
   isLoading: boolean;
-  refetchData: () => Promise<void>;
+  
+  // CRUD operations
+  addCliente: (cliente: Omit<Cliente, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  updateCliente: (id: string, updates: Partial<Cliente>) => Promise<void>;
+  deleteCliente: (id: string) => Promise<void>;
+  
+  addCuidador: (cuidador: Omit<Cuidador, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  updateCuidador: (id: string, updates: Partial<Cuidador>) => Promise<void>;
+  deleteCuidador: (id: string) => Promise<void>;
+  
+  addPaciente: (paciente: Omit<Paciente, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  updatePaciente: (id: string, updates: Partial<Paciente>) => Promise<void>;
+  deletePaciente: (id: string) => Promise<void>;
+  
+  addTransacao: (transacao: Omit<Transacao, 'id' | 'created_at'>) => Promise<void>;
+  updateTransacao: (id: string, updates: Partial<Transacao>) => Promise<void>;
+  deleteTransacao: (id: string) => Promise<void>;
+  
+  addTarefa: (tarefa: Omit<Tarefa, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  updateTarefa: (id: string, updates: Partial<Tarefa>) => Promise<void>;
+  deleteTarefa: (id: string) => Promise<void>;
+  
+  addLembrete: (lembrete: Omit<Lembrete, 'id' | 'created_at'>) => Promise<void>;
+  updateLembrete: (id: string, updates: Partial<Lembrete>) => Promise<void>;
+  deleteLembrete: (id: string) => Promise<void>;
+  
+  addMensagem: (mensagem: Omit<Mensagem, 'id' | 'created_at'>) => Promise<void>;
+  updateMensagem: (id: string, updates: Partial<Mensagem>) => Promise<void>;
+  deleteMensagem: (id: string) => Promise<void>;
+  
+  addNotificacao: (notificacao: Omit<Notificacao, 'id' | 'created_at'>) => Promise<void>;
+  updateNotificacao: (id: string, updates: Partial<Notificacao>) => Promise<void>;
+  deleteNotificacao: (id: string) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-interface DataProviderProps {
-  children: ReactNode;
-}
-
-export function DataProvider({ children }: DataProviderProps) {
-  const { user, session } = useAuth();
+export function DataProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
+  // State
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [cuidadores, setCuidadores] = useState<Cuidador[]>([]);
+  const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [tarefas, setTarefas] = useState<Tarefa[]>([]);
   const [lembretes, setLembretes] = useState<Lembrete[]>([]);
-  const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const fetchData = async () => {
-    if (!session) {
-      setIsLoading(false);
-      return;
-    }
-
+  // Fetch all data
+  const fetchAllData = async () => {
+    if (!user) return;
+    
     try {
-      // Fetch clientes
-      const { data: clientesData } = await supabase
-        .from('clientes')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      // Fetch cuidadores with cliente relation
-      const { data: cuidadoresData } = await supabase
-        .from('cuidadores')
-        .select(`
+      setIsLoading(true);
+      
+      // Fetch all data in parallel
+      const [
+        clientesRes,
+        cuidadoresRes,
+        pacientesRes,
+        transacoesRes,
+        tarefasRes,
+        lembretesRes,
+        mensagensRes,
+        notificacoesRes
+      ] = await Promise.all([
+        supabase.from('clientes').select('*'),
+        supabase.from('cuidadores').select(`
           *,
           cliente:clientes(*)
-        `)
-        .order('created_at', { ascending: false });
-
-      // Fetch pacientes with cliente and cuidador relations
-      const { data: pacientesData } = await supabase
-        .from('pacientes')
-        .select(`
+        `),
+        supabase.from('pacientes').select(`
           *,
           cliente:clientes(*),
           cuidador:cuidadores(*)
-        `)
-        .order('created_at', { ascending: false });
-
-      // Fetch transacoes with cliente relation
-      const { data: transacoesData } = await supabase
-        .from('transacoes')
-        .select(`
+        `),
+        supabase.from('transacoes').select(`
           *,
           cliente:clientes(*)
-        `)
-        .order('created_at', { ascending: false });
-
-      // Fetch tarefas with relations
-      const { data: tarefasData } = await supabase
-        .from('tarefas')
-        .select(`
+        `),
+        supabase.from('tarefas').select(`
           *,
           cliente:clientes(*),
           cuidador:cuidadores(*)
-        `)
-        .order('created_at', { ascending: false });
-
-      // Fetch lembretes with relations
-      const { data: lembretesData } = await supabase
-        .from('lembretes')
-        .select(`
+        `),
+        supabase.from('lembretes').select(`
           *,
           cliente:clientes(*),
           cuidador:cuidadores(*)
-        `)
-        .order('created_at', { ascending: false });
+        `),
+        supabase.from('mensagens').select('*').eq('destinatario_id', user.id),
+        supabase.from('notificacoes').select('*').eq('usuario_id', user.id)
+      ]);
 
-      // Fetch notificacoes for current user
-      const { data: notificacoesData } = await supabase
-        .from('notificacoes')
-        .select('*')
-        .eq('usuario_id', user?.id)
-        .order('created_at', { ascending: false });
+      // Update state with real data from database
+      if (clientesRes.data) setClientes(clientesRes.data as Cliente[]);
+      if (cuidadoresRes.data) setCuidadores(cuidadoresRes.data as Cuidador[]);
+      if (pacientesRes.data) setPacientes(pacientesRes.data as Paciente[]);
+      if (transacoesRes.data) setTransacoes(transacoesRes.data as Transacao[]);
+      if (tarefasRes.data) setTarefas(tarefasRes.data as Tarefa[]);
+      if (lembretesRes.data) setLembretes(lembretesRes.data as Lembrete[]);
+      if (mensagensRes.data) setMensagens(mensagensRes.data as Mensagem[]);
+      if (notificacoesRes.data) setNotificacoes(notificacoesRes.data as Notificacao[]);
 
-      // Fetch mensagens for current user
-      const { data: mensagensData } = await supabase
-        .from('mensagens')
-        .select('*')
-        .or(`remetente_id.eq.${user?.id},destinatario_id.eq.${user?.id}`)
-        .order('created_at', { ascending: false });
-
-      setClientes(clientesData as Cliente[] || []);
-      setCuidadores(cuidadoresData as Cuidador[] || []);
-      setPacientes(pacientesData as Paciente[] || []);
-      setTransacoes(transacoesData as Transacao[] || []);
-      setTarefas(tarefasData as Tarefa[] || []);
-      setLembretes(lembretesData as Lembrete[] || []);
-      setNotificacoes(notificacoesData || []);
-      setMensagens(mensagensData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao carregar dados',
+        description: 'Não foi possível carregar os dados do sistema.',
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Load data when user changes
   useEffect(() => {
-    fetchData();
-  }, [session, user]);
-
-  const addCliente = async (cliente: Database['public']['Tables']['clientes']['Insert']) => {
-    const { data, error } = await supabase
-      .from('clientes')
-      .insert(cliente)
-      .select()
-      .single();
-
-    if (error) throw error;
-    if (data) {
-      setClientes(prev => [data as Cliente, ...prev]);
+    if (user) {
+      fetchAllData();
+    } else {
+      // Clear data when user logs out
+      setClientes([]);
+      setCuidadores([]);
+      setPacientes([]);
+      setTransacoes([]);
+      setTarefas([]);
+      setLembretes([]);
+      setMensagens([]);
+      setNotificacoes([]);
+      setIsLoading(false);
     }
-  };
+  }, [user]);
 
-  const addPaciente = async (paciente: Database['public']['Tables']['pacientes']['Insert']) => {
-    const { data, error } = await supabase
-      .from('pacientes')
-      .insert(paciente)
-      .select(`
-        *,
-        cliente:clientes(*),
-        cuidador:cuidadores(*)
-      `)
-      .single();
-
+  // CRUD Operations for Clientes
+  const addCliente = async (cliente: Omit<Cliente, 'id' | 'created_at' | 'updated_at'>) => {
+    const { data, error } = await supabase.from('clientes').insert([cliente]).select().single();
     if (error) throw error;
-    if (data) {
-      setPacientes(prev => [data as Paciente, ...prev]);
-    }
+    setClientes(prev => [...prev, data as Cliente]);
   };
 
-  const addCuidador = async (cuidador: Database['public']['Tables']['cuidadores']['Insert']) => {
-    const { data, error } = await supabase
-      .from('cuidadores')
-      .insert(cuidador)
-      .select(`
-        *,
-        cliente:clientes(*)
-      `)
-      .single();
-
+  const updateCliente = async (id: string, updates: Partial<Cliente>) => {
+    const { data, error } = await supabase.from('clientes').update(updates).eq('id', id).select().single();
     if (error) throw error;
-    if (data) {
-      setCuidadores(prev => [data as Cuidador, ...prev]);
-    }
+    setClientes(prev => prev.map(c => c.id === id ? data as Cliente : c));
   };
 
-  const addTransacao = async (transacao: Database['public']['Tables']['transacoes']['Insert']) => {
-    const { data, error } = await supabase
-      .from('transacoes')
-      .insert(transacao)
-      .select(`
-        *,
-        cliente:clientes(*)
-      `)
-      .single();
-
+  const deleteCliente = async (id: string) => {
+    const { error } = await supabase.from('clientes').delete().eq('id', id);
     if (error) throw error;
-    if (data) {
-      setTransacoes(prev => [data as Transacao, ...prev]);
-    }
+    setClientes(prev => prev.filter(c => c.id !== id));
   };
 
-  const addTarefa = async (tarefa: Database['public']['Tables']['tarefas']['Insert']) => {
-    const { data, error } = await supabase
-      .from('tarefas')
-      .insert(tarefa)
-      .select(`
-        *,
-        cliente:clientes(*),
-        cuidador:cuidadores(*)
-      `)
-      .single();
+  // ... keep existing code (CRUD operations for all other entities)
 
+  const addCuidador = async (cuidador: Omit<Cuidador, 'id' | 'created_at' | 'updated_at'>) => {
+    const { data, error } = await supabase.from('cuidadores').insert([cuidador]).select().single();
     if (error) throw error;
-    if (data) {
-      setTarefas(prev => [data as Tarefa, ...prev]);
-    }
+    setCuidadores(prev => [...prev, data as Cuidador]);
   };
 
-  const addLembrete = async (lembrete: Database['public']['Tables']['lembretes']['Insert']) => {
-    const lembreteData = {
-      ...lembrete,
-      responsavel_id: user?.id || '',
-    };
-
-    const { data, error } = await supabase
-      .from('lembretes')
-      .insert(lembreteData)
-      .select(`
-        *,
-        cliente:clientes(*),
-        cuidador:cuidadores(*)
-      `)
-      .single();
-
+  const updateCuidador = async (id: string, updates: Partial<Cuidador>) => {
+    const { data, error } = await supabase.from('cuidadores').update(updates).eq('id', id).select().single();
     if (error) throw error;
-    if (data) {
-      setLembretes(prev => [data as Lembrete, ...prev]);
-    }
+    setCuidadores(prev => prev.map(c => c.id === id ? data as Cuidador : c));
   };
 
-  const addNotificacao = async (notificacao: Database['public']['Tables']['notificacoes']['Insert']) => {
-    const notificacaoData = {
-      ...notificacao,
-      usuario_id: user?.id || '',
-    };
-
-    const { data, error } = await supabase
-      .from('notificacoes')
-      .insert(notificacaoData)
-      .select()
-      .single();
-
+  const deleteCuidador = async (id: string) => {
+    const { error } = await supabase.from('cuidadores').delete().eq('id', id);
     if (error) throw error;
-    if (data) {
-      setNotificacoes(prev => [data, ...prev]);
-    }
+    setCuidadores(prev => prev.filter(c => c.id !== id));
   };
 
-  const updateTransacao = async (id: string, updateData: Partial<Transacao>) => {
-    const { data, error } = await supabase
-      .from('transacoes')
-      .update(updateData)
-      .eq('id', id)
-      .select(`
-        *,
-        cliente:clientes(*)
-      `)
-      .single();
-
+  const addPaciente = async (paciente: Omit<Paciente, 'id' | 'created_at' | 'updated_at'>) => {
+    const { data, error } = await supabase.from('pacientes').insert([paciente]).select().single();
     if (error) throw error;
-    if (data) {
-      setTransacoes(prev => prev.map(t => t.id === id ? data as Transacao : t));
-    }
+    setPacientes(prev => [...prev, data as Paciente]);
   };
 
-  const updateCliente = async (id: string, updateData: Partial<Cliente>) => {
-    const { data, error } = await supabase
-      .from('clientes')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
-
+  const updatePaciente = async (id: string, updates: Partial<Paciente>) => {
+    const { data, error } = await supabase.from('pacientes').update(updates).eq('id', id).select().single();
     if (error) throw error;
-    if (data) {
-      setClientes(prev => prev.map(c => c.id === id ? data as Cliente : c));
-    }
+    setPacientes(prev => prev.map(p => p.id === id ? data as Paciente : p));
   };
 
-  const updateTarefa = async (id: string, updateData: Partial<Tarefa>) => {
-    const { data, error } = await supabase
-      .from('tarefas')
-      .update(updateData)
-      .eq('id', id)
-      .select(`
-        *,
-        cliente:clientes(*),
-        cuidador:cuidadores(*)
-      `)
-      .single();
-
+  const deletePaciente = async (id: string) => {
+    const { error } = await supabase.from('pacientes').delete().eq('id', id);
     if (error) throw error;
-    if (data) {
-      setTarefas(prev => prev.map(t => t.id === id ? data as Tarefa : t));
-    }
+    setPacientes(prev => prev.filter(p => p.id !== id));
   };
 
-  const updatePaciente = async (id: string, updateData: Partial<Paciente>) => {
-    const { data, error } = await supabase
-      .from('pacientes')
-      .update(updateData)
-      .eq('id', id)
-      .select(`
-        *,
-        cliente:clientes(*),
-        cuidador:cuidadores(*)
-      `)
-      .single();
-
+  const addTransacao = async (transacao: Omit<Transacao, 'id' | 'created_at'>) => {
+    const { data, error } = await supabase.from('transacoes').insert([transacao]).select().single();
     if (error) throw error;
-    if (data) {
-      setPacientes(prev => prev.map(p => p.id === id ? data as Paciente : p));
-    }
+    setTransacoes(prev => [...prev, data as Transacao]);
   };
 
-  const updateCuidador = async (id: string, updateData: Partial<Cuidador>) => {
-    const { data, error } = await supabase
-      .from('cuidadores')
-      .update(updateData)
-      .eq('id', id)
-      .select(`
-        *,
-        cliente:clientes(*)
-      `)
-      .single();
-
+  const updateTransacao = async (id: string, updates: Partial<Transacao>) => {
+    const { data, error } = await supabase.from('transacoes').update(updates).eq('id', id).select().single();
     if (error) throw error;
-    if (data) {
-      setCuidadores(prev => prev.map(c => c.id === id ? data as Cuidador : c));
-    }
+    setTransacoes(prev => prev.map(t => t.id === id ? data as Transacao : t));
   };
 
-  const getClienteById = (id: string) => {
-    return clientes.find((cliente) => cliente.id === id);
+  const deleteTransacao = async (id: string) => {
+    const { error } = await supabase.from('transacoes').delete().eq('id', id);
+    if (error) throw error;
+    setTransacoes(prev => prev.filter(t => t.id !== id));
   };
 
-  const refetchData = async () => {
-    setIsLoading(true);
-    await fetchData();
+  const addTarefa = async (tarefa: Omit<Tarefa, 'id' | 'created_at' | 'updated_at'>) => {
+    const { data, error } = await supabase.from('tarefas').insert([tarefa]).select().single();
+    if (error) throw error;
+    setTarefas(prev => [...prev, data as Tarefa]);
+  };
+
+  const updateTarefa = async (id: string, updates: Partial<Tarefa>) => {
+    const { data, error } = await supabase.from('tarefas').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    setTarefas(prev => prev.map(t => t.id === id ? data as Tarefa : t));
+  };
+
+  const deleteTarefa = async (id: string) => {
+    const { error } = await supabase.from('tarefas').delete().eq('id', id);
+    if (error) throw error;
+    setTarefas(prev => prev.filter(t => t.id !== id));
+  };
+
+  const addLembrete = async (lembrete: Omit<Lembrete, 'id' | 'created_at'>) => {
+    const { data, error } = await supabase.from('lembretes').insert([lembrete]).select().single();
+    if (error) throw error;
+    setLembretes(prev => [...prev, data as Lembrete]);
+  };
+
+  const updateLembrete = async (id: string, updates: Partial<Lembrete>) => {
+    const { data, error } = await supabase.from('lembretes').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    setLembretes(prev => prev.map(l => l.id === id ? data as Lembrete : l));
+  };
+
+  const deleteLembrete = async (id: string) => {
+    const { error } = await supabase.from('lembretes').delete().eq('id', id);
+    if (error) throw error;
+    setLembretes(prev => prev.filter(l => l.id !== id));
+  };
+
+  const addMensagem = async (mensagem: Omit<Mensagem, 'id' | 'created_at'>) => {
+    const { data, error } = await supabase.from('mensagens').insert([mensagem]).select().single();
+    if (error) throw error;
+    setMensagens(prev => [...prev, data as Mensagem]);
+  };
+
+  const updateMensagem = async (id: string, updates: Partial<Mensagem>) => {
+    const { data, error } = await supabase.from('mensagens').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    setMensagens(prev => prev.map(m => m.id === id ? data as Mensagem : m));
+  };
+
+  const deleteMensagem = async (id: string) => {
+    const { error } = await supabase.from('mensagens').delete().eq('id', id);
+    if (error) throw error;
+    setMensagens(prev => prev.filter(m => m.id !== id));
+  };
+
+  const addNotificacao = async (notificacao: Omit<Notificacao, 'id' | 'created_at'>) => {
+    const { data, error } = await supabase.from('notificacoes').insert([notificacao]).select().single();
+    if (error) throw error;
+    setNotificacoes(prev => [...prev, data as Notificacao]);
+  };
+
+  const updateNotificacao = async (id: string, updates: Partial<Notificacao>) => {
+    const { data, error } = await supabase.from('notificacoes').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    setNotificacoes(prev => prev.map(n => n.id === id ? data as Notificacao : n));
+  };
+
+  const deleteNotificacao = async (id: string) => {
+    const { error } = await supabase.from('notificacoes').delete().eq('id', id);
+    if (error) throw error;
+    setNotificacoes(prev => prev.filter(n => n.id !== id));
   };
 
   return (
     <DataContext.Provider
       value={{
+        // Data
         clientes,
-        pacientes,
         cuidadores,
+        pacientes,
         transacoes,
         tarefas,
         lembretes,
-        notificacoes,
         mensagens,
-        addCliente,
-        addPaciente,
-        addCuidador,
-        addTransacao,
-        addTarefa,
-        addLembrete,
-        addNotificacao,
-        updateTransacao,
-        updateCliente,
-        updateTarefa,
-        updatePaciente,
-        updateCuidador,
-        getClienteById,
+        notificacoes,
+        
+        // Loading
         isLoading,
-        refetchData,
+        
+        // CRUD operations
+        addCliente,
+        updateCliente,
+        deleteCliente,
+        
+        addCuidador,
+        updateCuidador,
+        deleteCuidador,
+        
+        addPaciente,
+        updatePaciente,
+        deletePaciente,
+        
+        addTransacao,
+        updateTransacao,
+        deleteTransacao,
+        
+        addTarefa,
+        updateTarefa,
+        deleteTarefa,
+        
+        addLembrete,
+        updateLembrete,
+        deleteLembrete,
+        
+        addMensagem,
+        updateMensagem,
+        deleteMensagem,
+        
+        addNotificacao,
+        updateNotificacao,
+        deleteNotificacao,
       }}
     >
       {children}
