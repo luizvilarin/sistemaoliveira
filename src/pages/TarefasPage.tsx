@@ -140,7 +140,7 @@ const TarefasPage = () => {
                   <TableCell>{getClienteNome(tarefa.cliente_id)}</TableCell>
                   <TableCell>{getCuidadorNome(tarefa.cuidador_id)}</TableCell>
                   <TableCell>{getStatusBadge(tarefa.status)}</TableCell>
-                  <TableCell>{formatDate(tarefa.criado_em)}</TableCell>
+                  <TableCell>{formatDate(tarefa.created_at)}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button
