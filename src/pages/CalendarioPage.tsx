@@ -1,135 +1,157 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
-import { Calendar as CalendarIcon, Clock, Users } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Calendar, Plus, Clock, MapPin, User } from 'lucide-react';
+import LembreteForm from '@/components/lembretes/LembreteForm';
+import { formatDate } from '@/lib/utils';
 
 const CalendarioPage = () => {
-  const [date, setDate] = useState<Date | undefined>(new Date());
-  const { tarefas, clientes, cuidadores } = useData();
+  const { lembretes, isLoading } = useData();
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
-  // Simular eventos do dia
-  const eventosHoje = [
-    {
-      id: '1',
-      titulo: 'Visita domiciliar - João da Silva',
-      horario: '09:00',
-      cuidador: 'Fernanda Lima',
-      tipo: 'visita'
-    },
-    {
-      id: '2',
-      titulo: 'Sessão de fisioterapia - Maria Oliveira',
-      horario: '14:30',
-      cuidador: 'Ricardo Gomes',
-      tipo: 'terapia'
-    },
-    {
-      id: '3',
-      titulo: 'Consulta médica - Carlos Santos',
-      horario: '16:00',
-      cuidador: 'Fernanda Lima',
-      tipo: 'consulta'
-    }
-  ];
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
-  const getTipoColor = (tipo: string) => {
-    switch (tipo) {
-      case 'visita':
-        return 'bg-blue-100 text-blue-800';
-      case 'terapia':
-        return 'bg-green-100 text-green-800';
-      case 'consulta':
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  // Agrupar lembretes por data
+  const lembretesPorData = lembretes.reduce((acc, lembrete) => {
+    const data = lembrete.dia;
+    if (!acc[data]) {
+      acc[data] = [];
     }
-  };
+    acc[data].push(lembrete);
+    return acc;
+  }, {} as Record<string, typeof lembretes>);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Calendário</h1>
-          <p className="text-gray-600">Gerencie os agendamentos e eventos</p>
+          <h1 className="text-3xl font-bold text-gray-900">Calendário e Lembretes</h1>
+          <p className="text-gray-600">Gerencie os lembretes e agendamentos</p>
         </div>
+        <Button onClick={() => setIsFormOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Novo Lembrete
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Eventos Hoje</CardTitle>
-            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total de Lembretes</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{eventosHoje.length}</div>
+            <div className="text-2xl font-bold">{lembretes.length}</div>
           </CardContent>
         </Card>
+        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tarefas Pendentes</CardTitle>
+            <CardTitle className="text-sm font-medium">Hoje</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{tarefas.filter(t => t.status !== 'done').length}</div>
+            <div className="text-2xl font-bold">
+              {lembretesPorData[new Date().toISOString().split('T')[0]]?.length || 0}
+            </div>
           </CardContent>
         </Card>
+        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cuidadores Ativos</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Esta Semana</CardTitle>
+            <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{cuidadores.length}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Calendário</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              className="rounded-md border"
-            />
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Eventos de Hoje</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {eventosHoje.map((evento) => (
-                <div key={evento.id} className="flex items-center p-4 border rounded-lg">
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Clock className="h-5 w-5 text-primary" />
-                    </div>
-                  </div>
-                  <div className="ml-4 flex-1">
-                    <h4 className="text-sm font-medium text-gray-900">{evento.titulo}</h4>
-                    <p className="text-sm text-gray-500">Cuidador: {evento.cuidador}</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTipoColor(evento.tipo)}`}>
-                      {evento.tipo}
-                    </span>
-                    <span className="text-sm font-medium text-gray-900">{evento.horario}</span>
-                  </div>
-                </div>
-              ))}
+            <div className="text-2xl font-bold">
+              {lembretes.filter(l => {
+                const lembreteDate = new Date(l.dia);
+                const today = new Date();
+                const weekFromNow = new Date();
+                weekFromNow.setDate(today.getDate() + 7);
+                return lembreteDate >= today && lembreteDate <= weekFromNow;
+              }).length}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <div className="space-y-6">
+        {Object.keys(lembretesPorData)
+          .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+          .map((data) => (
+            <Card key={data}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  {formatDate(data)}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {lembretesPorData[data].map((lembrete) => (
+                    <div key={lembrete.id} className="p-4 border rounded-lg">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2">
+                          <h3 className="font-semibold">{lembrete.titulo}</h3>
+                          {lembrete.descricao && (
+                            <p className="text-gray-600">{lembrete.descricao}</p>
+                          )}
+                          <div className="flex items-center gap-4 text-sm text-gray-500">
+                            <div className="flex items-center gap-1">
+                              <MapPin className="h-4 w-4" />
+                              {lembrete.residencia}
+                            </div>
+                            {lembrete.cliente && (
+                              <div className="flex items-center gap-1">
+                                <User className="h-4 w-4" />
+                                Cliente: {lembrete.cliente.nome}
+                              </div>
+                            )}
+                            {lembrete.cuidador && (
+                              <div className="flex items-center gap-1">
+                                <User className="h-4 w-4" />
+                                Cuidador: {lembrete.cuidador.nome}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        
+        {Object.keys(lembretesPorData).length === 0 && (
+          <Card>
+            <CardContent className="text-center py-8">
+              <Calendar className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <p className="text-gray-500">Nenhum lembrete cadastrado</p>
+              <Button 
+                onClick={() => setIsFormOpen(true)}
+                className="mt-4"
+              >
+                Criar primeiro lembrete
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      <LembreteForm
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+      />
     </div>
   );
 };

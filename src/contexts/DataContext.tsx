@@ -1,5 +1,7 @@
 
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './AuthContext';
 
 // Interfaces para os dados
 interface Cliente {
@@ -8,42 +10,74 @@ interface Cliente {
   contato: string;
   tipo: 'fixo' | 'temporario';
   status: 'ativo' | 'pausado' | 'terceirizado';
-  criado_em: string;
+  endereco?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface Paciente {
   id: string;
   nome: string;
   cliente_id: string;
-  historico_medico: string;
-  criado_em: string;
+  cuidador_id?: string;
+  historico_medico?: string;
+  contrato_ativo: boolean;
+  valor_contrato?: number;
+  created_at: string;
+  updated_at: string;
+  cliente?: Cliente;
+  cuidador?: Cuidador;
 }
 
 interface Cuidador {
   id: string;
   nome: string;
   especializacao: string;
+  telefone?: string;
+  email?: string;
+  cliente_id?: string;
   disponibilidade: Record<string, any>;
-  criado_em: string;
+  created_at: string;
+  updated_at: string;
+  cliente?: Cliente;
+  pacientes?: Paciente[];
 }
 
 interface Transacao {
   id: string;
   cliente_id: string;
-  cliente_nome?: string; // Para exibição na UI
   valor: number;
   status: 'confirmado' | 'aguardando' | 'expirado';
   data: string;
+  created_at: string;
+  cliente?: Cliente;
 }
 
 interface Tarefa {
   id: string;
   titulo: string;
-  descricao: string;
+  descricao?: string;
   status: 'todo' | 'inProgress' | 'done';
   cliente_id: string;
   cuidador_id: string;
-  criado_em: string;
+  created_at: string;
+  updated_at: string;
+  cliente?: Cliente;
+  cuidador?: Cuidador;
+}
+
+interface Lembrete {
+  id: string;
+  titulo: string;
+  descricao?: string;
+  dia: string;
+  residencia: string;
+  responsavel_id: string;
+  cliente_id?: string;
+  cuidador_id?: string;
+  created_at: string;
+  cliente?: Cliente;
+  cuidador?: Cuidador;
 }
 
 interface Notificacao {
@@ -51,7 +85,17 @@ interface Notificacao {
   mensagem: string;
   usuario_id: string;
   lida: boolean;
-  criado_em: string;
+  created_at: string;
+}
+
+interface Mensagem {
+  id: string;
+  remetente_id: string;
+  destinatario_id?: string;
+  assunto: string;
+  conteudo: string;
+  lida: boolean;
+  created_at: string;
 }
 
 interface DataContextType {
@@ -60,286 +104,348 @@ interface DataContextType {
   cuidadores: Cuidador[];
   transacoes: Transacao[];
   tarefas: Tarefa[];
+  lembretes: Lembrete[];
   notificacoes: Notificacao[];
-  addCliente: (cliente: Omit<Cliente, 'id' | 'criado_em'>) => void;
-  addPaciente: (paciente: Omit<Paciente, 'id' | 'criado_em'>) => void;
-  addCuidador: (cuidador: Omit<Cuidador, 'id' | 'criado_em'>) => void;
-  addTransacao: (transacao: Omit<Transacao, 'id' | 'cliente_nome'>) => void;
-  addTarefa: (tarefa: Omit<Tarefa, 'id' | 'criado_em'>) => void;
-  addNotificacao: (notificacao: Omit<Notificacao, 'id' | 'criado_em'>) => void;
-  updateTransacao: (id: string, data: Partial<Transacao>) => void;
-  updateCliente: (id: string, data: Partial<Cliente>) => void;
-  updateTarefa: (id: string, data: Partial<Tarefa>) => void;
+  mensagens: Mensagem[];
+  addCliente: (cliente: Omit<Cliente, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  addPaciente: (paciente: Omit<Paciente, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  addCuidador: (cuidador: Omit<Cuidador, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  addTransacao: (transacao: Omit<Transacao, 'id' | 'created_at'>) => Promise<void>;
+  addTarefa: (tarefa: Omit<Tarefa, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  addLembrete: (lembrete: Omit<Lembrete, 'id' | 'created_at'>) => Promise<void>;
+  addNotificacao: (notificacao: Omit<Notificacao, 'id' | 'created_at'>) => Promise<void>;
+  updateTransacao: (id: string, data: Partial<Transacao>) => Promise<void>;
+  updateCliente: (id: string, data: Partial<Cliente>) => Promise<void>;
+  updateTarefa: (id: string, data: Partial<Tarefa>) => Promise<void>;
+  updatePaciente: (id: string, data: Partial<Paciente>) => Promise<void>;
+  updateCuidador: (id: string, data: Partial<Cuidador>) => Promise<void>;
   getClienteById: (id: string) => Cliente | undefined;
   isLoading: boolean;
+  refetchData: () => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
-
-// Dados de exemplo para simulação
-const mockClientes: Cliente[] = [
-  {
-    id: '1',
-    nome: 'João da Silva',
-    contato: '(11) 98765-4321',
-    tipo: 'fixo',
-    status: 'ativo',
-    criado_em: '2023-01-15T10:30:00Z',
-  },
-  {
-    id: '2',
-    nome: 'Maria Oliveira',
-    contato: '(21) 97654-3210',
-    tipo: 'temporario',
-    status: 'ativo',
-    criado_em: '2023-02-20T14:45:00Z',
-  },
-  {
-    id: '3',
-    nome: 'Carlos Santos',
-    contato: '(31) 96543-2109',
-    tipo: 'fixo',
-    status: 'pausado',
-    criado_em: '2023-03-10T09:15:00Z',
-  },
-  {
-    id: '4',
-    nome: 'Ana Pereira',
-    contato: '(41) 95432-1098',
-    tipo: 'temporario',
-    status: 'terceirizado',
-    criado_em: '2023-04-05T16:20:00Z',
-  },
-  {
-    id: '5',
-    nome: 'Paulo Ferreira',
-    contato: '(51) 94321-0987',
-    tipo: 'fixo',
-    status: 'ativo',
-    criado_em: '2023-05-18T11:10:00Z',
-  },
-];
-
-const mockPacientes: Paciente[] = [
-  {
-    id: '1',
-    nome: 'Pedro Silva',
-    cliente_id: '1',
-    historico_medico: 'Hipertensão, tratamento contínuo',
-    criado_em: '2023-01-16T10:30:00Z',
-  },
-  {
-    id: '2',
-    nome: 'Lúcia Oliveira',
-    cliente_id: '2',
-    historico_medico: 'Recuperação pós-operatória',
-    criado_em: '2023-02-21T14:45:00Z',
-  }
-];
-
-const mockCuidadores: Cuidador[] = [
-  {
-    id: '1',
-    nome: 'Fernanda Lima',
-    especializacao: 'Enfermagem',
-    disponibilidade: { seg: true, ter: true, qua: true, qui: true, sex: true },
-    criado_em: '2022-12-01T08:00:00Z',
-  },
-  {
-    id: '2',
-    nome: 'Ricardo Gomes',
-    especializacao: 'Fisioterapia',
-    disponibilidade: { seg: true, qua: true, sex: true },
-    criado_em: '2022-12-15T09:30:00Z',
-  }
-];
-
-const mockTransacoes: Transacao[] = [
-  {
-    id: '1',
-    cliente_id: '1',
-    cliente_nome: 'João da Silva',
-    valor: 1500.00,
-    status: 'confirmado',
-    data: '2023-05-10T14:30:00Z',
-  },
-  {
-    id: '2',
-    cliente_id: '2',
-    cliente_nome: 'Maria Oliveira',
-    valor: 800.00,
-    status: 'aguardando',
-    data: '2023-05-15T10:15:00Z',
-  },
-  {
-    id: '3',
-    cliente_id: '3',
-    cliente_nome: 'Carlos Santos',
-    valor: 1200.00,
-    status: 'expirado',
-    data: '2023-04-28T16:45:00Z',
-  },
-  {
-    id: '4',
-    cliente_id: '1',
-    cliente_nome: 'João da Silva',
-    valor: 1500.00,
-    status: 'confirmado',
-    data: '2023-04-10T14:30:00Z',
-  },
-  {
-    id: '5',
-    cliente_id: '2',
-    cliente_nome: 'Maria Oliveira',
-    valor: 800.00,
-    status: 'confirmado',
-    data: '2023-04-15T10:15:00Z',
-  }
-];
-
-const mockTarefas: Tarefa[] = [
-  {
-    id: '1',
-    titulo: 'Visita domiciliar',
-    descricao: 'Realizar visita semanal ao paciente Pedro Silva',
-    status: 'todo',
-    cliente_id: '1',
-    cuidador_id: '1',
-    criado_em: '2023-05-12T09:00:00Z',
-  },
-  {
-    id: '2',
-    titulo: 'Sessão de fisioterapia',
-    descricao: 'Realizar sessão de fisioterapia com Lúcia Oliveira',
-    status: 'inProgress',
-    cliente_id: '2',
-    cuidador_id: '2',
-    criado_em: '2023-05-14T10:30:00Z',
-  }
-];
-
-const mockNotificacoes: Notificacao[] = [
-  {
-    id: '1',
-    mensagem: 'Novo paciente cadastrado: Pedro Silva',
-    usuario_id: '1',
-    lida: false,
-    criado_em: '2023-05-16T15:30:00Z',
-  },
-  {
-    id: '2',
-    mensagem: 'Pagamento recebido do cliente João da Silva',
-    usuario_id: '1',
-    lida: true,
-    criado_em: '2023-05-15T14:45:00Z',
-  }
-];
 
 interface DataProviderProps {
   children: ReactNode;
 }
 
 export function DataProvider({ children }: DataProviderProps) {
-  const [clientes, setClientes] = useState<Cliente[]>(mockClientes);
-  const [pacientes, setPacientes] = useState<Paciente[]>(mockPacientes);
-  const [cuidadores, setCuidadores] = useState<Cuidador[]>(mockCuidadores);
-  const [transacoes, setTransacoes] = useState<Transacao[]>(mockTransacoes);
-  const [tarefas, setTarefas] = useState<Tarefa[]>(mockTarefas);
-  const [notificacoes, setNotificacoes] = useState<Notificacao[]>(mockNotificacoes);
+  const { user, session } = useAuth();
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [cuidadores, setCuidadores] = useState<Cuidador[]>([]);
+  const [transacoes, setTransacoes] = useState<Transacao[]>([]);
+  const [tarefas, setTarefas] = useState<Tarefa[]>([]);
+  const [lembretes, setLembretes] = useState<Lembrete[]>([]);
+  const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
+  const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    // Simular carregamento de dados
-    const timer = setTimeout(() => {
+  const fetchData = async () => {
+    if (!session) {
       setIsLoading(false);
-    }, 1000);
+      return;
+    }
 
-    return () => clearTimeout(timer);
-  }, []);
+    try {
+      // Fetch clientes
+      const { data: clientesData } = await supabase
+        .from('clientes')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  const addCliente = (cliente: Omit<Cliente, 'id' | 'criado_em'>) => {
-    const novoCliente: Cliente = {
-      ...cliente,
-      id: Date.now().toString(),
-      criado_em: new Date().toISOString(),
-    };
-    setClientes([...clientes, novoCliente]);
+      // Fetch cuidadores with cliente relation
+      const { data: cuidadoresData } = await supabase
+        .from('cuidadores')
+        .select(`
+          *,
+          cliente:clientes(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      // Fetch pacientes with cliente and cuidador relations
+      const { data: pacientesData } = await supabase
+        .from('pacientes')
+        .select(`
+          *,
+          cliente:clientes(*),
+          cuidador:cuidadores(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      // Fetch transacoes with cliente relation
+      const { data: transacoesData } = await supabase
+        .from('transacoes')
+        .select(`
+          *,
+          cliente:clientes(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      // Fetch tarefas with relations
+      const { data: tarefasData } = await supabase
+        .from('tarefas')
+        .select(`
+          *,
+          cliente:clientes(*),
+          cuidador:cuidadores(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      // Fetch lembretes with relations
+      const { data: lembretesData } = await supabase
+        .from('lembretes')
+        .select(`
+          *,
+          cliente:clientes(*),
+          cuidador:cuidadores(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      // Fetch notificacoes for current user
+      const { data: notificacoesData } = await supabase
+        .from('notificacoes')
+        .select('*')
+        .eq('usuario_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      // Fetch mensagens for current user
+      const { data: mensagensData } = await supabase
+        .from('mensagens')
+        .select('*')
+        .or(`remetente_id.eq.${user?.id},destinatario_id.eq.${user?.id}`)
+        .order('created_at', { ascending: false });
+
+      setClientes(clientesData || []);
+      setCuidadores(cuidadoresData || []);
+      setPacientes(pacientesData || []);
+      setTransacoes(transacoesData || []);
+      setTarefas(tarefasData || []);
+      setLembretes(lembretesData || []);
+      setNotificacoes(notificacoesData || []);
+      setMensagens(mensagensData || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const addPaciente = (paciente: Omit<Paciente, 'id' | 'criado_em'>) => {
-    const novoPaciente: Paciente = {
-      ...paciente,
-      id: Date.now().toString(),
-      criado_em: new Date().toISOString(),
-    };
-    setPacientes([...pacientes, novoPaciente]);
+  useEffect(() => {
+    fetchData();
+  }, [session, user]);
+
+  const addCliente = async (cliente: Omit<Cliente, 'id' | 'created_at' | 'updated_at'>) => {
+    const { data, error } = await supabase
+      .from('clientes')
+      .insert(cliente)
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (data) {
+      setClientes(prev => [data, ...prev]);
+    }
   };
 
-  const addCuidador = (cuidador: Omit<Cuidador, 'id' | 'criado_em'>) => {
-    const novoCuidador: Cuidador = {
-      ...cuidador,
-      id: Date.now().toString(),
-      criado_em: new Date().toISOString(),
-    };
-    setCuidadores([...cuidadores, novoCuidador]);
+  const addPaciente = async (paciente: Omit<Paciente, 'id' | 'created_at' | 'updated_at'>) => {
+    const { data, error } = await supabase
+      .from('pacientes')
+      .insert(paciente)
+      .select(`
+        *,
+        cliente:clientes(*),
+        cuidador:cuidadores(*)
+      `)
+      .single();
+
+    if (error) throw error;
+    if (data) {
+      setPacientes(prev => [data, ...prev]);
+    }
   };
 
-  const addTransacao = (transacao: Omit<Transacao, 'id' | 'cliente_nome'>) => {
-    const cliente = clientes.find(c => c.id === transacao.cliente_id);
-    
-    const novaTransacao: Transacao = {
-      ...transacao,
-      id: Date.now().toString(),
-      cliente_nome: cliente?.nome || 'Cliente desconhecido',
-    };
-    
-    setTransacoes([...transacoes, novaTransacao]);
+  const addCuidador = async (cuidador: Omit<Cuidador, 'id' | 'created_at' | 'updated_at'>) => {
+    const { data, error } = await supabase
+      .from('cuidadores')
+      .insert(cuidador)
+      .select(`
+        *,
+        cliente:clientes(*)
+      `)
+      .single();
+
+    if (error) throw error;
+    if (data) {
+      setCuidadores(prev => [data, ...prev]);
+    }
   };
 
-  const addTarefa = (tarefa: Omit<Tarefa, 'id' | 'criado_em'>) => {
-    const novaTarefa: Tarefa = {
-      ...tarefa,
-      id: Date.now().toString(),
-      criado_em: new Date().toISOString(),
-    };
-    setTarefas([...tarefas, novaTarefa]);
+  const addTransacao = async (transacao: Omit<Transacao, 'id' | 'created_at'>) => {
+    const { data, error } = await supabase
+      .from('transacoes')
+      .insert(transacao)
+      .select(`
+        *,
+        cliente:clientes(*)
+      `)
+      .single();
+
+    if (error) throw error;
+    if (data) {
+      setTransacoes(prev => [data, ...prev]);
+    }
   };
 
-  const addNotificacao = (notificacao: Omit<Notificacao, 'id' | 'criado_em'>) => {
-    const novaNotificacao: Notificacao = {
+  const addTarefa = async (tarefa: Omit<Tarefa, 'id' | 'created_at' | 'updated_at'>) => {
+    const { data, error } = await supabase
+      .from('tarefas')
+      .insert(tarefa)
+      .select(`
+        *,
+        cliente:clientes(*),
+        cuidador:cuidadores(*)
+      `)
+      .single();
+
+    if (error) throw error;
+    if (data) {
+      setTarefas(prev => [data, ...prev]);
+    }
+  };
+
+  const addLembrete = async (lembrete: Omit<Lembrete, 'id' | 'created_at'>) => {
+    const lembreteData = {
+      ...lembrete,
+      responsavel_id: user?.id || '',
+    };
+
+    const { data, error } = await supabase
+      .from('lembretes')
+      .insert(lembreteData)
+      .select(`
+        *,
+        cliente:clientes(*),
+        cuidador:cuidadores(*)
+      `)
+      .single();
+
+    if (error) throw error;
+    if (data) {
+      setLembretes(prev => [data, ...prev]);
+    }
+  };
+
+  const addNotificacao = async (notificacao: Omit<Notificacao, 'id' | 'created_at'>) => {
+    const notificacaoData = {
       ...notificacao,
-      id: Date.now().toString(),
-      criado_em: new Date().toISOString(),
+      usuario_id: user?.id || '',
     };
-    setNotificacoes([...notificacoes, novaNotificacao]);
+
+    const { data, error } = await supabase
+      .from('notificacoes')
+      .insert(notificacaoData)
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (data) {
+      setNotificacoes(prev => [data, ...prev]);
+    }
   };
 
-  const updateTransacao = (id: string, data: Partial<Transacao>) => {
-    setTransacoes(
-      transacoes.map((transacao) =>
-        transacao.id === id ? { ...transacao, ...data } : transacao
-      )
-    );
+  const updateTransacao = async (id: string, updateData: Partial<Transacao>) => {
+    const { data, error } = await supabase
+      .from('transacoes')
+      .update(updateData)
+      .eq('id', id)
+      .select(`
+        *,
+        cliente:clientes(*)
+      `)
+      .single();
+
+    if (error) throw error;
+    if (data) {
+      setTransacoes(prev => prev.map(t => t.id === id ? data : t));
+    }
   };
 
-  const updateCliente = (id: string, data: Partial<Cliente>) => {
-    setClientes(
-      clientes.map((cliente) =>
-        cliente.id === id ? { ...cliente, ...data } : cliente
-      )
-    );
+  const updateCliente = async (id: string, updateData: Partial<Cliente>) => {
+    const { data, error } = await supabase
+      .from('clientes')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (data) {
+      setClientes(prev => prev.map(c => c.id === id ? data : c));
+    }
   };
 
-  const updateTarefa = (id: string, data: Partial<Tarefa>) => {
-    setTarefas(
-      tarefas.map((tarefa) =>
-        tarefa.id === id ? { ...tarefa, ...data } : tarefa
-      )
-    );
+  const updateTarefa = async (id: string, updateData: Partial<Tarefa>) => {
+    const { data, error } = await supabase
+      .from('tarefas')
+      .update(updateData)
+      .eq('id', id)
+      .select(`
+        *,
+        cliente:clientes(*),
+        cuidador:cuidadores(*)
+      `)
+      .single();
+
+    if (error) throw error;
+    if (data) {
+      setTarefas(prev => prev.map(t => t.id === id ? data : t));
+    }
+  };
+
+  const updatePaciente = async (id: string, updateData: Partial<Paciente>) => {
+    const { data, error } = await supabase
+      .from('pacientes')
+      .update(updateData)
+      .eq('id', id)
+      .select(`
+        *,
+        cliente:clientes(*),
+        cuidador:cuidadores(*)
+      `)
+      .single();
+
+    if (error) throw error;
+    if (data) {
+      setPacientes(prev => prev.map(p => p.id === id ? data : p));
+    }
+  };
+
+  const updateCuidador = async (id: string, updateData: Partial<Cuidador>) => {
+    const { data, error } = await supabase
+      .from('cuidadores')
+      .update(updateData)
+      .eq('id', id)
+      .select(`
+        *,
+        cliente:clientes(*)
+      `)
+      .single();
+
+    if (error) throw error;
+    if (data) {
+      setCuidadores(prev => prev.map(c => c.id === id ? data : c));
+    }
   };
 
   const getClienteById = (id: string) => {
     return clientes.find((cliente) => cliente.id === id);
+  };
+
+  const refetchData = async () => {
+    setIsLoading(true);
+    await fetchData();
   };
 
   return (
@@ -350,18 +456,24 @@ export function DataProvider({ children }: DataProviderProps) {
         cuidadores,
         transacoes,
         tarefas,
+        lembretes,
         notificacoes,
+        mensagens,
         addCliente,
         addPaciente,
         addCuidador,
         addTransacao,
         addTarefa,
+        addLembrete,
         addNotificacao,
         updateTransacao,
         updateCliente,
         updateTarefa,
+        updatePaciente,
+        updateCuidador,
         getClienteById,
         isLoading,
+        refetchData,
       }}
     >
       {children}

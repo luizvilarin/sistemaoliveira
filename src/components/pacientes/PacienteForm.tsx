@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useData } from '@/contexts/DataContext';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Select,
   SelectContent,
@@ -21,7 +22,10 @@ import {
 const formSchema = z.object({
   nome: z.string().min(3, { message: 'Nome deve ter pelo menos 3 caracteres' }),
   cliente_id: z.string().min(1, { message: 'Cliente é obrigatório' }),
-  historico_medico: z.string().min(10, { message: 'Histórico médico deve ter pelo menos 10 caracteres' }),
+  cuidador_id: z.string().optional(),
+  historico_medico: z.string().optional(),
+  contrato_ativo: z.boolean().default(true),
+  valor_contrato: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -33,7 +37,7 @@ interface PacienteFormProps {
 }
 
 const PacienteForm: React.FC<PacienteFormProps> = ({ isOpen, onClose, pacienteToEdit }) => {
-  const { addPaciente, clientes } = useData();
+  const { addPaciente, updatePaciente, clientes, cuidadores } = useData();
   const { toast } = useToast();
   const isEditing = !!pacienteToEdit;
 
@@ -42,35 +46,53 @@ const PacienteForm: React.FC<PacienteFormProps> = ({ isOpen, onClose, pacienteTo
     defaultValues: {
       nome: pacienteToEdit?.nome || '',
       cliente_id: pacienteToEdit?.cliente_id || '',
+      cuidador_id: pacienteToEdit?.cuidador_id || '',
       historico_medico: pacienteToEdit?.historico_medico || '',
+      contrato_ativo: pacienteToEdit?.contrato_ativo ?? true,
+      valor_contrato: pacienteToEdit?.valor_contrato?.toString() || '',
     },
   });
 
-  function onSubmit(values: FormData) {
+  async function onSubmit(values: FormData) {
     try {
-      const pacienteData = values as Required<FormData>;
-      
-      addPaciente(pacienteData);
-      toast({
-        title: 'Paciente adicionado',
-        description: 'O paciente foi adicionado com sucesso!',
-      });
+      const pacienteData = {
+        nome: values.nome,
+        cliente_id: values.cliente_id,
+        cuidador_id: values.cuidador_id || null,
+        historico_medico: values.historico_medico || null,
+        contrato_ativo: values.contrato_ativo,
+        valor_contrato: values.valor_contrato ? parseFloat(values.valor_contrato) : null,
+      };
+
+      if (isEditing) {
+        await updatePaciente(pacienteToEdit.id, pacienteData);
+        toast({
+          title: 'Paciente atualizado',
+          description: 'O paciente foi atualizado com sucesso!',
+        });
+      } else {
+        await addPaciente(pacienteData);
+        toast({
+          title: 'Paciente adicionado',
+          description: 'O paciente foi adicionado com sucesso!',
+        });
+      }
       
       onClose();
       form.reset();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao processar paciente:', error);
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Ocorreu um erro ao processar o paciente.',
+        description: error.message || 'Ocorreu um erro ao processar o paciente.',
       });
     }
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Editar Paciente' : 'Novo Paciente'}</DialogTitle>
         </DialogHeader>
@@ -94,10 +116,9 @@ const PacienteForm: React.FC<PacienteFormProps> = ({ isOpen, onClose, pacienteTo
               name="cliente_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Cliente</FormLabel>
+                  <FormLabel>Cliente/Família</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    defaultValue={field.value}
                     value={field.value}
                   >
                     <FormControl>
@@ -117,6 +138,73 @@ const PacienteForm: React.FC<PacienteFormProps> = ({ isOpen, onClose, pacienteTo
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="cuidador_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cuidador (Opcional)</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um cuidador" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">Nenhum cuidador</SelectItem>
+                      {cuidadores.map((cuidador) => (
+                        <SelectItem key={cuidador.id} value={cuidador.id}>
+                          {cuidador.nome} - {cuidador.especializacao}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="contrato_ativo"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Contrato Ativo
+                      </FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="valor_contrato"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Valor do Contrato (R$)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        type="number" 
+                        step="0.01" 
+                        placeholder="0.00"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               control={form.control}
               name="historico_medico"

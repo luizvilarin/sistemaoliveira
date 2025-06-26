@@ -9,10 +9,20 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useData } from '@/contexts/DataContext';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const formSchema = z.object({
   nome: z.string().min(3, { message: 'Nome deve ter pelo menos 3 caracteres' }),
   especializacao: z.string().min(3, { message: 'Especialização deve ter pelo menos 3 caracteres' }),
+  telefone: z.string().optional(),
+  email: z.string().email('Email inválido').optional().or(z.literal('')),
+  cliente_id: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -24,7 +34,7 @@ interface CuidadorFormProps {
 }
 
 const CuidadorForm: React.FC<CuidadorFormProps> = ({ isOpen, onClose, cuidadorToEdit }) => {
-  const { addCuidador } = useData();
+  const { addCuidador, updateCuidador, clientes } = useData();
   const { toast } = useToast();
   const isEditing = !!cuidadorToEdit;
 
@@ -33,31 +43,45 @@ const CuidadorForm: React.FC<CuidadorFormProps> = ({ isOpen, onClose, cuidadorTo
     defaultValues: {
       nome: cuidadorToEdit?.nome || '',
       especializacao: cuidadorToEdit?.especializacao || '',
+      telefone: cuidadorToEdit?.telefone || '',
+      email: cuidadorToEdit?.email || '',
+      cliente_id: cuidadorToEdit?.cliente_id || '',
     },
   });
 
-  function onSubmit(values: FormData) {
+  async function onSubmit(values: FormData) {
     try {
       const cuidadorData = {
         nome: values.nome,
         especializacao: values.especializacao,
+        telefone: values.telefone || undefined,
+        email: values.email || undefined,
+        cliente_id: values.cliente_id || null,
         disponibilidade: { seg: true, ter: true, qua: true, qui: true, sex: true }
       };
-      
-      addCuidador(cuidadorData);
-      toast({
-        title: 'Cuidador adicionado',
-        description: 'O cuidador foi adicionado com sucesso!',
-      });
+
+      if (isEditing) {
+        await updateCuidador(cuidadorToEdit.id, cuidadorData);
+        toast({
+          title: 'Cuidador atualizado',
+          description: 'O cuidador foi atualizado com sucesso!',
+        });
+      } else {
+        await addCuidador(cuidadorData);
+        toast({
+          title: 'Cuidador adicionado',
+          description: 'O cuidador foi adicionado com sucesso!',
+        });
+      }
       
       onClose();
       form.reset();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao processar cuidador:', error);
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Ocorreu um erro ao processar o cuidador.',
+        description: error.message || 'Ocorreu um erro ao processar o cuidador.',
       });
     }
   }
@@ -92,6 +116,60 @@ const CuidadorForm: React.FC<CuidadorFormProps> = ({ isOpen, onClose, cuidadorTo
                   <FormControl>
                     <Input {...field} placeholder="Ex: Enfermagem, Fisioterapia..." />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="telefone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Telefone</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="(11) 99999-9999" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input {...field} type="email" placeholder="cuidador@email.com" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="cliente_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Família/Cliente (Opcional)</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma família" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">Nenhuma família</SelectItem>
+                      {clientes.map((cliente) => (
+                        <SelectItem key={cliente.id} value={cliente.id}>
+                          {cliente.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
