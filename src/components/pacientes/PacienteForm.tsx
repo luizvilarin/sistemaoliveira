@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,6 +26,7 @@ const formSchema = z.object({
   historico_medico: z.string().optional(),
   contrato_ativo: z.boolean().default(true),
   valor_contrato: z.string().optional(),
+  pagamento_realizado: z.boolean().default(false),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -36,7 +38,7 @@ interface PacienteFormProps {
 }
 
 const PacienteForm: React.FC<PacienteFormProps> = ({ isOpen, onClose, pacienteToEdit }) => {
-  const { addPaciente, updatePaciente, clientes, cuidadores } = useData();
+  const { addPaciente, updatePaciente, addTransacao, clientes, cuidadores } = useData();
   const { toast } = useToast();
   const isEditing = !!pacienteToEdit;
 
@@ -49,6 +51,7 @@ const PacienteForm: React.FC<PacienteFormProps> = ({ isOpen, onClose, pacienteTo
       historico_medico: '',
       contrato_ativo: true,
       valor_contrato: '',
+      pagamento_realizado: false,
     },
   });
 
@@ -61,6 +64,7 @@ const PacienteForm: React.FC<PacienteFormProps> = ({ isOpen, onClose, pacienteTo
         historico_medico: pacienteToEdit.historico_medico || '',
         contrato_ativo: pacienteToEdit.contrato_ativo ?? true,
         valor_contrato: pacienteToEdit.valor_contrato?.toString() || '',
+        pagamento_realizado: false,
       });
     } else {
       form.reset({
@@ -70,6 +74,7 @@ const PacienteForm: React.FC<PacienteFormProps> = ({ isOpen, onClose, pacienteTo
         historico_medico: '',
         contrato_ativo: true,
         valor_contrato: '',
+        pagamento_realizado: false,
       });
     }
   }, [pacienteToEdit, form]);
@@ -85,17 +90,38 @@ const PacienteForm: React.FC<PacienteFormProps> = ({ isOpen, onClose, pacienteTo
         valor_contrato: values.valor_contrato ? parseFloat(values.valor_contrato) : null,
       };
 
+      let pacienteId: string;
+
       if (isEditing) {
         await updatePaciente(pacienteToEdit.id, pacienteData);
+        pacienteId = pacienteToEdit.id;
         toast({
           title: 'Paciente atualizado',
           description: 'O paciente foi atualizado com sucesso!',
         });
       } else {
-        await addPaciente(pacienteData);
+        const newPaciente = await addPaciente(pacienteData);
+        pacienteId = newPaciente.id;
         toast({
           title: 'Paciente adicionado',
           description: 'O paciente foi adicionado com sucesso!',
+        });
+      }
+
+      // Criar transação automaticamente se há valor de contrato e não está editando
+      if (!isEditing && values.valor_contrato && parseFloat(values.valor_contrato) > 0) {
+        const transacaoData = {
+          cliente_id: values.cliente_id,
+          valor: parseFloat(values.valor_contrato),
+          status: values.pagamento_realizado ? 'confirmado' as const : 'aguardando' as const,
+          data: new Date().toISOString(),
+        };
+
+        await addTransacao(transacaoData);
+        
+        toast({
+          title: 'Transação criada',
+          description: `Transação de ${values.pagamento_realizado ? 'pagamento confirmado' : 'pagamento pendente'} foi criada automaticamente.`,
         });
       }
       
@@ -225,6 +251,30 @@ const PacienteForm: React.FC<PacienteFormProps> = ({ isOpen, onClose, pacienteTo
                 )}
               />
             </div>
+            {!isEditing && form.watch('valor_contrato') && parseFloat(form.watch('valor_contrato') || '0') > 0 && (
+              <FormField
+                control={form.control}
+                name="pagamento_realizado"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Pagamento já foi realizado?
+                      </FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        Marque se o pagamento do contrato já foi efetuado
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            )}
             <FormField
               control={form.control}
               name="historico_medico"

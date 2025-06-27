@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +20,8 @@ import MensagensPage from "./pages/MensagensPage";
 import RelatoriosPage from "./pages/RelatoriosPage";
 import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 import NotFound from "./pages/NotFound";
+import AuthCallbackPage from "./pages/AuthCallbackPage";
+import CompleteSignupPage from "./pages/CompleteSignupPage";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,8 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/auth/callback" element={<AuthCallbackPage />} />
+              <Route path="/complete-signup" element={<CompleteSignupPage />} />
               
               {/* Rotas protegidas - requer autenticação */}
               <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
