@@ -21,7 +21,12 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
 
     const { email, nome, perfil }: InviteRequest = await req.json();
 
@@ -32,9 +37,9 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: user } = await supabase.auth.getUser(token);
+    const { data: user, error: userError } = await supabase.auth.getUser(token);
     
-    if (!user.user) {
+    if (userError || !user.user) {
       throw new Error('Usuário não autenticado');
     }
 
@@ -49,7 +54,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Apenas administradores podem enviar convites');
     }
 
-    // Criar convite
+    // Criar convite na tabela
     const { error: inviteError } = await supabase
       .from('user_invites')
       .insert({
@@ -63,17 +68,29 @@ const handler = async (req: Request): Promise<Response> => {
       throw inviteError;
     }
 
-    // Enviar email de convite
-    const inviteLink = `${supabaseUrl}/auth/v1/signup?email=${encodeURIComponent(email)}&redirect_to=${encodeURIComponent('https://ijpamnmaldqumunjzfsz.supabase.co')}/auth/callback`;
+    // Enviar convite usando a API admin
+    const { data: inviteData, error: adminError } = await supabase.auth.admin.inviteUserByEmail(email, {
+      data: {
+        nome,
+        perfil
+      },
+      redirectTo: `${supabaseUrl}/auth/callback`
+    });
 
-    // Por enquanto, apenas log do link (você pode integrar com um serviço de email)
-    console.log(`Convite enviado para ${email}: ${inviteLink}`);
+    if (adminError) {
+      // Se falhar, remover o convite que criamos
+      await supabase
+        .from('user_invites')
+        .delete()
+        .eq('email', email);
+      throw adminError;
+    }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'Convite enviado com sucesso',
-        inviteLink 
+        data: inviteData
       }),
       {
         status: 200,

@@ -63,10 +63,21 @@ const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, onSuccess })
       onClose();
     } catch (error: any) {
       console.error('Erro ao enviar convite:', error);
+      
+      let errorMessage = 'Ocorreu um erro ao enviar o convite. Tente novamente.';
+      
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.error && typeof error.error === 'string') {
+        errorMessage = error.error;
+      } else if (error.error && error.error.message) {
+        errorMessage = error.error.message;
+      }
+      
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: error.message || 'Ocorreu um erro ao enviar o convite. Verifique se o e-mail é válido e tente novamente.',
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);
