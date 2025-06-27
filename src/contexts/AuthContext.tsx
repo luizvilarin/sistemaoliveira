@@ -12,6 +12,9 @@ interface AuthContextType {
   isLoading: boolean;
   isAdmin: boolean;
   signOut: () => Promise<void>;
+  login: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -51,6 +54,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const login = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { error };
+  };
+
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { error };
+  };
+
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Error signing out:', error);
+      throw error;
+    }
+  };
+
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Error signing out:', error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -80,20 +115,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Error signing out:', error);
-      throw error;
-    }
-  };
-
   const value = {
     user,
     userProfile,
     isLoading,
     isAdmin,
     signOut,
+    login,
+    signIn,
+    logout,
     refreshProfile,
   };
 
