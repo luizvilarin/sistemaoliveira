@@ -123,7 +123,7 @@ const ConvitesPendentes: React.FC<ConvitesPendentesProps> = ({ invites, onRefres
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onResendInvite(invite.email, invite.nome, invite.perfil)}
+                      onClick={() => onResendInvite(invite.email, invite.nome, invite.perfil as 'admin' | 'gestor' | 'cuidador')}
                       title="Reenviar convite"
                     >
                       <Mail className="h-4 w-4" />
