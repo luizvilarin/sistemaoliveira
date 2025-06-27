@@ -13,16 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Cliente, Cuidador } from '@/types/data';
-
-interface FormData {
-  nome: string;
-  cliente_id: string;
-  cuidador_id?: string;
-  historico_medico?: string;
-  contrato_ativo: boolean;
-  valor_contrato?: string;
-  pagamento_realizado: boolean;
-}
+import { FormData } from './PacienteFormLogic';
 
 interface PacienteFormFieldsProps {
   form: UseFormReturn<FormData>;
