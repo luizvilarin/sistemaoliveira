@@ -11,7 +11,7 @@ interface InviteRequest {
   email: string;
   nome: string;
   perfil: 'admin' | 'gestor' | 'cuidador';
-  resend?: boolean; // Novo parâmetro para permitir reenvio
+  resend?: boolean;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -47,12 +47,21 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Usuário não autenticado');
     }
 
+    console.log('Usuário autenticado:', user.user.id, user.user.email);
+
     // Verificar se é admin
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('perfil')
       .eq('id', user.user.id)
       .single();
+
+    if (profileError) {
+      console.error('Erro ao buscar perfil:', profileError);
+      throw new Error('Erro ao verificar permissões do usuário');
+    }
+
+    console.log('Profile do usuário:', profile);
 
     if (profile?.perfil !== 'admin') {
       throw new Error('Apenas administradores podem enviar convites');
@@ -108,13 +117,16 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Convite criado, enviando email...');
 
+    // URL correta para o domínio personalizado
+    const redirectUrl = 'https://paineloliveira.nexumagencia.com.br/auth/callback';
+
     // Enviar convite usando a API admin do Supabase
     const { data: inviteData, error: adminError } = await supabase.auth.admin.inviteUserByEmail(email, {
       data: {
         nome,
         perfil
       },
-      redirectTo: `${supabaseUrl.replace('https://ijpamnmaldqumunjzfsz.supabase.co', 'https://id-preview--cdce7f1b-6552-4f8c-93c4-f3297af8339c.lovable.app')}/auth/callback`
+      redirectTo: redirectUrl
     });
 
     if (adminError) {
@@ -129,13 +141,15 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Erro ao enviar email de convite: ' + adminError.message);
     }
 
-    console.log('Email enviado com sucesso:', inviteData);
+    console.log('Email enviado com sucesso para:', email);
+    console.log('Redirect URL configurada:', redirectUrl);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: resend ? 'Convite reenviado com sucesso' : 'Convite enviado com sucesso',
-        data: inviteData
+        data: inviteData,
+        redirectUrl: redirectUrl
       }),
       {
         status: 200,

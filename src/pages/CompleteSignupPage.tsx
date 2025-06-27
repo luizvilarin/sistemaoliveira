@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,6 @@ import { Eye, EyeOff, UserCheck, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const CompleteSignupPage = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -19,17 +18,52 @@ const CompleteSignupPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [userInfo, setUserInfo] = useState<{
+    nome: string;
+    email: string;
+    perfil: string;
+  } | null>(null);
   const [formData, setFormData] = useState({
     password: '',
     confirmPassword: '',
   });
 
   useEffect(() => {
-    // Se o usuário já está logado, redirecionar para dashboard
-    if (user) {
-      navigate('/dashboard');
-    }
-  }, [user, navigate]);
+    const checkUserSession = async () => {
+      console.log('CompleteSignup: Verificando sessão do usuário');
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.user) {
+        console.log('CompleteSignup: Sem sessão, redirecionando para login');
+        navigate('/login');
+        return;
+      }
+
+      const userData = session.user;
+      console.log('CompleteSignup: Usuário encontrado:', userData.email);
+      console.log('CompleteSignup: Metadata:', userData.user_metadata);
+
+      // Extrair informações do convite dos metadados
+      const nome = userData.user_metadata?.nome || 'Usuário';
+      const perfil = userData.user_metadata?.perfil || 'cuidador';
+      
+      setUserInfo({
+        nome,
+        email: userData.email || '',
+        perfil
+      });
+
+      // Se o usuário já tem uma senha definida (email_confirmed_at existe), 
+      // redirecionar para dashboard
+      if (userData.email_confirmed_at && !userData.user_metadata?.nome) {
+        console.log('CompleteSignup: Usuário já confirmado, redirecionando para dashboard');
+        navigate('/dashboard');
+      }
+    };
+
+    checkUserSession();
+  }, [navigate]);
 
   const handleCompleteSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,30 +89,37 @@ const CompleteSignupPage = () => {
     setIsLoading(true);
 
     try {
+      console.log('CompleteSignup: Atualizando senha do usuário');
+
       // Atualizar a senha do usuário
       const { error } = await supabase.auth.updateUser({
         password: formData.password
       });
 
       if (error) {
+        console.error('CompleteSignup: Erro ao atualizar senha:', error);
         throw error;
       }
+
+      console.log('CompleteSignup: Senha atualizada com sucesso');
 
       toast({
         title: 'Cadastro concluído!',
         description: 'Sua senha foi definida com sucesso. Redirecionando para o login...',
       });
 
-      // Fazer logout para forçar novo login
+      // Fazer logout para forçar novo login com a nova senha
+      console.log('CompleteSignup: Fazendo logout...');
       await supabase.auth.signOut();
       
       // Redirecionar para login após um pequeno delay
       setTimeout(() => {
+        console.log('CompleteSignup: Redirecionando para login');
         navigate('/login');
       }, 2000);
 
     } catch (error: any) {
-      console.error('Erro ao completar cadastro:', error);
+      console.error('CompleteSignup: Erro ao completar cadastro:', error);
       toast({
         variant: 'destructive',
         title: 'Erro',
@@ -89,6 +130,17 @@ const CompleteSignupPage = () => {
     }
   };
 
+  if (!userInfo) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando informações do usuário...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -97,11 +149,15 @@ const CompleteSignupPage = () => {
             <UserCheck className="h-6 w-6 text-white" />
           </div>
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Complete seu Cadastro
+            Bem-vindo, {userInfo.nome}!
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Defina sua senha para acessar o sistema
+            Complete seu cadastro definindo uma senha
           </p>
+          <div className="mt-2 text-xs text-gray-500">
+            <p>Email: {userInfo.email}</p>
+            <p>Perfil: {userInfo.perfil}</p>
+          </div>
         </div>
 
         <Card>
