@@ -21,3 +21,10 @@ export type Lembrete = Tables<'lembretes'> & {
 export type Mensagem = Tables<'mensagens'>;
 export type Notificacao = Tables<'notificacoes'>;
 export type NotificacaoSistema = Tables<'notificacoes_sistema'>;
+export type UserInvite = Tables<'user_invites'>;
+export type Profile = Tables<'profiles'>;
+
+// Usuario type combining profile with auth info
+export type Usuario = Profile & {
+  canDelete?: boolean;
+};

@@ -1,35 +1,34 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
 import StatCard from '@/components/dashboard/StatCard';
 import RecentTransactions from '@/components/dashboard/RecentTransactions';
 import GrowthChart from '@/components/dashboard/GrowthChart';
 import UsuarioForm from '@/components/usuarios/UsuarioForm';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import UsuariosList from '@/components/usuarios/UsuariosList';
 import { 
   Users, 
   HeartPulse, 
   DollarSign, 
   Clock, 
   User,
-  CalendarCheck,
-  Plus,
-  Edit,
-  UserPlus
+  CalendarCheck
 } from 'lucide-react';
 import { formatMoney } from '@/lib/utils';
+import { Usuario } from '@/types/data';
+import { userService } from '@/services/userService';
+import { useToast } from '@/components/ui/use-toast';
 
 const DashboardPage = () => {
-  const { isAdmin, userProfile } = useAuth();
+  const { isAdmin } = useAuth();
   const { clientes, pacientes, cuidadores, transacoes, lembretes } = useData();
-  const [isUsuarioFormOpen, setIsUsuarioFormOpen] = useState(false);
-  const [editingUsuario, setEditingUsuario] = useState(null);
+  const { toast } = useToast();
   
-  // Calcular o faturamento diário (apenas para administradores)
+  const [isUsuarioFormOpen, setIsUsuarioFormOpen] = useState(false);
+  const [users, setUsers] = useState<Usuario[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  
+  // ... keep existing code (calculations for faturamentoDiario, tempoMedio, agendaSemana)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
@@ -41,10 +40,8 @@ const DashboardPage = () => {
     })
     .reduce((acc, transaction) => acc + transaction.valor, 0);
 
-  // Calcular tempo médio baseado em dados reais (placeholder até implementarmos tracking de tempo)
   const tempoMedio = pacientes.length > 0 ? "2.5h" : "0h";
 
-  // Agenda da semana baseada em lembretes
   const inicioSemana = new Date();
   inicioSemana.setDate(inicioSemana.getDate() - inicioSemana.getDay());
   inicioSemana.setHours(0, 0, 0, 0);
@@ -58,27 +55,37 @@ const DashboardPage = () => {
     return lembreteDate >= inicioSemana && lembreteDate <= fimSemana;
   }).length;
 
-  const handleEditUsuario = (usuario: any) => {
-    setEditingUsuario(usuario);
-    setIsUsuarioFormOpen(true);
+  const loadUsers = async () => {
+    if (!isAdmin) return;
+    
+    try {
+      setLoadingUsers(true);
+      const usersData = await userService.getAllUsers();
+      setUsers(usersData);
+    } catch (error: any) {
+      console.error('Erro ao carregar usuários:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Não foi possível carregar a lista de usuários.',
+      });
+    } finally {
+      setLoadingUsers(false);
+    }
   };
+
+  useEffect(() => {
+    if (isAdmin) {
+      loadUsers();
+    }
+  }, [isAdmin]);
 
   const handleCloseUsuarioForm = () => {
     setIsUsuarioFormOpen(false);
-    setEditingUsuario(null);
   };
 
-  const getPerfilBadge = (perfil: string) => {
-    switch (perfil) {
-      case 'admin':
-        return <Badge variant="destructive">Admin</Badge>;
-      case 'gestor':
-        return <Badge variant="default">Gestor</Badge>;
-      case 'cuidador':
-        return <Badge variant="secondary">Cuidador</Badge>;
-      default:
-        return <Badge variant="outline">{perfil}</Badge>;
-    }
+  const handleUsuarioFormSuccess = () => {
+    loadUsers();
   };
 
   return (
@@ -149,64 +156,17 @@ const DashboardPage = () => {
 
       {/* Seção de Gestão de Usuários - Apenas para Administradores */}
       {isAdmin && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <UserPlus className="h-5 w-5" />
-                Gestão de Usuários
-              </CardTitle>
-              <Button onClick={() => setIsUsuarioFormOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Usuário
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {userProfile ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Perfil</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="font-medium">{userProfile.nome}</TableCell>
-                    <TableCell>{userProfile.email}</TableCell>
-                    <TableCell>{getPerfilBadge(userProfile.perfil)}</TableCell>
-                    <TableCell>
-                      <Badge variant="default">Ativo</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditUsuario(userProfile)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="text-center py-4 text-sm text-muted-foreground">
-                Nenhum usuário encontrado
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <UsuariosList
+          users={users}
+          onRefresh={loadUsers}
+          onNewUser={() => setIsUsuarioFormOpen(true)}
+        />
       )}
 
       <UsuarioForm
         isOpen={isUsuarioFormOpen}
         onClose={handleCloseUsuarioForm}
-        usuarioToEdit={editingUsuario}
+        onSuccess={handleUsuarioFormSuccess}
       />
     </div>
   );

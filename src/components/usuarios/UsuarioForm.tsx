@@ -15,6 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { userService } from '@/services/userService';
+import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
   nome: z.string().min(3, { message: 'Nome deve ter pelo menos 3 caracteres' }),
@@ -29,48 +31,45 @@ type FormData = z.infer<typeof formSchema>;
 interface UsuarioFormProps {
   isOpen: boolean;
   onClose: () => void;
-  usuarioToEdit?: {
-    id: string;
-    nome: string;
-    email: string;
-    perfil: 'admin' | 'gestor' | 'cuidador';
-  };
+  onSuccess?: () => void;
 }
 
-const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, usuarioToEdit }) => {
+const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, onSuccess }) => {
   const { toast } = useToast();
-  const isEditing = !!usuarioToEdit;
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      nome: usuarioToEdit?.nome || '',
-      email: usuarioToEdit?.email || '',
-      perfil: usuarioToEdit?.perfil || 'cuidador',
+      nome: '',
+      email: '',
+      perfil: 'cuidador',
     },
   });
 
-  function onSubmit(values: FormData) {
+  async function onSubmit(values: FormData) {
     try {
-      // For now, just show a message since user management requires backend implementation
-      console.log('Usuario data:', values);
+      setIsLoading(true);
+      
+      await userService.sendInvite(values.email, values.nome, values.perfil);
       
       toast({
-        title: isEditing ? 'Usuário atualizado' : 'Usuário criado',
-        description: isEditing 
-          ? 'O usuário foi atualizado com sucesso!' 
-          : 'O usuário foi criado com sucesso!',
+        title: 'Convite enviado',
+        description: `Convite enviado para ${values.email}. O usuário receberá um email com instruções para criar sua conta.`,
       });
       
-      onClose();
       form.reset();
-    } catch (error) {
-      console.error('Erro ao processar usuário:', error);
+      onSuccess?.();
+      onClose();
+    } catch (error: any) {
+      console.error('Erro ao enviar convite:', error);
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Ocorreu um erro ao processar o usuário.',
+        description: error.message || 'Ocorreu um erro ao enviar o convite.',
       });
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -78,7 +77,7 @@ const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, usuarioToEdi
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Editar Usuário' : 'Novo Usuário'}</DialogTitle>
+          <DialogTitle>Convidar Novo Usuário</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -89,7 +88,7 @@ const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, usuarioToEdi
                 <FormItem>
                   <FormLabel>Nome</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} placeholder="Nome completo" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -102,7 +101,7 @@ const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, usuarioToEdi
                 <FormItem>
                   <FormLabel>E-mail</FormLabel>
                   <FormControl>
-                    <Input {...field} type="email" />
+                    <Input {...field} type="email" placeholder="email@exemplo.com" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -135,11 +134,12 @@ const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, usuarioToEdi
               )}
             />
             <div className="flex justify-end gap-3">
-              <Button variant="outline" type="button" onClick={onClose}>
+              <Button variant="outline" type="button" onClick={onClose} disabled={isLoading}>
                 Cancelar
               </Button>
-              <Button type="submit">
-                {isEditing ? 'Atualizar' : 'Criar'}
+              <Button type="submit" disabled={isLoading}>
+                {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Enviar Convite
               </Button>
             </div>
           </form>

@@ -418,11 +418,48 @@ export type Database = {
           },
         ]
       }
+      user_invites: {
+        Row: {
+          accepted: boolean | null
+          created_at: string | null
+          email: string
+          expires_at: string | null
+          id: string
+          invited_by: string | null
+          nome: string
+          perfil: string
+        }
+        Insert: {
+          accepted?: boolean | null
+          created_at?: string | null
+          email: string
+          expires_at?: string | null
+          id?: string
+          invited_by?: string | null
+          nome: string
+          perfil: string
+        }
+        Update: {
+          accepted?: boolean | null
+          created_at?: string | null
+          email?: string
+          expires_at?: string | null
+          id?: string
+          invited_by?: string | null
+          nome?: string
+          perfil?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_user: {
+        Args: { user_id_to_delete: string }
+        Returns: boolean
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string

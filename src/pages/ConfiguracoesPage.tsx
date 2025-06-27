@@ -61,16 +61,8 @@ const ConfiguracoesPage = () => {
   const uploadAvatar = async (file: File): Promise<string | null> => {
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user?.id}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
-
-      // Criar bucket se não existir
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const avatarBucket = buckets?.find(bucket => bucket.name === 'avatars');
-      
-      if (!avatarBucket) {
-        await supabase.storage.createBucket('avatars', { public: true });
-      }
+      const fileName = `${user?.id}/${Date.now()}.${fileExt}`;
+      const filePath = fileName;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
