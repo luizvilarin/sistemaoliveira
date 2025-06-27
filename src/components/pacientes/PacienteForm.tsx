@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -46,7 +45,7 @@ const PacienteForm: React.FC<PacienteFormProps> = ({ isOpen, onClose, pacienteTo
     defaultValues: {
       nome: '',
       cliente_id: '',
-      cuidador_id: '',
+      cuidador_id: undefined,
       historico_medico: '',
       contrato_ativo: true,
       valor_contrato: '',
@@ -58,7 +57,7 @@ const PacienteForm: React.FC<PacienteFormProps> = ({ isOpen, onClose, pacienteTo
       form.reset({
         nome: pacienteToEdit.nome || '',
         cliente_id: pacienteToEdit.cliente_id || '',
-        cuidador_id: pacienteToEdit.cuidador_id || '',
+        cuidador_id: pacienteToEdit.cuidador_id || undefined,
         historico_medico: pacienteToEdit.historico_medico || '',
         contrato_ativo: pacienteToEdit.contrato_ativo ?? true,
         valor_contrato: pacienteToEdit.valor_contrato?.toString() || '',
@@ -67,7 +66,7 @@ const PacienteForm: React.FC<PacienteFormProps> = ({ isOpen, onClose, pacienteTo
       form.reset({
         nome: '',
         cliente_id: '',
-        cuidador_id: '',
+        cuidador_id: undefined,
         historico_medico: '',
         contrato_ativo: true,
         valor_contrato: '',
@@ -166,8 +165,8 @@ const PacienteForm: React.FC<PacienteFormProps> = ({ isOpen, onClose, pacienteTo
                 <FormItem>
                   <FormLabel>Cuidador (Opcional)</FormLabel>
                   <Select 
-                    onValueChange={field.onChange} 
-                    value={field.value || ''}
+                    onValueChange={(value) => field.onChange(value === "none" ? undefined : value)} 
+                    value={field.value || "none"}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -175,7 +174,7 @@ const PacienteForm: React.FC<PacienteFormProps> = ({ isOpen, onClose, pacienteTo
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Nenhum cuidador</SelectItem>
+                      <SelectItem value="none">Nenhum cuidador</SelectItem>
                       {cuidadores.map((cuidador) => (
                         <SelectItem key={cuidador.id} value={cuidador.id}>
                           {cuidador.nome} - {cuidador.especializacao}

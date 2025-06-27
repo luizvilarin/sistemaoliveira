@@ -49,8 +49,8 @@ const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose, lembreteTo
       descricao: '',
       dia: '',
       residencia: '',
-      cliente_id: '',
-      cuidador_id: '',
+      cliente_id: undefined,
+      cuidador_id: undefined,
     },
   });
 
@@ -61,8 +61,8 @@ const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose, lembreteTo
         descricao: lembreteToEdit.descricao || '',
         dia: lembreteToEdit.dia || '',
         residencia: lembreteToEdit.residencia || '',
-        cliente_id: lembreteToEdit.cliente_id || '',
-        cuidador_id: lembreteToEdit.cuidador_id || '',
+        cliente_id: lembreteToEdit.cliente_id || undefined,
+        cuidador_id: lembreteToEdit.cuidador_id || undefined,
       });
     } else {
       form.reset({
@@ -70,8 +70,8 @@ const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose, lembreteTo
         descricao: '',
         dia: '',
         residencia: '',
-        cliente_id: '',
-        cuidador_id: '',
+        cliente_id: undefined,
+        cuidador_id: undefined,
       });
     }
   }, [lembreteToEdit, form]);
@@ -172,8 +172,8 @@ const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose, lembreteTo
                   <FormItem>
                     <FormLabel>Cliente (Opcional)</FormLabel>
                     <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value || ''}
+                      onValueChange={(value) => field.onChange(value === "none" ? undefined : value)} 
+                      value={field.value || "none"}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -181,7 +181,7 @@ const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose, lembreteTo
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Nenhum cliente</SelectItem>
+                        <SelectItem value="none">Nenhum cliente</SelectItem>
                         {clientes.map((cliente) => (
                           <SelectItem key={cliente.id} value={cliente.id}>
                             {cliente.nome}
@@ -200,8 +200,8 @@ const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose, lembreteTo
                   <FormItem>
                     <FormLabel>Cuidador (Opcional)</FormLabel>
                     <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value || ''}
+                      onValueChange={(value) => field.onChange(value === "none" ? undefined : value)} 
+                      value={field.value || "none"}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -209,7 +209,7 @@ const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose, lembreteTo
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Nenhum cuidador</SelectItem>
+                        <SelectItem value="none">Nenhum cuidador</SelectItem>
                         {cuidadores.map((cuidador) => (
                           <SelectItem key={cuidador.id} value={cuidador.id}>
                             {cuidador.nome}
