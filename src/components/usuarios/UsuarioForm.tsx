@@ -1,211 +1,163 @@
 
-import React, { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import React, { useState } from 'react';
+import { useData } from '@/contexts/DataContext';
 import { useToast } from '@/components/ui/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-const formSchema = z.object({
-  nome: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres' }),
-  email: z.string().email({ message: 'Email inválido' }),
-  perfil: z.enum(['admin', 'gestor', 'cuidador'], { message: 'Selecione um perfil válido' }),
-  senha: z.string().min(6, { message: 'Senha deve ter pelo menos 6 caracteres' }).optional(),
-});
-
-type FormData = z.infer<typeof formSchema>;
 
 interface UsuarioFormProps {
   isOpen: boolean;
   onClose: () => void;
   usuarioToEdit?: any;
-  onSuccess?: () => void;
 }
 
-const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, usuarioToEdit, onSuccess }) => {
+const UsuarioForm = ({ isOpen, onClose, usuarioToEdit }: UsuarioFormProps) => {
+  const { refreshData } = useData();
   const { toast } = useToast();
-  const isEditing = !!usuarioToEdit;
-
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      nome: '',
-      email: '',
-      perfil: 'cuidador',
-      senha: '',
-    },
+  
+  const [formData, setFormData] = useState({
+    nome: usuarioToEdit?.nome || '',
+    email: usuarioToEdit?.email || '',
+    perfil: usuarioToEdit?.perfil || 'cuidador',
+    password: '',
   });
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (usuarioToEdit) {
-      form.reset({
-        nome: usuarioToEdit.nome || '',
-        email: usuarioToEdit.email || '',
-        perfil: usuarioToEdit.perfil || 'cuidador',
-        senha: '', // Não preencher senha para edição
-      });
-    } else {
-      form.reset({
-        nome: '',
-        email: '',
-        perfil: 'cuidador',
-        senha: '',
-      });
-    }
-  }, [usuarioToEdit, form]);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
 
-  async function onSubmit(values: FormData) {
     try {
-      if (isEditing) {
-        // Atualizar usuário existente
-        const { error: updateError } = await supabase
+      if (usuarioToEdit) {
+        // Update existing user profile only (cannot update auth email/password via admin)
+        const { error } = await supabase
           .from('profiles')
           .update({
-            nome: values.nome,
-            email: values.email,
-            perfil: values.perfil,
+            nome: formData.nome,
+            perfil: formData.perfil,
           })
           .eq('id', usuarioToEdit.id);
 
-        if (updateError) throw updateError;
+        if (error) throw error;
 
         toast({
-          title: 'Usuário atualizado',
-          description: 'O usuário foi atualizado com sucesso!',
+          title: 'Sucesso',
+          description: 'Usuário atualizado com sucesso!',
         });
       } else {
-        // Criar novo usuário
-        if (!values.senha) {
-          throw new Error('Senha é obrigatória para novos usuários');
-        }
-
-        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-          email: values.email,
-          password: values.senha,
-          user_metadata: {
-            nome: values.nome,
-            perfil: values.perfil,
-          },
-          email_confirm: true,
-        });
-
-        if (authError) throw authError;
-
-        // O perfil será criado automaticamente pelo trigger
+        // For new users, we need to use a more secure approach
+        // This is a simplified version - in production, this should be handled by a server-side function
         toast({
-          title: 'Usuário criado',
-          description: 'O usuário foi criado com sucesso!',
+          variant: 'destructive',
+          title: 'Funcionalidade Restrita',
+          description: 'Criação de novos usuários deve ser feita através do sistema de convites por email.',
         });
+        
+        // TODO: Implement proper user invitation system via Edge Function
+        // This prevents the security risk of exposing admin.createUser in the frontend
+        
+        onClose();
+        return;
       }
-      
-      onSuccess?.();
+
+      await refreshData();
       onClose();
     } catch (error: any) {
-      console.error('Erro ao processar usuário:', error);
+      console.error('Error managing user:', error);
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: error.message || 'Ocorreu um erro ao processar o usuário.',
+        description: error.message || 'Ocorreu um erro ao gerenciar o usuário.',
       });
+    } finally {
+      setIsSubmitting(false);
     }
-  }
+  };
+
+  const handleClose = () => {
+    setFormData({
+      nome: '',
+      email: '',
+      perfil: 'cuidador',
+      password: '',
+    });
+    onClose();
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Editar Usuário' : 'Novo Usuário'}</DialogTitle>
+          <DialogTitle>
+            {usuarioToEdit ? 'Editar Usuário' : 'Novo Usuário'}
+          </DialogTitle>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="nome"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Nome completo" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="nome">Nome</Label>
+            <Input
+              id="nome"
+              value={formData.nome}
+              onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+              required
             />
-            
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input {...field} type="email" placeholder="email@exemplo.com" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required
+              disabled={!!usuarioToEdit} // Cannot change email of existing user
             />
-
-            <FormField
-              control={form.control}
-              name="perfil"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Perfil</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o perfil" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="admin">Administrador</SelectItem>
-                      <SelectItem value="gestor">Gestor</SelectItem>
-                      <SelectItem value="cuidador">Cuidador</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {!isEditing && (
-              <FormField
-                control={form.control}
-                name="senha"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Senha</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="password" placeholder="Senha (mínimo 6 caracteres)" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="perfil">Perfil</Label>
+            <Select value={formData.perfil} onValueChange={(value) => setFormData({ ...formData, perfil: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o perfil" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="admin">Administrador</SelectItem>
+                <SelectItem value="gestor">Gestor</SelectItem>
+                <SelectItem value="cuidador">Cuidador</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {!usuarioToEdit && (
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha</Label>
+              <Input
+                id="password"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required={!usuarioToEdit}
+                minLength={6}
               />
-            )}
-
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" type="button" onClick={onClose}>
-                Cancelar
-              </Button>
-              <Button type="submit">
-                {isEditing ? 'Atualizar' : 'Criar'} Usuário
-              </Button>
             </div>
-          </form>
-        </Form>
+          )}
+          
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={handleClose}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

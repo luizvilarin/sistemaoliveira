@@ -20,8 +20,15 @@ const TopBar = () => {
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/login');
+    try {
+      await signOut();
+      // Force a complete page refresh to ensure clean state
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Error during sign out:', error);
+      // Force navigation even if signOut fails
+      window.location.href = '/login';
+    }
   };
 
   const getInitials = (name: string) => {
@@ -66,6 +73,11 @@ const TopBar = () => {
                   {userProfile?.email && (
                     <p className="w-[200px] truncate text-sm text-muted-foreground">
                       {userProfile.email}
+                    </p>
+                  )}
+                  {userProfile?.perfil && (
+                    <p className="text-xs text-muted-foreground capitalize">
+                      {userProfile.perfil}
                     </p>
                   )}
                 </div>

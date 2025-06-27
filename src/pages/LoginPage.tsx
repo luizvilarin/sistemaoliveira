@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { Eye, EyeOff, LogIn } from 'lucide-react';
+import { Eye, EyeOff, LogIn, Shield } from 'lucide-react';
 
 const LoginPage = () => {
   const { signIn, user, isLoading } = useAuth();
@@ -34,19 +34,37 @@ const LoginPage = () => {
     
     setIsSubmitting(true);
     
-    const { error } = await signIn(loginData.email, loginData.password);
-    
-    if (error) {
+    try {
+      const { error } = await signIn(loginData.email, loginData.password);
+      
+      if (error) {
+        // Sanitize error messages for security
+        const friendlyMessage = error.message?.includes('Invalid login credentials') 
+          ? 'Email ou senha incorretos'
+          : 'Erro ao fazer login. Tente novamente.';
+          
+        toast({
+          variant: 'destructive',
+          title: 'Erro no login',
+          description: friendlyMessage,
+        });
+      } else {
+        toast({
+          title: 'Login realizado',
+          description: 'Bem-vindo de volta!',
+        });
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
       toast({
         variant: 'destructive',
         title: 'Erro no login',
-        description: error.message || 'Credenciais inválidas',
+        description: 'Erro interno. Tente novamente.',
       });
-    } else {
-      navigate('/dashboard');
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    setIsSubmitting(false);
   };
 
   if (isLoading) {
@@ -58,14 +76,17 @@ const LoginPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
+          <div className="mx-auto h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center mb-4">
+            <Shield className="h-6 w-6 text-white" />
+          </div>
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
             Sistema de Gerenciamento de Clientes
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Gerencie seus clientes, pacientes e cuidadores
+            Acesso seguro para profissionais autorizados
           </p>
         </div>
 
@@ -88,6 +109,7 @@ const LoginPage = () => {
                   value={loginData.email}
                   onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                   required
+                  autoComplete="email"
                 />
               </div>
               
@@ -101,6 +123,7 @@ const LoginPage = () => {
                     value={loginData.password}
                     onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                     required
+                    autoComplete="current-password"
                   />
                   <Button
                     type="button"
@@ -128,6 +151,10 @@ const LoginPage = () => {
             </form>
           </CardContent>
         </Card>
+        
+        <div className="text-center text-xs text-gray-500">
+          <p>Sistema protegido por autenticação segura</p>
+        </div>
       </div>
     </div>
   );
