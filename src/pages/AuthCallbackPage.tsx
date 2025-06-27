@@ -14,10 +14,21 @@ const AuthCallbackPage = () => {
         console.log('AuthCallback: Iniciando processamento do callback');
         console.log('AuthCallback: URL atual:', window.location.href);
         
-        // Verificar se há um hash de autenticação na URL
+        // Verificar se há fragmentos de URL para processar
+        const urlParams = new URLSearchParams(window.location.search);
+        const fragment = window.location.hash;
+        
+        console.log('AuthCallback: URL params:', urlParams.toString());
+        console.log('AuthCallback: Fragment:', fragment);
+        
+        // Aguardar um momento para o Supabase processar o callback
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Verificar a sessão atual
         const { data, error } = await supabase.auth.getSession();
         
-        console.log('AuthCallback: Sessão obtida:', data?.session ? 'Sessão válida' : 'Sem sessão');
+        console.log('AuthCallback: Dados da sessão:', data);
+        console.log('AuthCallback: Erro da sessão:', error);
         
         if (error) {
           console.error('AuthCallback: Erro no callback de autenticação:', error);
@@ -33,15 +44,20 @@ const AuthCallbackPage = () => {
         if (data?.session?.user) {
           const user = data.session.user;
           console.log('AuthCallback: Usuário autenticado:', user.email);
+          console.log('AuthCallback: User metadata completo:', user.user_metadata);
+          console.log('AuthCallback: App metadata:', user.app_metadata);
+          console.log('AuthCallback: Email confirmed at:', user.email_confirmed_at);
+          console.log('AuthCallback: Created at:', user.created_at);
           
-          // Verificar se é um novo usuário vindo de convite
-          // Usuários de convite geralmente têm email_confirmed_at null na primeira vez
-          const isNewUser = !user.email_confirmed_at || user.user_metadata?.nome;
+          // Verificar se é um usuário vindo de convite
+          // Usuários de convite têm metadados específicos (nome, perfil)
+          const isFromInvite = user.user_metadata?.nome || user.user_metadata?.perfil;
+          const isNewUser = !user.email_confirmed_at || Math.abs(new Date(user.created_at).getTime() - Date.now()) < 300000; // 5 minutos
           
+          console.log('AuthCallback: É de convite?', isFromInvite);
           console.log('AuthCallback: É novo usuário?', isNewUser);
-          console.log('AuthCallback: User metadata:', user.user_metadata);
           
-          if (isNewUser) {
+          if (isFromInvite && isNewUser) {
             // Usuário autenticado via convite, redirecionar para completar cadastro
             console.log('AuthCallback: Redirecionando para complete-signup');
             navigate('/complete-signup');
@@ -51,8 +67,8 @@ const AuthCallbackPage = () => {
             navigate('/dashboard');
           }
         } else {
-          console.log('AuthCallback: Sem sessão, redirecionando para login');
-          // Sem sessão, redirecionar para login
+          console.log('AuthCallback: Sem sessão válida, redirecionando para login');
+          // Sem sessão válida, redirecionar para login
           navigate('/login');
         }
       } catch (error) {
@@ -74,6 +90,7 @@ const AuthCallbackPage = () => {
       <div className="text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
         <p className="text-gray-600">Processando convite...</p>
+        <p className="text-xs text-gray-500 mt-2">Aguarde enquanto configuramos sua conta</p>
       </div>
     </div>
   );

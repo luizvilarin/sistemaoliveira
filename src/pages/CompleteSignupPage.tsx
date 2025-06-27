@@ -42,22 +42,22 @@ const CompleteSignupPage = () => {
 
       const userData = session.user;
       console.log('CompleteSignup: Usuário encontrado:', userData.email);
-      console.log('CompleteSignup: Metadata:', userData.user_metadata);
+      console.log('CompleteSignup: Metadata completo:', userData.user_metadata);
 
       // Extrair informações do convite dos metadados
-      const nome = userData.user_metadata?.nome || 'Usuário';
+      const nome = userData.user_metadata?.nome || userData.email?.split('@')[0] || 'Usuário';
       const perfil = userData.user_metadata?.perfil || 'cuidador';
       
       setUserInfo({
         nome,
         email: userData.email || '',
-        perfil
+        perfil: perfil.charAt(0).toUpperCase() + perfil.slice(1)
       });
 
-      // Se o usuário já tem uma senha definida (email_confirmed_at existe), 
-      // redirecionar para dashboard
-      if (userData.email_confirmed_at && !userData.user_metadata?.nome) {
-        console.log('CompleteSignup: Usuário já confirmado, redirecionando para dashboard');
+      // Verificar se o usuário realmente precisa definir senha
+      // Se já tem email_confirmed_at e não tem metadados de convite, redirecionar
+      if (userData.email_confirmed_at && !userData.user_metadata?.nome && !userData.user_metadata?.perfil) {
+        console.log('CompleteSignup: Usuário já confirmado sem convite, redirecionando para dashboard');
         navigate('/dashboard');
       }
     };
@@ -92,31 +92,46 @@ const CompleteSignupPage = () => {
       console.log('CompleteSignup: Atualizando senha do usuário');
 
       // Atualizar a senha do usuário
-      const { error } = await supabase.auth.updateUser({
+      const { error: updateError } = await supabase.auth.updateUser({
         password: formData.password
       });
 
-      if (error) {
-        console.error('CompleteSignup: Erro ao atualizar senha:', error);
-        throw error;
+      if (updateError) {
+        console.error('CompleteSignup: Erro ao atualizar senha:', updateError);
+        throw updateError;
       }
 
       console.log('CompleteSignup: Senha atualizada com sucesso');
 
+      // Criar/atualizar perfil do usuário se não existir
+      if (userInfo) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: (await supabase.auth.getUser()).data.user?.id,
+            nome: userInfo.nome,
+            email: userInfo.email,
+            perfil: userInfo.perfil.toLowerCase(),
+          }, {
+            onConflict: 'id'
+          });
+
+        if (profileError) {
+          console.error('CompleteSignup: Erro ao criar perfil:', profileError);
+          // Não bloquear o fluxo por erro de perfil
+        }
+      }
+
       toast({
         title: 'Cadastro concluído!',
-        description: 'Sua senha foi definida com sucesso. Redirecionando para o login...',
+        description: 'Sua conta foi configurada com sucesso. Bem-vindo ao sistema!',
       });
 
-      // Fazer logout para forçar novo login com a nova senha
-      console.log('CompleteSignup: Fazendo logout...');
-      await supabase.auth.signOut();
-      
-      // Redirecionar para login após um pequeno delay
+      // Aguardar um momento antes de redirecionar
       setTimeout(() => {
-        console.log('CompleteSignup: Redirecionando para login');
-        navigate('/login');
-      }, 2000);
+        console.log('CompleteSignup: Redirecionando para dashboard');
+        navigate('/dashboard');
+      }, 1500);
 
     } catch (error: any) {
       console.error('CompleteSignup: Erro ao completar cadastro:', error);
@@ -238,7 +253,7 @@ const CompleteSignupPage = () => {
         </Card>
         
         <div className="text-center text-xs text-gray-500">
-          <p>Após definir sua senha, você será redirecionado para o login</p>
+          <p>Após definir sua senha, você será direcionado para o painel principal</p>
         </div>
       </div>
     </div>
