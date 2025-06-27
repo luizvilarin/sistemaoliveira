@@ -30,6 +30,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { email, nome, perfil }: InviteRequest = await req.json();
 
+    console.log('Processando convite para:', email);
+
     // Verificar se é admin
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
@@ -40,6 +42,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: user, error: userError } = await supabase.auth.getUser(token);
     
     if (userError || !user.user) {
+      console.error('Erro de autenticação:', userError);
       throw new Error('Usuário não autenticado');
     }
 
@@ -54,7 +57,37 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Apenas administradores podem enviar convites');
     }
 
-    // Criar convite na tabela
+    // Verificar se o usuário já existe
+    const { data: existingUser } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('email', email)
+      .single();
+
+    if (existingUser) {
+      throw new Error('Este email já possui uma conta no sistema');
+    }
+
+    // Verificar se já existe um convite ativo
+    const { data: existingInvite } = await supabase
+      .from('user_invites')
+      .select('*')
+      .eq('email', email)
+      .eq('accepted', false)
+      .gt('expires_at', new Date().toISOString())
+      .single();
+
+    if (existingInvite) {
+      throw new Error('Já existe um convite ativo para este email');
+    }
+
+    // Remover convites expirados para este email
+    await supabase
+      .from('user_invites')
+      .delete()
+      .eq('email', email);
+
+    // Criar novo convite na tabela
     const { error: inviteError } = await supabase
       .from('user_invites')
       .insert({
@@ -65,26 +98,34 @@ const handler = async (req: Request): Promise<Response> => {
       });
 
     if (inviteError) {
-      throw inviteError;
+      console.error('Erro ao criar convite:', inviteError);
+      throw new Error('Erro ao criar convite no banco de dados');
     }
 
-    // Enviar convite usando a API admin
+    console.log('Convite criado, enviando email...');
+
+    // Enviar convite usando a API admin do Supabase
     const { data: inviteData, error: adminError } = await supabase.auth.admin.inviteUserByEmail(email, {
       data: {
         nome,
         perfil
       },
-      redirectTo: `${supabaseUrl}/auth/callback`
+      redirectTo: `${supabaseUrl.replace('/supabase', '')}/auth/callback`
     });
 
     if (adminError) {
-      // Se falhar, remover o convite que criamos
+      console.error('Erro ao enviar email:', adminError);
+      
+      // Remover o convite que criamos se o email falhar
       await supabase
         .from('user_invites')
         .delete()
         .eq('email', email);
-      throw adminError;
+      
+      throw new Error('Erro ao enviar email de convite: ' + adminError.message);
     }
+
+    console.log('Email enviado com sucesso:', inviteData);
 
     return new Response(
       JSON.stringify({ 
@@ -101,7 +142,10 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error('Erro ao enviar convite:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || 'Erro interno do servidor',
+        details: error.toString()
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

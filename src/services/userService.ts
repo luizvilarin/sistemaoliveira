@@ -7,6 +7,8 @@ export const userService = {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Não autenticado');
 
+    console.log('Enviando convite via Edge Function...');
+
     // Chamar a edge function
     const { data, error } = await supabase.functions.invoke('send-invite', {
       body: { email, nome, perfil },
@@ -16,9 +18,16 @@ export const userService = {
     });
 
     if (error) {
-      throw error;
+      console.error('Erro da Edge Function:', error);
+      throw new Error(error.message || 'Erro ao enviar convite');
     }
 
+    if (data?.error) {
+      console.error('Erro retornado pela função:', data.error);
+      throw new Error(data.error);
+    }
+
+    console.log('Convite enviado com sucesso:', data);
     return data;
   },
 

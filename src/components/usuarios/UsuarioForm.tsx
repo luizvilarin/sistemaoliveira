@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Select,
   SelectContent,
@@ -51,32 +51,42 @@ const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, onSuccess })
     try {
       setIsLoading(true);
       
+      console.log('Enviando convite para:', values);
+      
       await userService.sendInvite(values.email, values.nome, values.perfil);
       
       toast({
         title: 'Convite enviado',
-        description: `Convite enviado para ${values.email}. O usuário receberá um email com instruções para criar sua conta.`,
+        description: `Convite enviado para ${values.email} com sucesso! O usuário receberá um email para criar sua conta.`,
       });
       
       form.reset();
       onSuccess?.();
       onClose();
+      
     } catch (error: any) {
       console.error('Erro ao enviar convite:', error);
       
       let errorMessage = 'Ocorreu um erro ao enviar o convite. Tente novamente.';
       
+      // Tratamento específico de erros
       if (error.message) {
-        errorMessage = error.message;
-      } else if (error.error && typeof error.error === 'string') {
-        errorMessage = error.error;
-      } else if (error.error && error.error.message) {
-        errorMessage = error.error.message;
+        if (error.message.includes('já possui uma conta')) {
+          errorMessage = 'Este email já possui uma conta no sistema.';
+        } else if (error.message.includes('convite ativo')) {
+          errorMessage = 'Já existe um convite pendente para este email.';
+        } else if (error.message.includes('administradores')) {
+          errorMessage = 'Apenas administradores podem enviar convites.';
+        } else if (error.message.includes('email de convite')) {
+          errorMessage = 'Erro ao enviar email. Verifique se as configurações de email estão corretas no Supabase.';
+        } else {
+          errorMessage = error.message;
+        }
       }
       
       toast({
         variant: 'destructive',
-        title: 'Erro',
+        title: 'Erro ao enviar convite',
         description: errorMessage,
       });
     } finally {
@@ -126,7 +136,6 @@ const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, onSuccess })
                   <FormLabel>Perfil</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    defaultValue={field.value}
                     value={field.value}
                   >
                     <FormControl>
