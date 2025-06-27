@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
@@ -6,6 +7,7 @@ import RecentTransactions from '@/components/dashboard/RecentTransactions';
 import GrowthChart from '@/components/dashboard/GrowthChart';
 import UsuarioForm from '@/components/usuarios/UsuarioForm';
 import UsuariosList from '@/components/usuarios/UsuariosList';
+import ConvitesPendentes from '@/components/usuarios/ConvitesPendentes';
 import { 
   Users, 
   HeartPulse, 
@@ -15,7 +17,7 @@ import {
   CalendarCheck
 } from 'lucide-react';
 import { formatMoney } from '@/lib/utils';
-import { Usuario } from '@/types/data';
+import { Usuario, UserInvite } from '@/types/data';
 import { userService } from '@/services/userService';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -26,6 +28,7 @@ const DashboardPage = () => {
   
   const [isUsuarioFormOpen, setIsUsuarioFormOpen] = useState(false);
   const [users, setUsers] = useState<Usuario[]>([]);
+  const [invites, setInvites] = useState<UserInvite[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   
   // ... keep existing code (calculations for faturamentoDiario, tempoMedio, agendaSemana)
@@ -60,8 +63,12 @@ const DashboardPage = () => {
     
     try {
       setLoadingUsers(true);
-      const usersData = await userService.getAllUsers();
+      const [usersData, invitesData] = await Promise.all([
+        userService.getAllUsers(),
+        userService.getInvites()
+      ]);
       setUsers(usersData);
+      setInvites(invitesData.filter(invite => !invite.accepted));
     } catch (error: any) {
       console.error('Erro ao carregar usuários:', error);
       toast({
@@ -86,6 +93,23 @@ const DashboardPage = () => {
 
   const handleUsuarioFormSuccess = () => {
     loadUsers();
+  };
+
+  const handleResendInvite = async (email: string, nome: string, perfil: 'admin' | 'gestor' | 'cuidador') => {
+    try {
+      await userService.sendInvite(email, nome, perfil, true);
+      toast({
+        title: 'Convite reenviado',
+        description: `Convite reenviado para ${email} com sucesso!`,
+      });
+      loadUsers();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao reenviar convite',
+        description: error.message || 'Não foi possível reenviar o convite.',
+      });
+    }
   };
 
   return (
@@ -156,11 +180,19 @@ const DashboardPage = () => {
 
       {/* Seção de Gestão de Usuários - Apenas para Administradores */}
       {isAdmin && (
-        <UsuariosList
-          users={users}
-          onRefresh={loadUsers}
-          onNewUser={() => setIsUsuarioFormOpen(true)}
-        />
+        <div className="space-y-6">
+          <ConvitesPendentes
+            invites={invites}
+            onRefresh={loadUsers}
+            onResendInvite={handleResendInvite}
+          />
+          
+          <UsuariosList
+            users={users}
+            onRefresh={loadUsers}
+            onNewUser={() => setIsUsuarioFormOpen(true)}
+          />
+        </div>
       )}
 
       <UsuarioForm

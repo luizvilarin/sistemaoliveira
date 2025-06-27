@@ -8,6 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Select,
   SelectContent,
@@ -24,6 +25,7 @@ const formSchema = z.object({
   perfil: z.enum(['admin', 'gestor', 'cuidador'], {
     required_error: 'Perfil é obrigatório',
   }),
+  resend: z.boolean().default(false),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -44,6 +46,7 @@ const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, onSuccess })
       nome: '',
       email: '',
       perfil: 'cuidador',
+      resend: false,
     },
   });
 
@@ -53,11 +56,11 @@ const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, onSuccess })
       
       console.log('Enviando convite para:', values);
       
-      await userService.sendInvite(values.email, values.nome, values.perfil);
+      await userService.sendInvite(values.email, values.nome, values.perfil, values.resend);
       
       toast({
-        title: 'Convite enviado',
-        description: `Convite enviado para ${values.email} com sucesso! O usuário receberá um email para criar sua conta.`,
+        title: values.resend ? 'Convite reenviado' : 'Convite enviado',
+        description: `Convite ${values.resend ? 'reenviado' : 'enviado'} para ${values.email} com sucesso! O usuário receberá um email para criar sua conta.`,
       });
       
       form.reset();
@@ -74,7 +77,7 @@ const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, onSuccess })
         if (error.message.includes('já possui uma conta')) {
           errorMessage = 'Este email já possui uma conta no sistema.';
         } else if (error.message.includes('convite ativo')) {
-          errorMessage = 'Já existe um convite pendente para este email.';
+          errorMessage = 'Já existe um convite pendente para este email. Marque a opção "Permitir reenvio" se deseja enviar novamente.';
         } else if (error.message.includes('administradores')) {
           errorMessage = 'Apenas administradores podem enviar convites.';
         } else if (error.message.includes('email de convite')) {
@@ -150,6 +153,28 @@ const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, onSuccess })
                     </SelectContent>
                   </Select>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="resend"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                      Permitir reenvio
+                    </FormLabel>
+                    <p className="text-xs text-muted-foreground">
+                      Marque esta opção para reenviar convite mesmo que já exista um pendente
+                    </p>
+                  </div>
                 </FormItem>
               )}
             />

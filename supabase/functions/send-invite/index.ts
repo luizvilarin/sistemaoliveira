@@ -11,6 +11,7 @@ interface InviteRequest {
   email: string;
   nome: string;
   perfil: 'admin' | 'gestor' | 'cuidador';
+  resend?: boolean; // Novo parâmetro para permitir reenvio
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -28,9 +29,9 @@ const handler = async (req: Request): Promise<Response> => {
       }
     });
 
-    const { email, nome, perfil }: InviteRequest = await req.json();
+    const { email, nome, perfil, resend = false }: InviteRequest = await req.json();
 
-    console.log('Processando convite para:', email);
+    console.log('Processando convite para:', email, resend ? '(reenvio)' : '');
 
     // Verificar se é admin
     const authHeader = req.headers.get('Authorization');
@@ -77,15 +78,18 @@ const handler = async (req: Request): Promise<Response> => {
       .gt('expires_at', new Date().toISOString())
       .single();
 
-    if (existingInvite) {
-      throw new Error('Já existe um convite ativo para este email');
+    if (existingInvite && !resend) {
+      throw new Error('Já existe um convite ativo para este email. Use a opção de reenvio se necessário.');
     }
 
-    // Remover convites expirados para este email
-    await supabase
-      .from('user_invites')
-      .delete()
-      .eq('email', email);
+    // Remover convites antigos (expirados ou se for reenvio)
+    if (resend || existingInvite) {
+      console.log('Removendo convites antigos para:', email);
+      await supabase
+        .from('user_invites')
+        .delete()
+        .eq('email', email);
+    }
 
     // Criar novo convite na tabela
     const { error: inviteError } = await supabase
@@ -110,7 +114,7 @@ const handler = async (req: Request): Promise<Response> => {
         nome,
         perfil
       },
-      redirectTo: `${supabaseUrl.replace('/supabase', '')}/auth/callback`
+      redirectTo: `${supabaseUrl.replace('https://ijpamnmaldqumunjzfsz.supabase.co', 'https://id-preview--cdce7f1b-6552-4f8c-93c4-f3297af8339c.lovable.app')}/auth/callback`
     });
 
     if (adminError) {
@@ -130,7 +134,7 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Convite enviado com sucesso',
+        message: resend ? 'Convite reenviado com sucesso' : 'Convite enviado com sucesso',
         data: inviteData
       }),
       {

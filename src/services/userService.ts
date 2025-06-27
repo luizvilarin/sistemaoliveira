@@ -3,15 +3,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { Usuario, UserInvite } from '@/types/data';
 
 export const userService = {
-  async sendInvite(email: string, nome: string, perfil: 'admin' | 'gestor' | 'cuidador') {
+  async sendInvite(email: string, nome: string, perfil: 'admin' | 'gestor' | 'cuidador', resend = false) {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Não autenticado');
 
-    console.log('Enviando convite via Edge Function...');
+    console.log('Enviando convite via Edge Function...', resend ? '(reenvio)' : '');
 
     // Chamar a edge function
     const { data, error } = await supabase.functions.invoke('send-invite', {
-      body: { email, nome, perfil },
+      body: { email, nome, perfil, resend },
       headers: {
         Authorization: `Bearer ${session.access_token}`,
       },
@@ -37,6 +37,24 @@ export const userService = {
 
     const { data, error } = await supabase.functions.invoke('delete-user', {
       body: { userId },
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  },
+
+  async deleteInvite(email: string) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Não autenticado');
+
+    const { data, error } = await supabase.functions.invoke('delete-invite', {
+      body: { email },
       headers: {
         Authorization: `Bearer ${session.access_token}`,
       },
