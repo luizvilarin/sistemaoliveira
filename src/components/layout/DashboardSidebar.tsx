@@ -48,7 +48,7 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({ to, icon, label, adminOnly = 
 };
 
 const DashboardSidebar = () => {
-  const { userProfile, logout } = useAuth();
+  const { userProfile, signOut } = useAuth();
 
   return (
     <div className="h-screen w-64 bg-sidebar border-r border-border flex flex-col">
@@ -84,7 +84,7 @@ const DashboardSidebar = () => {
       
       <div className="p-4 border-t border-border">
         <button 
-          onClick={logout}
+          onClick={signOut}
           className="sgc-navbar-item w-full text-red-500 hover:text-red-600 hover:bg-red-50"
         >
           <LogOut size={18} />

@@ -16,7 +16,7 @@ const loginSchema = z.object({
 });
 
 const LoginForm: React.FC = () => {
-  const { login, isLoading } = useAuth();
+  const { signIn, isLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   
   const form = useForm<z.infer<typeof loginSchema>>({
@@ -28,7 +28,7 @@ const LoginForm: React.FC = () => {
   });
   
   async function onSubmit(values: z.infer<typeof loginSchema>) {
-    await login(values.email, values.senha);
+    await signIn(values.email, values.senha);
   }
   
   return (

@@ -41,6 +41,9 @@ interface DataContextType {
   // Loading states
   isLoading: boolean;
   
+  // Refresh method
+  refreshData: () => Promise<void>;
+  
   // CRUD operations
   addCliente: (cliente: TablesInsert<'clientes'>) => Promise<void>;
   updateCliente: (id: string, updates: TablesUpdate<'clientes'>) => Promise<void>;
@@ -162,6 +165,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Refresh data method
+  const refreshData = async () => {
+    await fetchAllData();
   };
 
   // Load data when user changes
@@ -385,6 +393,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         
         // Loading
         isLoading,
+        
+        // Refresh method
+        refreshData,
         
         // CRUD operations
         addCliente,
