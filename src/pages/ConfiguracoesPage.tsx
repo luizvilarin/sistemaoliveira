@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,177 +7,275 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/components/ui/use-toast';
-import { Camera, Save, User, Mail, Shield } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { User, Camera, Save } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+
+const profileSchema = z.object({
+  nome: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres' }),
+  email: z.string().email({ message: 'Email inválido' }),
+});
+
+type ProfileFormData = z.infer<typeof profileSchema>;
 
 const ConfiguracoesPage = () => {
-  const { user, updateProfile } = useAuth();
+  const { userProfile, user, refreshProfile } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [profileData, setProfileData] = useState({
-    nome: '',
-    email: user?.email || '',
-    avatar_url: '',
+  const [avatar, setAvatar] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const form = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      nome: userProfile?.nome || '',
+      email: userProfile?.email || '',
+    },
   });
 
   React.useEffect(() => {
-    if (user) {
-      // Buscar dados do perfil do usuário
-      setProfileData({
-        nome: user.user_metadata?.nome || user.email?.split('@')[0] || '',
-        email: user.email || '',
-        avatar_url: user.user_metadata?.avatar_url || '',
+    if (userProfile) {
+      form.reset({
+        nome: userProfile.nome || '',
+        email: userProfile.email || '',
       });
     }
-  }, [user]);
+  }, [userProfile, form]);
 
-  const handleSaveProfile = async () => {
-    setIsLoading(true);
-    
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setAvatar(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadAvatar = async (file: File): Promise<string | null> => {
     try {
-      const { error } = await updateProfile({
-        nome: profileData.nome,
-        avatar_url: profileData.avatar_url,
-      });
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user?.id}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      // Criar bucket se não existir
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const avatarBucket = buckets?.find(bucket => bucket.name === 'avatars');
       
-      if (error) throw error;
-      
+      if (!avatarBucket) {
+        await supabase.storage.createBucket('avatars', { public: true });
+      }
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Erro ao fazer upload do avatar:', error);
+      return null;
+    }
+  };
+
+  const onSubmit = async (values: ProfileFormData) => {
+    if (!user?.id) return;
+
+    setIsLoading(true);
+    try {
+      let avatarUrl = userProfile?.avatar_url;
+
+      // Upload do avatar se houver
+      if (avatar) {
+        const uploadedAvatarUrl = await uploadAvatar(avatar);
+        if (uploadedAvatarUrl) {
+          avatarUrl = uploadedAvatarUrl;
+        }
+      }
+
+      // Atualizar perfil no banco
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          nome: values.nome,
+          email: values.email,
+          avatar_url: avatarUrl,
+        })
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
+
+      // Atualizar email no auth se mudou
+      if (values.email !== userProfile?.email) {
+        const { error: authError } = await supabase.auth.updateUser({
+          email: values.email,
+        });
+
+        if (authError) {
+          // Se erro no auth, reverter mudança no profile
+          await supabase
+            .from('profiles')
+            .update({ email: userProfile?.email })
+            .eq('id', user.id);
+          throw authError;
+        }
+      }
+
+      // Refresh do perfil
+      await refreshProfile();
+
       toast({
         title: 'Perfil atualizado',
-        description: 'Suas informações foram atualizadas com sucesso!',
+        description: 'Suas informações foram salvas com sucesso!',
       });
+
+      // Limpar preview
+      setAvatar(null);
+      setAvatarPreview(null);
     } catch (error: any) {
+      console.error('Erro ao atualizar perfil:', error);
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: error.message || 'Erro ao atualizar perfil',
+        description: error.message || 'Erro ao atualizar perfil.',
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Aqui você implementaria o upload para o Supabase Storage
-      // Por enquanto, vamos simular com uma URL temporária
-      const imageUrl = URL.createObjectURL(file);
-      setProfileData({ ...profileData, avatar_url: imageUrl });
-    }
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
   };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Configurações</h1>
-        <p className="text-gray-600">Gerencie suas configurações de perfil</p>
+        <p className="text-gray-600">Gerencie suas informações pessoais</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Perfil do Usuário
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={profileData.avatar_url} alt="Avatar" />
-                <AvatarFallback>
-                  {profileData.nome.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <Label htmlFor="avatar-upload" className="cursor-pointer">
-                  <div className="flex items-center gap-2 text-blue-600 hover:text-blue-800">
-                    <Camera className="h-4 w-4" />
-                    Alterar foto
-                  </div>
-                </Label>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Informações Pessoais</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="nome"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Seu nome completo" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="email" placeholder="seu@email.com" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button type="submit" disabled={isLoading}>
+                    <Save className="h-4 w-4 mr-2" />
+                    {isLoading ? 'Salvando...' : 'Salvar Alterações'}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Foto de Perfil</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col items-center space-y-4">
+                <Avatar className="h-24 w-24">
+                  <AvatarImage 
+                    src={avatarPreview || userProfile?.avatar_url || ''} 
+                    alt={userProfile?.nome || ''} 
+                  />
+                  <AvatarFallback className="text-lg">
+                    {userProfile?.nome ? getInitials(userProfile.nome) : <User className="h-8 w-8" />}
+                  </AvatarFallback>
+                </Avatar>
+                
                 <input
-                  id="avatar-upload"
+                  ref={fileInputRef}
                   type="file"
                   accept="image/*"
+                  onChange={handleAvatarChange}
                   className="hidden"
-                  onChange={handleImageUpload}
                 />
-                <p className="text-sm text-gray-500 mt-1">
-                  JPG ou PNG. Máximo 2MB.
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  Alterar Foto
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Informações da Conta</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div>
+                <Label className="text-sm font-medium text-gray-500">Perfil</Label>
+                <p className="text-sm">{userProfile?.perfil}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-500">Data de Criação</Label>
+                <p className="text-sm">
+                  {userProfile?.created_at 
+                    ? new Date(userProfile.created_at).toLocaleDateString('pt-BR')
+                    : 'N/A'
+                  }
                 </p>
               </div>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="nome">Nome Completo</Label>
-                <Input
-                  id="nome"
-                  value={profileData.nome}
-                  onChange={(e) => setProfileData({ ...profileData, nome: e.target.value })}
-                  placeholder="Seu nome completo"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="email"
-                    value={profileData.email}
-                    disabled
-                    className="pl-10"
-                  />
-                </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  O email não pode ser alterado.
-                </p>
-              </div>
-
-              <Button 
-                onClick={handleSaveProfile} 
-                disabled={isLoading}
-                className="w-full"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                {isLoading ? 'Salvando...' : 'Salvar Alterações'}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Informações da Conta
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <h4 className="font-medium text-gray-900 mb-2">Perfil de Acesso</h4>
-              <p className="text-sm text-gray-600">
-                Administrador - Acesso completo ao sistema
-              </p>
-            </div>
-
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <h4 className="font-medium text-gray-900 mb-2">Data de Criação</h4>
-              <p className="text-sm text-gray-600">
-                {user?.created_at ? new Date(user.created_at).toLocaleDateString('pt-BR') : 'Não disponível'}
-              </p>
-            </div>
-
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <h4 className="font-medium text-gray-900 mb-2">Último Acesso</h4>
-              <p className="text-sm text-gray-600">
-                {user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString('pt-BR') : 'Não disponível'}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

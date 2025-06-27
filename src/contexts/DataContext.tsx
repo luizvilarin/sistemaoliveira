@@ -24,6 +24,7 @@ type Lembrete = Tables<'lembretes'> & {
 };
 type Mensagem = Tables<'mensagens'>;
 type Notificacao = Tables<'notificacoes'>;
+type NotificacaoSistema = Tables<'notificacoes_sistema'>;
 
 interface DataContextType {
   // Data
@@ -35,6 +36,7 @@ interface DataContextType {
   lembretes: Lembrete[];
   mensagens: Mensagem[];
   notificacoes: Notificacao[];
+  notificacoesSistema: NotificacaoSistema[];
   
   // Loading states
   isLoading: boolean;
@@ -71,6 +73,10 @@ interface DataContextType {
   addNotificacao: (notificacao: TablesInsert<'notificacoes'>) => Promise<void>;
   updateNotificacao: (id: string, updates: TablesUpdate<'notificacoes'>) => Promise<void>;
   deleteNotificacao: (id: string) => Promise<void>;
+
+  addNotificacaoSistema: (notificacao: TablesInsert<'notificacoes_sistema'>) => Promise<void>;
+  updateNotificacaoSistema: (id: string, updates: TablesUpdate<'notificacoes_sistema'>) => Promise<void>;
+  deleteNotificacaoSistema: (id: string) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -88,6 +94,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [lembretes, setLembretes] = useState<Lembrete[]>([]);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
+  const [notificacoesSistema, setNotificacoesSistema] = useState<NotificacaoSistema[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch all data
@@ -106,7 +113,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         tarefasRes,
         lembretesRes,
         mensagensRes,
-        notificacoesRes
+        notificacoesRes,
+        notificacoesSistemaRes
       ] = await Promise.all([
         supabase.from('clientes').select('*'),
         supabase.from('cuidadores').select(`
@@ -129,7 +137,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           cuidador:cuidadores(*)
         `),
         supabase.from('mensagens').select('*').eq('destinatario_id', user.id),
-        supabase.from('notificacoes').select('*').eq('usuario_id', user.id)
+        supabase.from('notificacoes').select('*').eq('usuario_id', user.id),
+        supabase.from('notificacoes_sistema').select('*').eq('usuario_id', user.id)
       ]);
 
       // Update state with real data from database
@@ -141,6 +150,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       if (lembretesRes.data) setLembretes(lembretesRes.data);
       if (mensagensRes.data) setMensagens(mensagensRes.data);
       if (notificacoesRes.data) setNotificacoes(notificacoesRes.data);
+      if (notificacoesSistemaRes.data) setNotificacoesSistema(notificacoesSistemaRes.data);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -168,6 +178,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setLembretes([]);
       setMensagens([]);
       setNotificacoes([]);
+      setNotificacoesSistema([]);
       setIsLoading(false);
     }
   }, [user]);
@@ -191,7 +202,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setClientes(prev => prev.filter(c => c.id !== id));
   };
 
-  // CRUD Operations for Cuidadores
   const addCuidador = async (cuidador: TablesInsert<'cuidadores'>) => {
     const { data, error } = await supabase.from('cuidadores').insert(cuidador).select().single();
     if (error) throw error;
@@ -210,7 +220,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setCuidadores(prev => prev.filter(c => c.id !== id));
   };
 
-  // CRUD Operations for Pacientes
   const addPaciente = async (paciente: TablesInsert<'pacientes'>) => {
     const { data, error } = await supabase.from('pacientes').insert(paciente).select(`
       *,
@@ -237,7 +246,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setPacientes(prev => prev.filter(p => p.id !== id));
   };
 
-  // CRUD Operations for Transacoes
   const addTransacao = async (transacao: TablesInsert<'transacoes'>) => {
     const { data, error } = await supabase.from('transacoes').insert(transacao).select(`
       *,
@@ -262,7 +270,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setTransacoes(prev => prev.filter(t => t.id !== id));
   };
 
-  // CRUD Operations for Tarefas
   const addTarefa = async (tarefa: TablesInsert<'tarefas'>) => {
     const { data, error } = await supabase.from('tarefas').insert(tarefa).select().single();
     if (error) throw error;
@@ -281,7 +288,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setTarefas(prev => prev.filter(t => t.id !== id));
   };
 
-  // CRUD Operations for Lembretes
   const addLembrete = async (lembrete: TablesInsert<'lembretes'>) => {
     const { data, error } = await supabase.from('lembretes').insert(lembrete).select(`
       *,
@@ -308,7 +314,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setLembretes(prev => prev.filter(l => l.id !== id));
   };
 
-  // CRUD Operations for Mensagens
   const addMensagem = async (mensagem: TablesInsert<'mensagens'>) => {
     const { data, error } = await supabase.from('mensagens').insert(mensagem).select().single();
     if (error) throw error;
@@ -327,7 +332,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setMensagens(prev => prev.filter(m => m.id !== id));
   };
 
-  // CRUD Operations for Notificacoes
   const addNotificacao = async (notificacao: TablesInsert<'notificacoes'>) => {
     const { data, error } = await supabase.from('notificacoes').insert(notificacao).select().single();
     if (error) throw error;
@@ -346,6 +350,25 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setNotificacoes(prev => prev.filter(n => n.id !== id));
   };
 
+  // Notificações do sistema CRUD operations
+  const addNotificacaoSistema = async (notificacao: TablesInsert<'notificacoes_sistema'>) => {
+    const { data, error } = await supabase.from('notificacoes_sistema').insert(notificacao).select().single();
+    if (error) throw error;
+    setNotificacoesSistema(prev => [...prev, data]);
+  };
+
+  const updateNotificacaoSistema = async (id: string, updates: TablesUpdate<'notificacoes_sistema'>) => {
+    const { data, error } = await supabase.from('notificacoes_sistema').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    setNotificacoesSistema(prev => prev.map(n => n.id === id ? data : n));
+  };
+
+  const deleteNotificacaoSistema = async (id: string) => {
+    const { error } = await supabase.from('notificacoes_sistema').delete().eq('id', id);
+    if (error) throw error;
+    setNotificacoesSistema(prev => prev.filter(n => n.id !== id));
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -358,6 +381,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         lembretes,
         mensagens,
         notificacoes,
+        notificacoesSistema,
         
         // Loading
         isLoading,
@@ -394,6 +418,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         addNotificacao,
         updateNotificacao,
         deleteNotificacao,
+
+        addNotificacaoSistema,
+        updateNotificacaoSistema,
+        deleteNotificacaoSistema,
       }}
     >
       {children}

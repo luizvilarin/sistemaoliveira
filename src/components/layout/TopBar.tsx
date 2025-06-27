@@ -1,74 +1,90 @@
 
 import React from 'react';
-import { Bell, Search } from 'lucide-react';
-import { useData } from '@/contexts/DataContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Settings, LogOut, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import MensagensDropdown from './MensagensDropdown';
+import NotificationSystem from '@/components/notifications/NotificationSystem';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from '@/components/ui/badge';
-import MensagensDropdown from './MensagensDropdown';
+} from '@/components/ui/dropdown-menu';
 
 const TopBar = () => {
-  const { notificacoes } = useData();
-  const unreadCount = notificacoes.filter(n => !n.lida).length;
+  const { userProfile, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
+  };
 
   return (
-    <header className="h-16 border-b border-border flex items-center px-6 bg-white dark:bg-gray-800">
-      <div className="flex-1">
-        <div className="relative w-64">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <input
-            type="search"
-            placeholder="Buscar..."
-            className="pl-8 h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          />
+    <div className="bg-white shadow-sm border-b px-6 py-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">
+            Sistema de Gerenciamento
+          </h1>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <NotificationSystem />
+          <MensagensDropdown />
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={userProfile?.avatar_url || ''} alt={userProfile?.nome || ''} />
+                  <AvatarFallback>
+                    {userProfile?.nome ? getInitials(userProfile.nome) : <User className="h-4 w-4" />}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end">
+              <div className="flex items-center justify-start gap-2 p-2">
+                <div className="flex flex-col space-y-1 leading-none">
+                  {userProfile?.nome && (
+                    <p className="font-medium">{userProfile.nome}</p>
+                  )}
+                  {userProfile?.email && (
+                    <p className="w-[200px] truncate text-sm text-muted-foreground">
+                      {userProfile.email}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/configuracoes')}>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Configurações</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Sair</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
-      
-      <div className="flex items-center gap-4">
-        <MensagensDropdown />
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              {unreadCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0">{unreadCount}</Badge>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel>Notificações</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {notificacoes.length > 0 ? (
-              notificacoes.map((notificacao) => (
-                <DropdownMenuItem key={notificacao.id} className="flex flex-col items-start p-3">
-                  <div className="flex items-center w-full">
-                    <span className="text-sm">{notificacao.mensagem}</span>
-                    {!notificacao.lida && (
-                      <span className="ml-auto bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">
-                        Novo
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-xs text-muted-foreground mt-1">
-                    {new Date(notificacao.created_at).toLocaleString()}
-                  </span>
-                </DropdownMenuItem>
-              ))
-            ) : (
-              <DropdownMenuItem disabled>Sem notificações</DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </header>
+    </div>
   );
 };
 

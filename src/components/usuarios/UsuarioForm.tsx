@@ -1,148 +1,211 @@
 
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import React, { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const formSchema = z.object({
+  nome: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres' }),
+  email: z.string().email({ message: 'Email inválido' }),
+  perfil: z.enum(['admin', 'gestor', 'cuidador'], { message: 'Selecione um perfil válido' }),
+  senha: z.string().min(6, { message: 'Senha deve ter pelo menos 6 caracteres' }).optional(),
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 interface UsuarioFormProps {
   isOpen: boolean;
   onClose: () => void;
   usuarioToEdit?: any;
+  onSuccess?: () => void;
 }
 
-const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, usuarioToEdit }) => {
+const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, usuarioToEdit, onSuccess }) => {
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    nome: '',
-    email: '',
-    perfil: 'cuidador' as 'admin' | 'gestor' | 'cuidador',
-    senha: '',
-    confirmarSenha: ''
+  const isEditing = !!usuarioToEdit;
+
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      nome: '',
+      email: '',
+      perfil: 'cuidador',
+      senha: '',
+    },
   });
 
   useEffect(() => {
     if (usuarioToEdit) {
-      setFormData({
+      form.reset({
         nome: usuarioToEdit.nome || '',
         email: usuarioToEdit.email || '',
         perfil: usuarioToEdit.perfil || 'cuidador',
-        senha: '',
-        confirmarSenha: ''
+        senha: '', // Não preencher senha para edição
       });
     } else {
-      setFormData({
+      form.reset({
         nome: '',
         email: '',
         perfil: 'cuidador',
         senha: '',
-        confirmarSenha: ''
       });
     }
-  }, [usuarioToEdit]);
+  }, [usuarioToEdit, form]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (formData.senha !== formData.confirmarSenha) {
+  async function onSubmit(values: FormData) {
+    try {
+      if (isEditing) {
+        // Atualizar usuário existente
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            nome: values.nome,
+            email: values.email,
+            perfil: values.perfil,
+          })
+          .eq('id', usuarioToEdit.id);
+
+        if (updateError) throw updateError;
+
+        toast({
+          title: 'Usuário atualizado',
+          description: 'O usuário foi atualizado com sucesso!',
+        });
+      } else {
+        // Criar novo usuário
+        if (!values.senha) {
+          throw new Error('Senha é obrigatória para novos usuários');
+        }
+
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+          email: values.email,
+          password: values.senha,
+          user_metadata: {
+            nome: values.nome,
+            perfil: values.perfil,
+          },
+          email_confirm: true,
+        });
+
+        if (authError) throw authError;
+
+        // O perfil será criado automaticamente pelo trigger
+        toast({
+          title: 'Usuário criado',
+          description: 'O usuário foi criado com sucesso!',
+        });
+      }
+      
+      onSuccess?.();
+      onClose();
+    } catch (error: any) {
+      console.error('Erro ao processar usuário:', error);
       toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "As senhas não coincidem.",
+        variant: 'destructive',
+        title: 'Erro',
+        description: error.message || 'Ocorreu um erro ao processar o usuário.',
       });
-      return;
     }
-
-    // Aqui você implementaria a lógica para salvar o usuário
-    console.log('Dados do usuário:', formData);
-    
-    toast({
-      title: usuarioToEdit ? "Usuário atualizado" : "Usuário criado",
-      description: usuarioToEdit ? "Usuário atualizado com sucesso." : "Novo usuário criado com sucesso.",
-    });
-    
-    onClose();
-  };
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>
-            {usuarioToEdit ? 'Editar Usuário' : 'Novo Usuário'}
-          </DialogTitle>
+          <DialogTitle>{isEditing ? 'Editar Usuário' : 'Novo Usuário'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="nome">Nome completo *</Label>
-            <Input
-              id="nome"
-              value={formData.nome}
-              onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
-              required
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="nome"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Nome completo" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              required
+            
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input {...field} type="email" placeholder="email@exemplo.com" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="perfil">Perfil *</Label>
-            <Select value={formData.perfil} onValueChange={(value: 'admin' | 'gestor' | 'cuidador') => 
-              setFormData(prev => ({ ...prev, perfil: value }))
-            }>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="admin">Administrador</SelectItem>
-                <SelectItem value="gestor">Gestor</SelectItem>
-                <SelectItem value="cuidador">Cuidador</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="senha">Senha *</Label>
-            <Input
-              id="senha"
-              type="password"
-              value={formData.senha}
-              onChange={(e) => setFormData(prev => ({ ...prev, senha: e.target.value }))}
-              required
+            <FormField
+              control={form.control}
+              name="perfil"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Perfil</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o perfil" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="admin">Administrador</SelectItem>
+                      <SelectItem value="gestor">Gestor</SelectItem>
+                      <SelectItem value="cuidador">Cuidador</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="confirmarSenha">Confirmar senha *</Label>
-            <Input
-              id="confirmarSenha"
-              type="password"
-              value={formData.confirmarSenha}
-              onChange={(e) => setFormData(prev => ({ ...prev, confirmarSenha: e.target.value }))}
-              required
-            />
-          </div>
+            {!isEditing && (
+              <FormField
+                control={form.control}
+                name="senha"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Senha</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="password" placeholder="Senha (mínimo 6 caracteres)" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button type="submit">
-              {usuarioToEdit ? 'Atualizar' : 'Criar'} Usuário
-            </Button>
-          </div>
-        </form>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" type="button" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button type="submit">
+                {isEditing ? 'Atualizar' : 'Criar'} Usuário
+              </Button>
+            </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

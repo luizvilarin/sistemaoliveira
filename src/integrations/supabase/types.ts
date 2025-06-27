@@ -93,10 +93,15 @@ export type Database = {
           cuidador_id: string | null
           descricao: string | null
           dia: string
+          hora: string | null
           id: string
           residencia: string
           responsavel_id: string
+          status: string | null
+          tags: string[] | null
+          tipo: string | null
           titulo: string
+          urgente: boolean | null
         }
         Insert: {
           cliente_id?: string | null
@@ -104,10 +109,15 @@ export type Database = {
           cuidador_id?: string | null
           descricao?: string | null
           dia: string
+          hora?: string | null
           id?: string
           residencia: string
           responsavel_id: string
+          status?: string | null
+          tags?: string[] | null
+          tipo?: string | null
           titulo: string
+          urgente?: boolean | null
         }
         Update: {
           cliente_id?: string | null
@@ -115,10 +125,15 @@ export type Database = {
           cuidador_id?: string | null
           descricao?: string | null
           dia?: string
+          hora?: string | null
           id?: string
           residencia?: string
           responsavel_id?: string
+          status?: string | null
+          tags?: string[] | null
+          tipo?: string | null
           titulo?: string
+          urgente?: boolean | null
         }
         Relationships: [
           {
@@ -191,6 +206,48 @@ export type Database = {
         }
         Relationships: []
       }
+      notificacoes_sistema: {
+        Row: {
+          acao_url: string | null
+          created_at: string | null
+          data_criacao: string | null
+          data_vencimento: string | null
+          id: string
+          lida: boolean | null
+          mensagem: string
+          metadados: Json | null
+          tipo: string
+          titulo: string
+          usuario_id: string
+        }
+        Insert: {
+          acao_url?: string | null
+          created_at?: string | null
+          data_criacao?: string | null
+          data_vencimento?: string | null
+          id?: string
+          lida?: boolean | null
+          mensagem: string
+          metadados?: Json | null
+          tipo: string
+          titulo: string
+          usuario_id: string
+        }
+        Update: {
+          acao_url?: string | null
+          created_at?: string | null
+          data_criacao?: string | null
+          data_vencimento?: string | null
+          id?: string
+          lida?: boolean | null
+          mensagem?: string
+          metadados?: Json | null
+          tipo?: string
+          titulo?: string
+          usuario_id?: string
+        }
+        Relationships: []
+      }
       pacientes: {
         Row: {
           cliente_id: string
@@ -244,30 +301,36 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ativo: boolean | null
           avatar_url: string | null
           created_at: string
           email: string
           id: string
           nome: string
           perfil: string
+          senha_hash: string | null
           updated_at: string
         }
         Insert: {
+          ativo?: boolean | null
           avatar_url?: string | null
           created_at?: string
           email: string
           id: string
           nome: string
           perfil: string
+          senha_hash?: string | null
           updated_at?: string
         }
         Update: {
+          ativo?: boolean | null
           avatar_url?: string | null
           created_at?: string
           email?: string
           id?: string
           nome?: string
           perfil?: string
+          senha_hash?: string | null
           updated_at?: string
         }
         Relationships: []
