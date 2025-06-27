@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -33,12 +33,14 @@ type FormData = z.infer<typeof formSchema>;
 interface LembreteFormProps {
   isOpen: boolean;
   onClose: () => void;
+  lembreteToEdit?: any;
 }
 
-const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose }) => {
-  const { addLembrete, clientes, cuidadores } = useData();
+const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose, lembreteToEdit }) => {
+  const { addLembrete, updateLembrete, clientes, cuidadores } = useData();
   const { user } = useAuth();
   const { toast } = useToast();
+  const isEditing = !!lembreteToEdit;
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -52,32 +54,65 @@ const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose }) => {
     },
   });
 
+  useEffect(() => {
+    if (lembreteToEdit) {
+      form.reset({
+        titulo: lembreteToEdit.titulo || '',
+        descricao: lembreteToEdit.descricao || '',
+        dia: lembreteToEdit.dia || '',
+        residencia: lembreteToEdit.residencia || '',
+        cliente_id: lembreteToEdit.cliente_id || '',
+        cuidador_id: lembreteToEdit.cuidador_id || '',
+      });
+    } else {
+      form.reset({
+        titulo: '',
+        descricao: '',
+        dia: '',
+        residencia: '',
+        cliente_id: '',
+        cuidador_id: '',
+      });
+    }
+  }, [lembreteToEdit, form]);
+
   async function onSubmit(values: FormData) {
     try {
+      if (!user?.id) {
+        throw new Error('Usuário não autenticado');
+      }
+
       const lembreteData = {
         titulo: values.titulo,
         descricao: values.descricao || null,
         dia: values.dia,
         residencia: values.residencia,
-        responsavel_id: user?.id || '',
+        responsavel_id: user.id,
         cliente_id: values.cliente_id || null,
         cuidador_id: values.cuidador_id || null,
       };
 
-      await addLembrete(lembreteData);
-      toast({
-        title: 'Lembrete criado',
-        description: 'O lembrete foi criado com sucesso!',
-      });
+      if (isEditing) {
+        await updateLembrete(lembreteToEdit.id, lembreteData);
+        toast({
+          title: 'Lembrete atualizado',
+          description: 'O lembrete foi atualizado com sucesso!',
+        });
+      } else {
+        await addLembrete(lembreteData);
+        toast({
+          title: 'Lembrete criado',
+          description: 'O lembrete foi criado com sucesso!',
+        });
+      }
       
       onClose();
-      form.reset();
     } catch (error: any) {
-      console.error('Erro ao criar lembrete:', error);
+      console.error('Erro ao processar lembrete:', error);
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: error.message || 'Ocorreu um erro ao criar o lembrete.',
+        description: error.message || 'Ocorreu um erro ao processar o lembrete.',
       });
     }
   }
@@ -86,7 +121,7 @@ const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose }) => {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Novo Lembrete</DialogTitle>
+          <DialogTitle>{isEditing ? 'Editar Lembrete' : 'Novo Lembrete'}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -138,7 +173,7 @@ const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose }) => {
                     <FormLabel>Cliente (Opcional)</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
-                      value={field.value}
+                      value={field.value || ''}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -166,7 +201,7 @@ const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose }) => {
                     <FormLabel>Cuidador (Opcional)</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
-                      value={field.value}
+                      value={field.value || ''}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -205,7 +240,7 @@ const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose }) => {
                 Cancelar
               </Button>
               <Button type="submit">
-                Criar Lembrete
+                {isEditing ? 'Atualizar' : 'Criar'} Lembrete
               </Button>
             </div>
           </form>

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -44,14 +44,36 @@ const PacienteForm: React.FC<PacienteFormProps> = ({ isOpen, onClose, pacienteTo
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      nome: pacienteToEdit?.nome || '',
-      cliente_id: pacienteToEdit?.cliente_id || '',
-      cuidador_id: pacienteToEdit?.cuidador_id || '',
-      historico_medico: pacienteToEdit?.historico_medico || '',
-      contrato_ativo: pacienteToEdit?.contrato_ativo ?? true,
-      valor_contrato: pacienteToEdit?.valor_contrato?.toString() || '',
+      nome: '',
+      cliente_id: '',
+      cuidador_id: '',
+      historico_medico: '',
+      contrato_ativo: true,
+      valor_contrato: '',
     },
   });
+
+  useEffect(() => {
+    if (pacienteToEdit) {
+      form.reset({
+        nome: pacienteToEdit.nome || '',
+        cliente_id: pacienteToEdit.cliente_id || '',
+        cuidador_id: pacienteToEdit.cuidador_id || '',
+        historico_medico: pacienteToEdit.historico_medico || '',
+        contrato_ativo: pacienteToEdit.contrato_ativo ?? true,
+        valor_contrato: pacienteToEdit.valor_contrato?.toString() || '',
+      });
+    } else {
+      form.reset({
+        nome: '',
+        cliente_id: '',
+        cuidador_id: '',
+        historico_medico: '',
+        contrato_ativo: true,
+        valor_contrato: '',
+      });
+    }
+  }, [pacienteToEdit, form]);
 
   async function onSubmit(values: FormData) {
     try {
@@ -79,7 +101,6 @@ const PacienteForm: React.FC<PacienteFormProps> = ({ isOpen, onClose, pacienteTo
       }
       
       onClose();
-      form.reset();
     } catch (error: any) {
       console.error('Erro ao processar paciente:', error);
       toast({
@@ -105,7 +126,7 @@ const PacienteForm: React.FC<PacienteFormProps> = ({ isOpen, onClose, pacienteTo
                 <FormItem>
                   <FormLabel>Nome</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} placeholder="Nome do paciente" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -146,7 +167,7 @@ const PacienteForm: React.FC<PacienteFormProps> = ({ isOpen, onClose, pacienteTo
                   <FormLabel>Cuidador (Opcional)</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    value={field.value}
+                    value={field.value || ''}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -212,7 +233,7 @@ const PacienteForm: React.FC<PacienteFormProps> = ({ isOpen, onClose, pacienteTo
                 <FormItem>
                   <FormLabel>Histórico Médico</FormLabel>
                   <FormControl>
-                    <Textarea {...field} rows={4} />
+                    <Textarea {...field} rows={4} placeholder="Informações sobre o histórico médico do paciente" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

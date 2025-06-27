@@ -212,13 +212,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   // CRUD Operations for Pacientes
   const addPaciente = async (paciente: TablesInsert<'pacientes'>) => {
-    const { data, error } = await supabase.from('pacientes').insert(paciente).select().single();
+    const { data, error } = await supabase.from('pacientes').insert(paciente).select(`
+      *,
+      cliente:clientes(*),
+      cuidador:cuidadores(*)
+    `).single();
     if (error) throw error;
     setPacientes(prev => [...prev, data]);
   };
 
   const updatePaciente = async (id: string, updates: TablesUpdate<'pacientes'>) => {
-    const { data, error } = await supabase.from('pacientes').update(updates).eq('id', id).select().single();
+    const { data, error } = await supabase.from('pacientes').update(updates).eq('id', id).select(`
+      *,
+      cliente:clientes(*),
+      cuidador:cuidadores(*)
+    `).single();
     if (error) throw error;
     setPacientes(prev => prev.map(p => p.id === id ? data : p));
   };
@@ -231,13 +239,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   // CRUD Operations for Transacoes
   const addTransacao = async (transacao: TablesInsert<'transacoes'>) => {
-    const { data, error } = await supabase.from('transacoes').insert(transacao).select().single();
+    const { data, error } = await supabase.from('transacoes').insert(transacao).select(`
+      *,
+      cliente:clientes(*)
+    `).single();
     if (error) throw error;
     setTransacoes(prev => [...prev, data]);
   };
 
   const updateTransacao = async (id: string, updates: TablesUpdate<'transacoes'>) => {
-    const { data, error } = await supabase.from('transacoes').update(updates).eq('id', id).select().single();
+    const { data, error } = await supabase.from('transacoes').update(updates).eq('id', id).select(`
+      *,
+      cliente:clientes(*)
+    `).single();
     if (error) throw error;
     setTransacoes(prev => prev.map(t => t.id === id ? data : t));
   };
@@ -269,13 +283,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   // CRUD Operations for Lembretes
   const addLembrete = async (lembrete: TablesInsert<'lembretes'>) => {
-    const { data, error } = await supabase.from('lembretes').insert(lembrete).select().single();
+    const { data, error } = await supabase.from('lembretes').insert(lembrete).select(`
+      *,
+      cliente:clientes(*),
+      cuidador:cuidadores(*)
+    `).single();
     if (error) throw error;
     setLembretes(prev => [...prev, data]);
   };
 
   const updateLembrete = async (id: string, updates: TablesUpdate<'lembretes'>) => {
-    const { data, error } = await supabase.from('lembretes').update(updates).eq('id', id).select().single();
+    const { data, error } = await supabase.from('lembretes').update(updates).eq('id', id).select(`
+      *,
+      cliente:clientes(*),
+      cuidador:cuidadores(*)
+    `).single();
     if (error) throw error;
     setLembretes(prev => prev.map(l => l.id === id ? data : l));
   };
