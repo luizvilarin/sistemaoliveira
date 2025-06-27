@@ -31,19 +31,19 @@ export interface DataContextType {
   refreshData: () => Promise<void>;
   
   // CRUD operations
-  addCliente: (cliente: TablesInsert<'clientes'>) => Promise<void>;
+  addCliente: (cliente: TablesInsert<'clientes'>) => Promise<Cliente>;
   updateCliente: (id: string, updates: TablesUpdate<'clientes'>) => Promise<void>;
   deleteCliente: (id: string) => Promise<void>;
   
-  addCuidador: (cuidador: TablesInsert<'cuidadores'>) => Promise<void>;
+  addCuidador: (cuidador: TablesInsert<'cuidadores'>) => Promise<Cuidador>;
   updateCuidador: (id: string, updates: TablesUpdate<'cuidadores'>) => Promise<void>;
   deleteCuidador: (id: string) => Promise<void>;
   
-  addPaciente: (paciente: TablesInsert<'pacientes'>) => Promise<void>;
+  addPaciente: (paciente: TablesInsert<'pacientes'>) => Promise<Paciente>;
   updatePaciente: (id: string, updates: TablesUpdate<'pacientes'>) => Promise<void>;
   deletePaciente: (id: string) => Promise<void>;
   
-  addTransacao: (transacao: TablesInsert<'transacoes'>) => Promise<void>;
+  addTransacao: (transacao: TablesInsert<'transacoes'>) => Promise<Transacao>;
   updateTransacao: (id: string, updates: TablesUpdate<'transacoes'>) => Promise<void>;
   deleteTransacao: (id: string) => Promise<void>;
   

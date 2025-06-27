@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import {
@@ -29,6 +28,7 @@ export const useCrudOperations = (
     const { data, error } = await supabase.from('clientes').insert(cliente).select().single();
     if (error) throw error;
     setClientes(prev => [...prev, data]);
+    return data;
   };
 
   const updateCliente = async (id: string, updates: TablesUpdate<'clientes'>) => {
@@ -47,6 +47,7 @@ export const useCrudOperations = (
     const { data, error } = await supabase.from('cuidadores').insert(cuidador).select().single();
     if (error) throw error;
     setCuidadores(prev => [...prev, data]);
+    return data;
   };
 
   const updateCuidador = async (id: string, updates: TablesUpdate<'cuidadores'>) => {
@@ -69,6 +70,7 @@ export const useCrudOperations = (
     `).single();
     if (error) throw error;
     setPacientes(prev => [...prev, data]);
+    return data;
   };
 
   const updatePaciente = async (id: string, updates: TablesUpdate<'pacientes'>) => {
@@ -94,6 +96,7 @@ export const useCrudOperations = (
     `).single();
     if (error) throw error;
     setTransacoes(prev => [...prev, data]);
+    return data;
   };
 
   const updateTransacao = async (id: string, updates: TablesUpdate<'transacoes'>) => {
