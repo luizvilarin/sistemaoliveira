@@ -41,21 +41,55 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Usuário não autenticado');
     }
 
-    // Usar a função do banco para deletar o usuário
-    const { data, error } = await supabase.rpc('admin_delete_user', {
-      user_id_to_delete: userId
-    });
+    console.log('Usuário autenticado:', user.user.id, user.user.email);
 
-    if (error) {
-      throw error;
+    // Verificar se o usuário atual é admin
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('perfil')
+      .eq('id', user.user.id)
+      .single();
+
+    console.log('Profile do usuário:', profile);
+
+    if (profileError) {
+      console.error('Erro ao buscar profile:', profileError);
+      throw new Error('Erro ao verificar permissões');
     }
+
+    if (profile?.perfil !== 'admin') {
+      console.log('Usuário não é admin:', profile?.perfil);
+      throw new Error('Apenas administradores podem deletar usuários');
+    }
+
+    // Buscar dados do usuário a ser deletado
+    const { data: targetProfile, error: targetError } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('id', userId)
+      .single();
+
+    if (targetError) {
+      console.error('Erro ao buscar usuário alvo:', targetError);
+      throw new Error('Usuário não encontrado');
+    }
+
+    // Proteger o usuário proprietário
+    if (targetProfile?.email === 'luizvilarinho.nave@gmail.com') {
+      throw new Error('O usuário proprietário não pode ser deletado');
+    }
+
+    console.log('Deletando usuário:', userId, targetProfile?.email);
 
     // Deletar usuário do auth usando service key
     const { error: authError } = await supabase.auth.admin.deleteUser(userId);
     
     if (authError) {
+      console.error('Erro ao deletar do auth:', authError);
       throw authError;
     }
+
+    console.log('Usuário deletado com sucesso');
 
     return new Response(
       JSON.stringify({ 
