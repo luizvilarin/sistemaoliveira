@@ -25,7 +25,7 @@ import { formatMoney } from '@/lib/utils';
 
 const DashboardPage = () => {
   const { isAdmin, userProfile } = useAuth();
-  const { clientes, pacientes, cuidadores, transacoes } = useData();
+  const { clientes, pacientes, cuidadores, transacoes, lembretes } = useData();
   const [isUsuarioFormOpen, setIsUsuarioFormOpen] = useState(false);
   const [editingUsuario, setEditingUsuario] = useState(null);
   
@@ -40,6 +40,23 @@ const DashboardPage = () => {
       return t.status === 'confirmado' && transacaoDate.getTime() === today.getTime();
     })
     .reduce((acc, transaction) => acc + transaction.valor, 0);
+
+  // Calcular tempo médio baseado em dados reais (placeholder até implementarmos tracking de tempo)
+  const tempoMedio = pacientes.length > 0 ? "2.5h" : "0h";
+
+  // Agenda da semana baseada em lembretes
+  const inicioSemana = new Date();
+  inicioSemana.setDate(inicioSemana.getDate() - inicioSemana.getDay());
+  inicioSemana.setHours(0, 0, 0, 0);
+  
+  const fimSemana = new Date(inicioSemana);
+  fimSemana.setDate(fimSemana.getDate() + 6);
+  fimSemana.setHours(23, 59, 59, 999);
+
+  const agendaSemana = lembretes.filter(lembrete => {
+    const lembreteDate = new Date(lembrete.dia);
+    return lembreteDate >= inicioSemana && lembreteDate <= fimSemana;
+  }).length;
 
   const handleEditUsuario = (usuario: any) => {
     setEditingUsuario(usuario);
@@ -104,17 +121,13 @@ const DashboardPage = () => {
             value={formatMoney(faturamentoDiario)} 
             icon={DollarSign}
             description="Receita confirmada hoje" 
-            trend={{ 
-              direction: 'up', 
-              value: '12%' 
-            }}
             colorScheme="orange"
           />
         )}
         
         <StatCard 
           title="Tempo Médio de Atendimento" 
-          value="2.5h" 
+          value={tempoMedio} 
           icon={Clock}
           description="Por paciente" 
           colorScheme="default"
@@ -122,16 +135,15 @@ const DashboardPage = () => {
         
         <StatCard 
           title="Agenda da Semana" 
-          value="15" 
+          value={agendaSemana} 
           icon={CalendarCheck}
-          description="Visitas programadas" 
+          description="Lembretes programados" 
           colorScheme="blue"
         />
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <GrowthChart />
-        
+        <GrowthChart />        
         {isAdmin && <RecentTransactions />}
       </div>
 

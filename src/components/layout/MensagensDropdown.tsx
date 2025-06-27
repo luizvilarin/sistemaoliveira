@@ -12,37 +12,14 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, User } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
-// Mock data para mensagens
-const mockMensagens = [
-  {
-    id: '1',
-    remetente: 'João Silva',
-    assunto: 'Reunião de hoje',
-    preview: 'Olá, gostaria de confirmar nossa reunião...',
-    tempo: '5 min',
-    naoLida: true
-  },
-  {
-    id: '2',
-    remetente: 'Maria Santos',
-    assunto: 'Relatório mensal',
-    preview: 'Segue em anexo o relatório do mês...',
-    tempo: '1 hora',
-    naoLida: true
-  },
-  {
-    id: '3',
-    remetente: 'Pedro Costa',
-    assunto: 'Agendamento',
-    preview: 'Podemos reagendar para amanhã?',
-    tempo: '2 horas',
-    naoLida: false
-  }
-];
+import { useData } from '@/contexts/DataContext';
+import { useNavigate } from 'react-router-dom';
 
 const MensagensDropdown = () => {
-  const mensagensNaoLidas = mockMensagens.filter(m => m.naoLida).length;
+  const navigate = useNavigate();
+  const { mensagens } = useData();
+  
+  const mensagensNaoLidas = mensagens.filter(m => !m.lida).length;
 
   return (
     <DropdownMenu>
@@ -59,8 +36,8 @@ const MensagensDropdown = () => {
       <DropdownMenuContent align="end" className="w-80">
         <DropdownMenuLabel>Mensagens</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {mockMensagens.length > 0 ? (
-          mockMensagens.map((mensagem) => (
+        {mensagens.length > 0 ? (
+          mensagens.slice(0, 3).map((mensagem) => (
             <DropdownMenuItem key={mensagem.id} className="flex items-start gap-3 p-3 cursor-pointer">
               <Avatar className="h-8 w-8">
                 <AvatarFallback>
@@ -69,12 +46,14 @@ const MensagensDropdown = () => {
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium truncate">{mensagem.remetente}</p>
-                  <span className="text-xs text-muted-foreground">{mensagem.tempo}</span>
+                  <p className="text-sm font-medium truncate">Remetente</p>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(mensagem.created_at).toLocaleDateString()}
+                  </span>
                 </div>
                 <p className="text-sm font-medium text-gray-900 truncate">{mensagem.assunto}</p>
-                <p className="text-xs text-muted-foreground truncate">{mensagem.preview}</p>
-                {mensagem.naoLida && (
+                <p className="text-xs text-muted-foreground truncate">{mensagem.conteudo}</p>
+                {!mensagem.lida && (
                   <div className="flex justify-end mt-1">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                   </div>
@@ -86,7 +65,7 @@ const MensagensDropdown = () => {
           <DropdownMenuItem disabled>Sem mensagens</DropdownMenuItem>
         )}
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="justify-center">
+        <DropdownMenuItem className="justify-center" onClick={() => navigate('/mensagens')}>
           <Button variant="ghost" size="sm" className="w-full">
             Ver todas as mensagens
           </Button>

@@ -6,7 +6,19 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Edit, User } from 'lucide-react';
+import { Search, Plus, Edit, User, Trash2 } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import ClienteForm from '@/components/clientes/ClienteForm';
 import { formatDate } from '@/lib/utils';
 
@@ -41,7 +53,8 @@ const ClientTypeBadge = ({ tipo }: { tipo: string }) => {
 };
 
 const ClientesPage = () => {
-  const { clientes, isLoading } = useData();
+  const { clientes, isLoading, deleteCliente } = useData();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [isClienteFormOpen, setIsClienteFormOpen] = useState(false);
   const [currentCliente, setCurrentCliente] = useState<any>(null);
@@ -66,6 +79,23 @@ const ClientesPage = () => {
   const handleEditCliente = (cliente: any) => {
     setCurrentCliente(cliente);
     setIsClienteFormOpen(true);
+  };
+
+  const handleDeleteCliente = async (cliente: any) => {
+    try {
+      await deleteCliente(cliente.id);
+      toast({
+        title: 'Cliente removido',
+        description: 'O cliente foi removido com sucesso!',
+      });
+    } catch (error) {
+      console.error('Erro ao remover cliente:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Ocorreu um erro ao remover o cliente.',
+      });
+    }
   };
 
   return (
@@ -132,9 +162,32 @@ const ClientesPage = () => {
                       </TableCell>
                       <TableCell>{formatDate(cliente.created_at)}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="outline" size="sm" onClick={() => handleEditCliente(cliente)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
+                        <div className="flex gap-2 justify-end">
+                          <Button variant="outline" size="sm" onClick={() => handleEditCliente(cliente)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Confirmar remoção</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tem certeza que deseja remover o cliente "{cliente.nome}"? Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteCliente(cliente)}>
+                                  Remover
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
