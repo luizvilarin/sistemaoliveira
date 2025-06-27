@@ -3,6 +3,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   User, 
   LayoutDashboard, 
@@ -50,6 +51,15 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({ to, icon, label, adminOnly = 
 const DashboardSidebar = () => {
   const { userProfile, signOut } = useAuth();
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
+  };
+
   return (
     <div className="h-screen w-64 bg-sidebar border-r border-border flex flex-col">
       <div className="p-4 border-b border-border">
@@ -59,9 +69,12 @@ const DashboardSidebar = () => {
       
       <div className="p-4 border-b border-border">
         <div className="flex items-center">
-          <div className="w-10 h-10 rounded-full bg-sgc-blue-100 text-sgc-blue-600 flex items-center justify-center">
-            <User size={20} />
-          </div>
+          <Avatar className="w-10 h-10">
+            <AvatarImage src={userProfile?.avatar_url || ''} alt={userProfile?.nome || ''} />
+            <AvatarFallback className="bg-sgc-blue-100 text-sgc-blue-600">
+              {userProfile?.nome ? getInitials(userProfile.nome) : <User size={20} />}
+            </AvatarFallback>
+          </Avatar>
           <div className="ml-3">
             <p className="text-sm font-medium">{userProfile?.nome || 'Usuário'}</p>
             <p className="text-xs text-gray-500 capitalize">{userProfile?.perfil || 'cuidador'}</p>

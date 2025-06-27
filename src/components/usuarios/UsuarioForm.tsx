@@ -66,7 +66,7 @@ const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, onSuccess })
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: error.message || 'Ocorreu um erro ao enviar o convite.',
+        description: error.message || 'Ocorreu um erro ao enviar o convite. Verifique se o e-mail é válido e tente novamente.',
       });
     } finally {
       setIsLoading(false);

@@ -7,18 +7,49 @@ export const userService = {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Não autenticado');
 
-    const response = await supabase.functions.invoke('send-invite', {
-      body: { email, nome, perfil },
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    });
+    // Verificar se é admin
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('perfil')
+      .eq('id', session.user.id)
+      .single();
 
-    if (response.error) {
-      throw response.error;
+    if (profile?.perfil !== 'admin') {
+      throw new Error('Apenas administradores podem enviar convites');
     }
 
-    return response.data;
+    // Primeiro, salvar o convite na nossa tabela
+    const { error: inviteError } = await supabase
+      .from('user_invites')
+      .insert({
+        email,
+        nome,
+        perfil,
+        invited_by: session.user.id
+      });
+
+    if (inviteError) {
+      throw inviteError;
+    }
+
+    // Usar o método nativo do Supabase para enviar o convite
+    const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
+      data: {
+        nome,
+        perfil
+      }
+    });
+
+    if (error) {
+      // Se falhar, remover o convite que criamos
+      await supabase
+        .from('user_invites')
+        .delete()
+        .eq('email', email);
+      throw error;
+    }
+
+    return data;
   },
 
   async deleteUser(userId: string) {
