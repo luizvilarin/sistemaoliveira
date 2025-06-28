@@ -178,7 +178,7 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ isOpen, onClose, clienteToEdi
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o status" />
                       </SelectTrigger>
-                    </FormContent>
+                    </FormControl>
                     <SelectContent>
                       <SelectItem value="ativo">Ativo</SelectItem>
                       <SelectItem value="pausado">Pausado</SelectItem>
