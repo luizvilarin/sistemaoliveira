@@ -52,3 +52,19 @@ export interface UserProfile {
   avatar_url?: string;
   ativo: boolean;
 }
+
+export interface NotificacaoSistema {
+  id: string;
+  usuario_id: string;
+  tipo: string;
+  titulo: string;
+  mensagem: string;
+  data_criacao: string;
+  created_at?: string; // adicionar esta propriedade opcional
+  data_vencimento?: string;
+  lida: boolean;
+  acao_url?: string;
+  metadados?: any;
+  grupo_id?: string;
+  mensagem_id?: string;
+}

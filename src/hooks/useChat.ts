@@ -87,7 +87,12 @@ export const useChat = () => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMensagens(data || []);
+      // Fazer cast explícito para garantir compatibilidade de tipos
+      const mensagensTyped = (data || []).map(msg => ({
+        ...msg,
+        tipo_mensagem: msg.tipo_mensagem as 'texto' | 'imagem' | 'video' | 'audio' | 'arquivo'
+      }));
+      setMensagens(mensagensTyped);
     } catch (error) {
       console.error('Erro ao carregar mensagens:', error);
     }
@@ -206,7 +211,7 @@ export const useChat = () => {
 
       if (buscarError) throw buscarError;
 
-      const reacoesAtuais = mensagem.emoji_reacoes || {};
+      const reacoesAtuais = (mensagem.emoji_reacoes as Record<string, string[]>) || {};
       const usuariosEmoji = reacoesAtuais[emoji] || [];
 
       // Toggle da reação

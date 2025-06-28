@@ -13,21 +13,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-
-interface NotificacaoSistema {
-  id: string;
-  usuario_id: string;
-  tipo: string;
-  titulo: string;
-  mensagem: string;
-  data_criacao: string;
-  data_vencimento?: string;
-  lida: boolean;
-  acao_url?: string;
-  metadados?: any;
-  grupo_id?: string;
-  mensagem_id?: string;
-}
+import { NotificacaoSistema } from '@/types/chat';
 
 const NotificationSystem = () => {
   const { user } = useAuth();
