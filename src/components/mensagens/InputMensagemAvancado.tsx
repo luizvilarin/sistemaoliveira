@@ -2,24 +2,13 @@
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Send, 
-  Paperclip, 
-  Image as ImageIcon, 
-  Video, 
-  Mic, 
-  Smile,
-  AtSign,
-  X
-} from 'lucide-react';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Send } from 'lucide-react';
 import { UserProfile } from '@/types/chat';
 import { useChat } from '@/hooks/useChat';
+import EmojiPicker from './EmojiPicker';
+import MentionsList from './MentionsList';
+import FileAttachments from './FileAttachments';
+import AudioRecorder from './AudioRecorder';
 
 interface InputMensagemAvancadoProps {
   destinatarioId?: string;
@@ -37,13 +26,6 @@ interface InputMensagemAvancadoProps {
   onEnviar?: () => void;
 }
 
-const emojis = [
-  '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇',
-  '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚',
-  '👍', '👎', '👌', '✌️', '🤞', '🤟', '👏', '🙌', '👐', '🤝',
-  '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔'
-];
-
 const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
   destinatarioId,
   grupoId,
@@ -58,11 +40,7 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
   const [showMencoes, setShowMencoes] = useState(false);
   const [mencoes, setMencoes] = useState<string[]>([]);
   const [arquivos, setArquivos] = useState<File[]>([]);
-  const [isRecording, setIsRecording] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
 
   const handleEnviarMensagem = async () => {
     if ((!mensagem.trim() && arquivos.length === 0) || isEnviando) return;
@@ -140,8 +118,7 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+  const handleFileSelect = (files: File[]) => {
     setArquivos(prev => [...prev, ...files]);
   };
 
@@ -149,150 +126,39 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
     setArquivos(prev => prev.filter((_, i) => i !== index));
   };
 
-  const iniciarGravacao = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
-      };
-
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-        // TODO: Implementar upload do áudio
-        console.log('Áudio gravado:', audioBlob);
-        stream.getTracks().forEach(track => track.stop());
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-    } catch (error) {
-      console.error('Erro ao iniciar gravação:', error);
-    }
-  };
-
-  const pararGravacao = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .substring(0, 2)
-      .toUpperCase();
+  const handleAudioRecorded = (audioBlob: Blob) => {
+    // TODO: Implementar upload do áudio
+    console.log('Áudio gravado:', audioBlob);
   };
 
   return (
     <div className="p-4 border-t bg-white">
-      {/* Arquivos selecionados */}
-      {arquivos.length > 0 && (
-        <div className="mb-3 flex flex-wrap gap-2">
-          {arquivos.map((arquivo, index) => (
-            <div key={index} className="flex items-center bg-gray-100 px-2 py-1 rounded text-sm">
-              <span className="truncate max-w-32">{arquivo.name}</span>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-4 w-4 p-0 ml-1"
-                onClick={() => removerArquivo(index)}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
+      <FileAttachments
+        arquivos={arquivos}
+        onFileSelect={handleFileSelect}
+        onRemoveFile={removerArquivo}
+      />
 
       <div className="flex items-end space-x-2">
         {/* Botões de ação */}
         <div className="flex space-x-1">
-          {/* Upload de arquivos */}
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Paperclip className="h-4 w-4" />
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
-            onChange={handleFileSelect}
-            className="hidden"
+          <FileAttachments
+            arquivos={[]}
+            onFileSelect={handleFileSelect}
+            onRemoveFile={removerArquivo}
           />
 
-          {/* Menções */}
-          {isGroup && (
-            <Popover open={showMencoes} onOpenChange={setShowMencoes}>
-              <PopoverTrigger asChild>
-                <Button size="sm" variant="ghost">
-                  <AtSign className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-64 p-2">
-                <div className="max-h-48 overflow-y-auto">
-                  {usuarios.map(usuario => (
-                    <div
-                      key={usuario.id}
-                      className="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded cursor-pointer"
-                      onClick={() => insertarMencao(usuario)}
-                    >
-                      <Avatar className="w-6 h-6">
-                        <AvatarImage src={usuario.avatar_url} alt={usuario.nome} />
-                        <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                          {getInitials(usuario.nome)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">{usuario.nome}</span>
-                    </div>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-          )}
+          <MentionsList
+            usuarios={usuarios}
+            isGroup={isGroup}
+            onMentionSelect={insertarMencao}
+            open={showMencoes}
+            onOpenChange={setShowMencoes}
+          />
 
-          {/* Emojis */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button size="sm" variant="ghost">
-                <Smile className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64 p-2">
-              <div className="grid grid-cols-8 gap-1">
-                {emojis.map(emoji => (
-                  <Button
-                    key={emoji}
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 w-8 p-0 text-lg"
-                    onClick={() => insertarEmoji(emoji)}
-                  >
-                    {emoji}
-                  </Button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+          <EmojiPicker onEmojiSelect={insertarEmoji} />
 
-          {/* Gravação de áudio */}
-          <Button
-            size="sm"
-            variant={isRecording ? "destructive" : "ghost"}
-            onClick={isRecording ? pararGravacao : iniciarGravacao}
-          >
-            <Mic className="h-4 w-4" />
-          </Button>
+          <AudioRecorder onAudioRecorded={handleAudioRecorded} />
         </div>
 
         {/* Campo de texto */}
