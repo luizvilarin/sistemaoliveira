@@ -8,7 +8,8 @@ import {
   TrendingUp, 
   Users, 
   DollarSign, 
-  Calendar 
+  Calendar,
+  FileSpreadsheet
 } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import { formatMoney } from '@/lib/utils';
@@ -19,10 +20,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useToast } from '@/components/ui/use-toast';
 
 const RelatoriosPage = () => {
   const { clientes, transacoes, tarefas, pacientes, cuidadores } = useData();
   const [selectedPeriod, setSelectedPeriod] = useState('mes');
+  const { toast } = useToast();
 
   // Calcular estatísticas reais
   const totalReceita = transacoes
@@ -39,6 +42,309 @@ const RelatoriosPage = () => {
   const valorTotalContratos = pacientes
     .filter(p => p.contrato_ativo)
     .reduce((acc, p) => acc + (p.valor_contrato || 0), 0);
+
+  const exportToExcel = (relatorioId: string) => {
+    console.log(`Exportando relatório ${relatorioId} para Excel...`);
+    
+    let data: any[] = [];
+    let filename = '';
+    
+    switch (relatorioId) {
+      case '1': // Relatório Financeiro
+        data = transacoes.map(t => ({
+          Cliente: clientes.find(c => c.id === t.cliente_id)?.nome || 'N/A',
+          Valor: t.valor,
+          Status: t.status,
+          Data: new Date(t.data).toLocaleDateString('pt-BR')
+        }));
+        filename = 'relatorio-financeiro.csv';
+        break;
+      case '2': // Relatório de Clientes
+        data = clientes.map(c => ({
+          Nome: c.nome,
+          Contato: c.contato,
+          Tipo: c.tipo,
+          Status: c.status,
+          'Data Cadastro': new Date(c.created_at).toLocaleDateString('pt-BR')
+        }));
+        filename = 'relatorio-clientes.csv';
+        break;
+      case '3': // Relatório de Tarefas
+        data = tarefas.map(t => ({
+          Título: t.titulo,
+          Descrição: t.descricao || 'N/A',
+          Status: t.status,
+          Cliente: clientes.find(c => c.id === t.cliente_id)?.nome || 'N/A',
+          'Data Criação': new Date(t.created_at).toLocaleDateString('pt-BR')
+        }));
+        filename = 'relatorio-tarefas.csv';
+        break;
+      case '4': // Relatório de Performance
+        data = [
+          { Métrica: 'Taxa de Eficiência', Valor: `${taxaEficiencia.toFixed(1)}%` },
+          { Métrica: 'Clientes Ativos', Valor: clientesAtivos },
+          { Métrica: 'Tarefas Concluídas', Valor: tarefasConcluidas },
+          { Métrica: 'Receita Total', Valor: formatMoney(totalReceita) },
+          { Métrica: 'Contratos Ativos', Valor: contratosAtivos }
+        ];
+        filename = 'relatorio-performance.csv';
+        break;
+    }
+
+    // Converter para CSV
+    if (data.length > 0) {
+      const csvContent = convertToCSV(data);
+      downloadCSV(csvContent, filename);
+      
+      toast({
+        title: 'Relatório exportado',
+        description: `O arquivo ${filename} foi baixado com sucesso!`,
+      });
+    }
+  };
+
+  const convertToCSV = (data: any[]) => {
+    if (data.length === 0) return '';
+    
+    const headers = Object.keys(data[0]);
+    const csvRows = [
+      headers.join(','),
+      ...data.map(row => 
+        headers.map(header => {
+          const value = row[header];
+          return typeof value === 'string' && value.includes(',') 
+            ? `"${value}"` 
+            : value;
+        }).join(',')
+      )
+    ];
+    
+    return csvRows.join('\n');
+  };
+
+  const downloadCSV = (csvContent: string, filename: string) => {
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  const exportToPDF = (relatorioId: string) => {
+    console.log(`Exportando relatório ${relatorioId} para PDF...`);
+    
+    // Criar conteúdo HTML para impressão
+    let htmlContent = '';
+    
+    switch (relatorioId) {
+      case '1':
+        htmlContent = generateFinancialReportHTML();
+        break;
+      case '2':
+        htmlContent = generateClientReportHTML();
+        break;
+      case '3':
+        htmlContent = generateTaskReportHTML();
+        break;
+      case '4':
+        htmlContent = generatePerformanceReportHTML();
+        break;
+    }
+
+    // Abrir em nova janela para impressão/salvamento como PDF
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
+
+    toast({
+      title: 'Relatório PDF',
+      description: 'Uma nova janela foi aberta para impressão/salvamento como PDF.',
+    });
+  };
+
+  const generateFinancialReportHTML = () => {
+    return `
+      <html>
+        <head>
+          <title>Relatório Financeiro</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            h1 { color: #333; }
+          </style>
+        </head>
+        <body>
+          <h1>Relatório Financeiro</h1>
+          <p>Período: ${selectedPeriod}</p>
+          <p>Data de geração: ${new Date().toLocaleDateString('pt-BR')}</p>
+          
+          <h2>Resumo</h2>
+          <p>Receita Total: ${formatMoney(totalReceita)}</p>
+          <p>Transações Confirmadas: ${transacoes.filter(t => t.status === 'confirmado').length}</p>
+          
+          <h2>Transações</h2>
+          <table>
+            <tr>
+              <th>Cliente</th>
+              <th>Valor</th>
+              <th>Status</th>
+              <th>Data</th>
+            </tr>
+            ${transacoes.map(t => `
+              <tr>
+                <td>${clientes.find(c => c.id === t.cliente_id)?.nome || 'N/A'}</td>
+                <td>${formatMoney(t.valor)}</td>
+                <td>${t.status}</td>
+                <td>${new Date(t.data).toLocaleDateString('pt-BR')}</td>
+              </tr>
+            `).join('')}
+          </table>
+        </body>
+      </html>
+    `;
+  };
+
+  const generateClientReportHTML = () => {
+    return `
+      <html>
+        <head>
+          <title>Relatório de Clientes</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            h1 { color: #333; }
+          </style>
+        </head>
+        <body>
+          <h1>Relatório de Clientes</h1>
+          <p>Total de clientes: ${clientes.length}</p>
+          <p>Clientes ativos: ${clientesAtivos}</p>
+          <p>Data de geração: ${new Date().toLocaleDateString('pt-BR')}</p>
+          
+          <table>
+            <tr>
+              <th>Nome</th>
+              <th>Contato</th>
+              <th>Tipo</th>
+              <th>Status</th>
+              <th>Data Cadastro</th>
+            </tr>
+            ${clientes.map(c => `
+              <tr>
+                <td>${c.nome}</td>
+                <td>${c.contato}</td>
+                <td>${c.tipo}</td>
+                <td>${c.status}</td>
+                <td>${new Date(c.created_at).toLocaleDateString('pt-BR')}</td>
+              </tr>
+            `).join('')}
+          </table>
+        </body>
+      </html>
+    `;
+  };
+
+  const generateTaskReportHTML = () => {
+    return `
+      <html>
+        <head>
+          <title>Relatório de Tarefas</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            h1 { color: #333; }
+          </style>
+        </head>
+        <body>
+          <h1>Relatório de Tarefas</h1>
+          <p>Total de tarefas: ${tarefas.length}</p>
+          <p>Tarefas concluídas: ${tarefasConcluidas}</p>
+          <p>Taxa de conclusão: ${taxaEficiencia.toFixed(1)}%</p>
+          <p>Data de geração: ${new Date().toLocaleDateString('pt-BR')}</p>
+          
+          <table>
+            <tr>
+              <th>Título</th>
+              <th>Status</th>
+              <th>Cliente</th>
+              <th>Data Criação</th>
+            </tr>
+            ${tarefas.map(t => `
+              <tr>
+                <td>${t.titulo}</td>
+                <td>${t.status}</td>
+                <td>${clientes.find(c => c.id === t.cliente_id)?.nome || 'N/A'}</td>
+                <td>${new Date(t.created_at).toLocaleDateString('pt-BR')}</td>
+              </tr>
+            `).join('')}
+          </table>
+        </body>
+      </html>
+    `;
+  };
+
+  const generatePerformanceReportHTML = () => {
+    return `
+      <html>
+        <head>
+          <title>Relatório de Performance</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .metric { background-color: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; }
+            h1 { color: #333; }
+          </style>
+        </head>
+        <body>
+          <h1>Relatório de Performance</h1>
+          <p>Data de geração: ${new Date().toLocaleDateString('pt-BR')}</p>
+          
+          <div class="metric">
+            <h3>Taxa de Eficiência</h3>
+            <p>${taxaEficiencia.toFixed(1)}%</p>
+          </div>
+          
+          <div class="metric">
+            <h3>Receita Total</h3>
+            <p>${formatMoney(totalReceita)}</p>
+          </div>
+          
+          <div class="metric">
+            <h3>Clientes Ativos</h3>
+            <p>${clientesAtivos} de ${clientes.length} total</p>
+          </div>
+          
+          <div class="metric">
+            <h3>Tarefas Concluídas</h3>
+            <p>${tarefasConcluidas} de ${tarefas.length} total</p>
+          </div>
+          
+          <div class="metric">
+            <h3>Contratos Ativos</h3>
+            <p>${contratosAtivos} contratos gerando ${formatMoney(valorTotalContratos)}</p>
+          </div>
+        </body>
+      </html>
+    `;
+  };
 
   const relatoriosDisponiveis = [
     {
@@ -70,11 +376,6 @@ const RelatoriosPage = () => {
       dados: `${taxaEficiencia.toFixed(1)}% eficiência`
     }
   ];
-
-  const handleDownloadReport = (relatorioId: string) => {
-    console.log(`Baixando relatório ${relatorioId} para o período: ${selectedPeriod}`);
-    // Aqui seria implementada a lógica de geração do relatório
-  };
 
   return (
     <div className="space-y-6">
@@ -174,14 +475,24 @@ const RelatoriosPage = () => {
                              selectedPeriod === 'semana' ? 'Esta Semana' :
                              selectedPeriod === 'trimestre' ? 'Este Trimestre' : 'Este Ano'}
                   </p>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleDownloadReport(relatorio.id)}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Baixar
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => exportToExcel(relatorio.id)}
+                    >
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      Excel
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => exportToPDF(relatorio.id)}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      PDF
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

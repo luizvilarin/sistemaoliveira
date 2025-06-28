@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -48,14 +48,32 @@ const TransacaoForm: React.FC<TransacaoFormProps> = ({ isOpen, onClose, transaca
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      cliente_id: transacaoToEdit?.cliente_id || '',
-      valor: transacaoToEdit ? transacaoToEdit.valor.toString() : '',
-      status: transacaoToEdit?.status || 'aguardando',
-      data: transacaoToEdit 
-        ? new Date(transacaoToEdit.data).toISOString().slice(0, 16) 
-        : new Date().toISOString().slice(0, 16),
+      cliente_id: '',
+      valor: '',
+      status: 'aguardando',
+      data: new Date().toISOString().slice(0, 16),
     },
   });
+
+  // Resetar o formulário quando transacaoToEdit mudar
+  useEffect(() => {
+    if (transacaoToEdit) {
+      console.log('Editando transação:', transacaoToEdit);
+      form.reset({
+        cliente_id: transacaoToEdit.cliente_id,
+        valor: transacaoToEdit.valor.toString(),
+        status: transacaoToEdit.status,
+        data: new Date(transacaoToEdit.data).toISOString().slice(0, 16),
+      });
+    } else {
+      form.reset({
+        cliente_id: '',
+        valor: '',
+        status: 'aguardando',
+        data: new Date().toISOString().slice(0, 16),
+      });
+    }
+  }, [transacaoToEdit, form]);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     try {
@@ -83,7 +101,6 @@ const TransacaoForm: React.FC<TransacaoFormProps> = ({ isOpen, onClose, transaca
         });
       }
       onClose();
-      form.reset();
     } catch (error) {
       console.error('Erro ao processar transação:', error);
       toast({
@@ -110,7 +127,6 @@ const TransacaoForm: React.FC<TransacaoFormProps> = ({ isOpen, onClose, transaca
                   <FormLabel>Cliente</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    defaultValue={field.value} 
                     value={field.value}
                   >
                     <FormControl>
@@ -151,7 +167,6 @@ const TransacaoForm: React.FC<TransacaoFormProps> = ({ isOpen, onClose, transaca
                   <FormLabel>Status</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    defaultValue={field.value}
                     value={field.value}
                   >
                     <FormControl>

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DollarSign, Search, Plus, Edit, FileText } from 'lucide-react';
+import { DollarSign, Search, Plus, Edit } from 'lucide-react';
 import TransacaoForm from '@/components/transacoes/TransacaoForm';
 import { useNavigate } from 'react-router-dom';
 
@@ -123,14 +123,9 @@ const TransacoesPage = () => {
                         </TableCell>
                         <TableCell>{formatDateTime(transacao.data)}</TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="outline" size="sm" onClick={() => handleEditTransacao(transacao)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              <FileText className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          <Button variant="outline" size="sm" onClick={() => handleEditTransacao(transacao)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );

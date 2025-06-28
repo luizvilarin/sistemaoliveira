@@ -109,11 +109,11 @@ const GrowthChart: React.FC = () => {
         )}
         <div className="flex justify-center gap-6 mt-4">
           <div className="flex items-center">
-            <div className="h-3 w-3 rounded-full bg-sgc-blue-500 mr-1"></div>
+            <div className="h-3 w-3 rounded-full bg-blue-500 mr-1"></div>
             <span className="text-sm">Clientes Fixos</span>
           </div>
           <div className="flex items-center">
-            <div className="h-3 w-3 rounded-full bg-sgc-green-500 mr-1"></div>
+            <div className="h-3 w-3 rounded-full bg-green-500 mr-1"></div>
             <span className="text-sm">Clientes Temporários</span>
           </div>
         </div>

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -50,12 +50,32 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ isOpen, onClose, clienteToEdi
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      nome: clienteToEdit?.nome || '',
-      contato: clienteToEdit?.contato || '',
-      tipo: clienteToEdit?.tipo || 'fixo',
-      status: clienteToEdit?.status || 'ativo',
+      nome: '',
+      contato: '',
+      tipo: 'fixo',
+      status: 'ativo',
     },
   });
+
+  // Resetar o formulário quando clienteToEdit mudar
+  useEffect(() => {
+    if (clienteToEdit) {
+      console.log('Editando cliente:', clienteToEdit);
+      form.reset({
+        nome: clienteToEdit.nome,
+        contato: clienteToEdit.contato,
+        tipo: clienteToEdit.tipo,
+        status: clienteToEdit.status,
+      });
+    } else {
+      form.reset({
+        nome: '',
+        contato: '',
+        tipo: 'fixo',
+        status: 'ativo',
+      });
+    }
+  }, [clienteToEdit, form]);
 
   function onSubmit(values: FormData) {
     try {
@@ -76,7 +96,6 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ isOpen, onClose, clienteToEdi
         });
       }
       onClose();
-      form.reset();
     } catch (error) {
       console.error('Erro ao processar cliente:', error);
       toast({
@@ -129,7 +148,6 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ isOpen, onClose, clienteToEdi
                   <FormLabel>Tipo</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    defaultValue={field.value}
                     value={field.value}
                   >
                     <FormControl>
@@ -154,14 +172,13 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ isOpen, onClose, clienteToEdi
                   <FormLabel>Status</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    defaultValue={field.value}
                     value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o status" />
                       </SelectTrigger>
-                    </FormControl>
+                    </FormContent>
                     <SelectContent>
                       <SelectItem value="ativo">Ativo</SelectItem>
                       <SelectItem value="pausado">Pausado</SelectItem>

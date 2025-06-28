@@ -30,10 +30,12 @@ interface ChatMessage {
   destinatario_id: string;
   created_at: string;
   assunto: string;
+  lida: boolean;
 }
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ selectedUser }) => {
   const { userProfile } = useAuth();
+  const { addMensagem } = useData();
   const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -53,9 +55,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedUser }) => {
     if (selectedUser && userProfile) {
       loadMessages();
       
-      // Configurar realtime para mensagens
+      // Marcar mensagens como lidas quando abrir a conversa
+      markMessagesAsRead();
+      
+      // Configurar realtime para mensagens entre estes dois usuários específicos
       const channel = supabase
-        .channel(`chat-${selectedUser.id}-${userProfile.id}`)
+        .channel(`chat-${userProfile.id}-${selectedUser.id}`)
         .on('postgres_changes', 
           { 
             event: 'INSERT', 
@@ -64,16 +69,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedUser }) => {
             filter: `or(and(remetente_id.eq.${userProfile.id},destinatario_id.eq.${selectedUser.id}),and(remetente_id.eq.${selectedUser.id},destinatario_id.eq.${userProfile.id}))`
           }, 
           (payload) => {
-            console.log('Nova mensagem recebida:', payload);
+            console.log('Nova mensagem recebida no chat:', payload);
             const newMsg = payload.new as ChatMessage;
             setMessages(prev => {
               // Evitar duplicatas
               if (prev.some(msg => msg.id === newMsg.id)) {
                 return prev;
               }
-              return [...prev, newMsg].sort((a, b) => 
+              const updatedMessages = [...prev, newMsg].sort((a, b) => 
                 new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
               );
+              
+              // Se a mensagem foi recebida (não enviada por mim), marcar como lida
+              if (newMsg.remetente_id !== userProfile.id) {
+                markMessageAsRead(newMsg.id);
+              }
+              
+              return updatedMessages;
             });
           }
         )
@@ -92,7 +104,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedUser }) => {
     
     setIsLoading(true);
     try {
-      console.log('Carregando mensagens entre:', userProfile.id, 'e', selectedUser.id);
+      console.log('Carregando conversa entre:', userProfile.id, 'e', selectedUser.id);
       
       const { data, error } = await supabase
         .from('mensagens')
@@ -105,7 +117,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedUser }) => {
         throw error;
       }
 
-      console.log('Mensagens carregadas:', data?.length || 0);
+      console.log('Mensagens da conversa carregadas:', data?.length || 0);
       setMessages(data || []);
     } catch (error) {
       console.error('Erro ao carregar mensagens:', error);
@@ -116,6 +128,33 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedUser }) => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const markMessagesAsRead = async () => {
+    if (!selectedUser || !userProfile) return;
+    
+    try {
+      // Marcar como lidas todas as mensagens não lidas desta conversa que eu recebi
+      await supabase
+        .from('mensagens')
+        .update({ lida: true })
+        .eq('remetente_id', selectedUser.id)
+        .eq('destinatario_id', userProfile.id)
+        .eq('lida', false);
+    } catch (error) {
+      console.error('Erro ao marcar mensagens como lidas:', error);
+    }
+  };
+
+  const markMessageAsRead = async (messageId: string) => {
+    try {
+      await supabase
+        .from('mensagens')
+        .update({ lida: true })
+        .eq('id', messageId);
+    } catch (error) {
+      console.error('Erro ao marcar mensagem como lida:', error);
     }
   };
 
@@ -134,18 +173,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedUser }) => {
         lida: false,
       };
 
-      const { data, error } = await supabase
-        .from('mensagens')
-        .insert(messageData)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Erro ao enviar mensagem:', error);
-        throw error;
-      }
-
-      console.log('Mensagem enviada com sucesso:', data);
+      await addMensagem(messageData);
       setNewMessage('');
 
       toast({
@@ -232,12 +260,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedUser }) => {
                     }`}
                   >
                     <p className="text-sm">{message.conteudo}</p>
-                    <p className="text-xs mt-1 opacity-70">
-                      {new Date(message.created_at).toLocaleTimeString('pt-BR', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
+                    <div className="flex items-center justify-between mt-1">
+                      <p className="text-xs opacity-70">
+                        {new Date(message.created_at).toLocaleTimeString('pt-BR', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                      {message.remetente_id === userProfile?.id && (
+                        <span className="text-xs opacity-70">
+                          {message.lida ? '✓✓' : '✓'}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))
