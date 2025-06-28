@@ -55,7 +55,7 @@ export interface DataContextType {
   updateLembrete: (id: string, updates: TablesUpdate<'lembretes'>) => Promise<void>;
   deleteLembrete: (id: string) => Promise<void>;
   
-  addMensagem: (mensagem: TablesInsert<'mensagens'>) => Promise<void>;
+  addMensagem: (mensagem: TablesInsert<'mensagens'>) => Promise<Mensagem>;
   updateMensagem: (id: string, updates: TablesUpdate<'mensagens'>) => Promise<void>;
   deleteMensagem: (id: string) => Promise<void>;
   
