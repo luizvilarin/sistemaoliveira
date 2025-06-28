@@ -22,7 +22,7 @@ const AuthCallbackPage = () => {
         console.log('AuthCallback: Fragment:', fragment);
         
         // Aguardar um momento para o Supabase processar o callback
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
         // Verificar a sessão atual
         const { data, error } = await supabase.auth.getSession();
@@ -49,16 +49,25 @@ const AuthCallbackPage = () => {
           console.log('AuthCallback: Email confirmed at:', user.email_confirmed_at);
           console.log('AuthCallback: Created at:', user.created_at);
           
-          // Verificar se é um usuário vindo de convite
-          // Usuários de convite têm metadados específicos (nome, perfil)
-          const isFromInvite = user.user_metadata?.nome || user.user_metadata?.perfil;
-          const isNewUser = !user.email_confirmed_at || Math.abs(new Date(user.created_at).getTime() - Date.now()) < 300000; // 5 minutos
+          // Verificar se existe convite pendente para este email
+          const { data: inviteData } = await supabase
+            .from('user_invites')
+            .select('*')
+            .eq('email', user.email)
+            .eq('accepted', false)
+            .single();
           
-          console.log('AuthCallback: É de convite?', isFromInvite);
-          console.log('AuthCallback: É novo usuário?', isNewUser);
+          console.log('AuthCallback: Dados do convite:', inviteData);
           
-          if (isFromInvite && isNewUser) {
-            // Usuário autenticado via convite, redirecionar para completar cadastro
+          // Se existe convite pendente OU se o usuário tem metadados de convite
+          const hasInviteMetadata = user.user_metadata?.nome || user.user_metadata?.perfil;
+          const hasInvite = inviteData || hasInviteMetadata;
+          
+          console.log('AuthCallback: Tem convite?', hasInvite);
+          console.log('AuthCallback: Tem metadados de convite?', hasInviteMetadata);
+          
+          if (hasInvite) {
+            // Usuário de convite, redirecionar para completar cadastro
             console.log('AuthCallback: Redirecionando para complete-signup');
             navigate('/complete-signup');
           } else {
@@ -68,7 +77,6 @@ const AuthCallbackPage = () => {
           }
         } else {
           console.log('AuthCallback: Sem sessão válida, redirecionando para login');
-          // Sem sessão válida, redirecionar para login
           navigate('/login');
         }
       } catch (error) {

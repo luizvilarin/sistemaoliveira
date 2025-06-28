@@ -44,22 +44,37 @@ const CompleteSignupPage = () => {
       console.log('CompleteSignup: Usuário encontrado:', userData.email);
       console.log('CompleteSignup: Metadata completo:', userData.user_metadata);
 
-      // Extrair informações do convite dos metadados
-      const nome = userData.user_metadata?.nome || userData.email?.split('@')[0] || 'Usuário';
-      const perfil = userData.user_metadata?.perfil || 'cuidador';
-      
-      setUserInfo({
-        nome,
-        email: userData.email || '',
-        perfil: perfil.charAt(0).toUpperCase() + perfil.slice(1)
-      });
+      // Verificar se existe convite para este usuário
+      const { data: inviteData } = await supabase
+        .from('user_invites')
+        .select('*')
+        .eq('email', userData.email)
+        .single();
 
-      // Verificar se o usuário realmente precisa definir senha
-      // Se já tem email_confirmed_at e não tem metadados de convite, redirecionar
-      if (userData.email_confirmed_at && !userData.user_metadata?.nome && !userData.user_metadata?.perfil) {
-        console.log('CompleteSignup: Usuário já confirmado sem convite, redirecionando para dashboard');
+      console.log('CompleteSignup: Dados do convite:', inviteData);
+
+      let nome, perfil;
+
+      if (inviteData) {
+        // Usar dados do convite
+        nome = inviteData.nome;
+        perfil = inviteData.perfil;
+      } else if (userData.user_metadata?.nome || userData.user_metadata?.perfil) {
+        // Usar metadados do usuário
+        nome = userData.user_metadata.nome;
+        perfil = userData.user_metadata.perfil;
+      } else {
+        // Usuário não veio de convite, redirecionar para dashboard
+        console.log('CompleteSignup: Usuário não veio de convite, redirecionando para dashboard');
         navigate('/dashboard');
+        return;
       }
+
+      setUserInfo({
+        nome: nome || userData.email?.split('@')[0] || 'Usuário',
+        email: userData.email || '',
+        perfil: perfil ? perfil.charAt(0).toUpperCase() + perfil.slice(1) : 'Cuidador'
+      });
     };
 
     checkUserSession();
@@ -103,22 +118,31 @@ const CompleteSignupPage = () => {
 
       console.log('CompleteSignup: Senha atualizada com sucesso');
 
-      // Criar/atualizar perfil do usuário se não existir
+      // Criar/atualizar perfil do usuário
       if (userInfo) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: (await supabase.auth.getUser()).data.user?.id,
-            nome: userInfo.nome,
-            email: userInfo.email,
-            perfil: userInfo.perfil.toLowerCase(),
-          }, {
-            onConflict: 'id'
-          });
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        
+        if (currentUser) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: currentUser.id,
+              nome: userInfo.nome,
+              email: userInfo.email,
+              perfil: userInfo.perfil.toLowerCase(),
+            }, {
+              onConflict: 'id'
+            });
 
-        if (profileError) {
-          console.error('CompleteSignup: Erro ao criar perfil:', profileError);
-          // Não bloquear o fluxo por erro de perfil
+          if (profileError) {
+            console.error('CompleteSignup: Erro ao criar perfil:', profileError);
+          }
+
+          // Marcar convite como aceito se existir
+          await supabase
+            .from('user_invites')
+            .update({ accepted: true })
+            .eq('email', userInfo.email);
         }
       }
 
@@ -131,7 +155,7 @@ const CompleteSignupPage = () => {
       setTimeout(() => {
         console.log('CompleteSignup: Redirecionando para dashboard');
         navigate('/dashboard');
-      }, 1500);
+      }, 2000);
 
     } catch (error: any) {
       console.error('CompleteSignup: Erro ao completar cadastro:', error);
