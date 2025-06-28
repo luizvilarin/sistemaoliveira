@@ -133,19 +133,32 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
 
   return (
     <div className="p-4 border-t bg-white">
-      <FileAttachments
-        arquivos={arquivos}
-        onFileSelect={handleFileSelect}
-        onRemoveFile={removerArquivo}
-      />
+      {/* Selected files display - only show if there are files */}
+      {arquivos.length > 0 && (
+        <div className="mb-3 flex flex-wrap gap-2">
+          {arquivos.map((arquivo, index) => (
+            <div key={index} className="flex items-center bg-gray-100 px-2 py-1 rounded text-sm">
+              <span className="truncate max-w-32">{arquivo.name}</span>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-4 w-4 p-0 ml-1"
+                onClick={() => removerArquivo(index)}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="flex items-end space-x-2">
-        {/* Botões de ação */}
+        {/* Action buttons */}
         <div className="flex space-x-1">
           <FileAttachments
             arquivos={[]}
             onFileSelect={handleFileSelect}
-            onRemoveFile={removerArquivo}
+            onRemoveFile={() => {}} // Not needed for button-only mode
           />
 
           <MentionsList
@@ -161,7 +174,7 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
           <AudioRecorder onAudioRecorded={handleAudioRecorded} />
         </div>
 
-        {/* Campo de texto */}
+        {/* Text field */}
         <Textarea
           ref={textareaRef}
           placeholder="Digite sua mensagem..."
@@ -172,7 +185,7 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
           rows={1}
         />
 
-        {/* Botão enviar */}
+        {/* Send button */}
         <Button 
           onClick={handleEnviarMensagem}
           disabled={isEnviando || (!mensagem.trim() && arquivos.length === 0)}
