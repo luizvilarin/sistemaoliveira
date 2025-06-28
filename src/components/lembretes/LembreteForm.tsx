@@ -41,9 +41,10 @@ interface LembreteFormProps {
   isOpen: boolean;
   onClose: () => void;
   lembreteToEdit?: any;
+  selectedDate?: Date | null;
 }
 
-const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose, lembreteToEdit }) => {
+const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose, lembreteToEdit, selectedDate }) => {
   const { addLembrete, updateLembrete, clientes, cuidadores } = useData();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -83,10 +84,12 @@ const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose, lembreteTo
         tags: lembreteToEdit.tags || [],
       });
     } else {
+      // Se há uma data selecionada, usar ela como padrão
+      const defaultDate = selectedDate ? selectedDate.toISOString().split('T')[0] : '';
       form.reset({
         titulo: '',
         descricao: '',
-        dia: '',
+        dia: defaultDate,
         hora: '',
         residencia: '',
         cliente_id: undefined,
@@ -96,7 +99,7 @@ const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose, lembreteTo
         tags: [],
       });
     }
-  }, [lembreteToEdit, form]);
+  }, [lembreteToEdit, selectedDate, form]);
 
   const addTag = () => {
     if (currentTag.trim() && !watchedTags.includes(currentTag.trim())) {

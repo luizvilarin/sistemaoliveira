@@ -36,7 +36,7 @@ export interface DataContextType {
   deleteCliente: (id: string) => Promise<void>;
   
   addCuidador: (cuidador: TablesInsert<'cuidadores'>) => Promise<Cuidador>;
-  updateCuidador: (id: string, updates: TablesUpdate<'cuidadores'>) => Promise<void>;
+  updateCuidador: (id: string, updates: TablesUpdate<'cuidadores'>) => Promise<Cuidador>;
   deleteCuidador: (id: string) => Promise<void>;
   
   addPaciente: (paciente: TablesInsert<'pacientes'>) => Promise<Paciente>;
@@ -44,7 +44,7 @@ export interface DataContextType {
   deletePaciente: (id: string) => Promise<void>;
   
   addTransacao: (transacao: TablesInsert<'transacoes'>) => Promise<Transacao>;
-  updateTransacao: (id: string, updates: TablesUpdate<'transacoes'>) => Promise<void>;
+  updateTransacao: (id: string, updates: TablesUpdate<'transacoes'>) => Promise<Transacao>;
   deleteTransacao: (id: string) => Promise<void>;
   
   addTarefa: (tarefa: TablesInsert<'tarefas'>) => Promise<void>;
