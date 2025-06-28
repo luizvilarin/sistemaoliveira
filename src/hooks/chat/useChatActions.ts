@@ -6,9 +6,13 @@ export const useChatActions = (userProfile: any) => {
   const { toast } = useToast();
 
   const criarGrupo = async (nome: string, descricao?: string, membros: string[] = []) => {
-    if (!userProfile) return;
+    if (!userProfile) {
+      throw new Error('Usuário não autenticado');
+    }
 
     try {
+      console.log('Criando grupo:', { nome, descricao, membros, userId: userProfile.id });
+      
       // Criar o grupo
       const { data: grupo, error: grupoError } = await supabase
         .from('grupos_chat')
@@ -20,10 +24,15 @@ export const useChatActions = (userProfile: any) => {
         .select()
         .single();
 
-      if (grupoError) throw grupoError;
+      if (grupoError) {
+        console.error('Erro ao criar grupo:', grupoError);
+        throw grupoError;
+      }
+
+      console.log('Grupo criado:', grupo);
 
       // Adicionar o criador como admin
-      await supabase
+      const { error: criadorError } = await supabase
         .from('membros_grupo')
         .insert({
           grupo_id: grupo.id,
@@ -31,9 +40,14 @@ export const useChatActions = (userProfile: any) => {
           papel: 'admin'
         });
 
+      if (criadorError) {
+        console.error('Erro ao adicionar criador:', criadorError);
+        throw criadorError;
+      }
+
       // Adicionar outros membros
       if (membros.length > 0) {
-        await supabase
+        const { error: membrosError } = await supabase
           .from('membros_grupo')
           .insert(
             membros.map(userId => ({
@@ -42,6 +56,11 @@ export const useChatActions = (userProfile: any) => {
               papel: 'membro' as const
             }))
           );
+
+        if (membrosError) {
+          console.error('Erro ao adicionar membros:', membrosError);
+          throw membrosError;
+        }
       }
 
       toast({
@@ -55,8 +74,9 @@ export const useChatActions = (userProfile: any) => {
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Não foi possível criar o grupo.'
+        description: 'Não foi possível criar o grupo. Verifique suas permissões.'
       });
+      throw error;
     }
   };
 
@@ -70,19 +90,37 @@ export const useChatActions = (userProfile: any) => {
     duracaoAudio?: number,
     mencoes?: string[]
   ) => {
-    if (!userProfile || (!destinatarioId && !grupoId)) return;
+    if (!userProfile) {
+      throw new Error('Usuário não autenticado');
+    }
+
+    if (!destinatarioId && !grupoId) {
+      throw new Error('É necessário especificar um destinatário ou grupo');
+    }
+
+    if (!conteudo.trim() && !arquivoUrl) {
+      throw new Error('Mensagem não pode estar vazia');
+    }
 
     try {
+      console.log('Enviando mensagem:', {
+        conteudo,
+        destinatarioId,
+        grupoId,
+        tipoMensagem,
+        remetente: userProfile.id
+      });
+
       const mensagemData = {
         assunto: grupoId ? `Mensagem no grupo` : `Mensagem privada`,
-        conteudo,
+        conteudo: conteudo.trim(),
         remetente_id: userProfile.id,
-        destinatario_id: destinatarioId,
-        grupo_id: grupoId,
+        destinatario_id: destinatarioId || null,
+        grupo_id: grupoId || null,
         tipo_mensagem: tipoMensagem,
-        arquivo_url: arquivoUrl,
-        arquivo_nome: arquivoNome,
-        duracao_audio: duracaoAudio,
+        arquivo_url: arquivoUrl || null,
+        arquivo_nome: arquivoNome || null,
+        duracao_audio: duracaoAudio || null,
         mencoes: mencoes || [],
         lida: false
       };
@@ -93,15 +131,21 @@ export const useChatActions = (userProfile: any) => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao inserir mensagem:', error);
+        throw error;
+      }
+
+      console.log('Mensagem enviada com sucesso:', data);
       return data;
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Não foi possível enviar a mensagem.'
+        description: 'Não foi possível enviar a mensagem. Verifique sua conexão.'
       });
+      throw error;
     }
   };
 
@@ -109,7 +153,6 @@ export const useChatActions = (userProfile: any) => {
     if (!userProfile) return;
 
     try {
-      // Buscar a mensagem atual
       const { data: mensagem, error: buscarError } = await supabase
         .from('mensagens')
         .select('emoji_reacoes')
@@ -121,7 +164,6 @@ export const useChatActions = (userProfile: any) => {
       const reacoesAtuais = (mensagem.emoji_reacoes as Record<string, string[]>) || {};
       const usuariosEmoji = reacoesAtuais[emoji] || [];
 
-      // Toggle da reação
       const novasReacoes = { ...reacoesAtuais };
       if (usuariosEmoji.includes(userProfile.id)) {
         novasReacoes[emoji] = usuariosEmoji.filter(id => id !== userProfile.id);
@@ -140,6 +182,11 @@ export const useChatActions = (userProfile: any) => {
       if (error) throw error;
     } catch (error) {
       console.error('Erro ao adicionar reação:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Não foi possível adicionar a reação.'
+      });
     }
   };
 

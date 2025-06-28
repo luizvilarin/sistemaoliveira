@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Send, X } from 'lucide-react';
 import { UserProfile } from '@/types/chat';
 import { useChat } from '@/hooks/useChat';
+import { useToast } from '@/components/ui/use-toast';
 import EmojiPicker from './EmojiPicker';
 import MentionsList from './MentionsList';
 import FileAttachments from './FileAttachments';
@@ -35,6 +36,7 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
   onEnviar
 }) => {
   const { enviarMensagem } = useChat();
+  const { toast } = useToast();
   const [mensagem, setMensagem] = useState('');
   const [isEnviando, setIsEnviando] = useState(false);
   const [showMencoes, setShowMencoes] = useState(false);
@@ -43,17 +45,26 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleEnviarMensagem = async () => {
-    if ((!mensagem.trim() && arquivos.length === 0) || isEnviando) return;
+    if ((!mensagem.trim() && arquivos.length === 0) || isEnviando) {
+      return;
+    }
+
+    if (!destinatarioId && !grupoId) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Selecione um destinatário ou grupo para enviar a mensagem.'
+      });
+      return;
+    }
 
     setIsEnviando(true);
+    
     try {
       if (onSendMessage) {
         await onSendMessage(mensagem, 'texto', undefined, undefined, undefined, mencoes);
-      } else if (arquivos.length > 0) {
-        // TODO: Implementar upload de arquivos
-        console.log('Upload de arquivos não implementado ainda');
       } else {
-        await enviarMensagem(
+        const resultado = await enviarMensagem(
           mensagem,
           destinatarioId,
           grupoId,
@@ -63,12 +74,30 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
           undefined,
           mencoes
         );
+        
+        if (!resultado) {
+          throw new Error('Falha ao enviar mensagem');
+        }
       }
       
+      // Limpar campos após envio bem-sucedido
       setMensagem('');
       setMencoes([]);
       setArquivos([]);
       onEnviar?.();
+      
+      toast({
+        title: 'Mensagem enviada',
+        description: 'Sua mensagem foi enviada com sucesso!'
+      });
+      
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao enviar',
+        description: 'Não foi possível enviar a mensagem. Tente novamente.'
+      });
     } finally {
       setIsEnviando(false);
     }
@@ -89,7 +118,6 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
       const novaMensagem = mensagem.substring(0, start) + emoji + mensagem.substring(end);
       setMensagem(novaMensagem);
       
-      // Manter o cursor após o emoji
       setTimeout(() => {
         textarea.setSelectionRange(start + emoji.length, start + emoji.length);
         textarea.focus();
@@ -105,7 +133,6 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
       const novaMensagem = mensagem.substring(0, start) + `@${usuario.nome} ` + mensagem.substring(end);
       setMensagem(novaMensagem);
       
-      // Adicionar à lista de menções
       if (!mencoes.includes(usuario.id)) {
         setMencoes([...mencoes, usuario.id]);
       }
@@ -126,77 +153,133 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
     setArquivos(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleAudioRecorded = (audioBlob: Blob) => {
-    // TODO: Implementar upload do áudio
-    console.log('Áudio gravado:', audioBlob);
+  const handleAudioRecorded = async (audioBlob: Blob, duration: number) => {
+    if (!destinatarioId && !grupoId) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Selecione um destinatário ou grupo para enviar o áudio.'
+      });
+      return;
+    }
+
+    setIsEnviando(true);
+    
+    try {
+      // Simular upload do áudio (aqui você implementaria o upload real)
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audioNome = `audio_${Date.now()}.webm`;
+      
+      if (onSendMessage) {
+        await onSendMessage('Áudio', 'audio', audioUrl, audioNome, duration, []);
+      } else {
+        await enviarMensagem(
+          'Áudio',
+          destinatarioId,
+          grupoId,
+          'audio',
+          audioUrl,
+          audioNome,
+          duration,
+          []
+        );
+      }
+      
+      toast({
+        title: 'Áudio enviado',
+        description: `Áudio de ${duration} segundos enviado com sucesso!`
+      });
+      
+    } catch (error) {
+      console.error('Erro ao enviar áudio:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao enviar áudio',
+        description: 'Não foi possível enviar o áudio. Tente novamente.'
+      });
+    } finally {
+      setIsEnviando(false);
+    }
   };
 
+  const canSend = (mensagem.trim() || arquivos.length > 0) && !isEnviando;
+
   return (
-    <div className="p-4 border-t bg-white">
-      {/* Selected files display - only show if there are files */}
+    <div className="border-t bg-white">
+      {/* Selected files display */}
       {arquivos.length > 0 && (
-        <div className="mb-3 flex flex-wrap gap-2">
-          {arquivos.map((arquivo, index) => (
-            <div key={index} className="flex items-center bg-gray-100 px-2 py-1 rounded text-sm">
-              <span className="truncate max-w-32">{arquivo.name}</span>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-4 w-4 p-0 ml-1"
-                onClick={() => removerArquivo(index)}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-          ))}
+        <div className="p-3 border-b bg-gray-50">
+          <div className="flex flex-wrap gap-2">
+            {arquivos.map((arquivo, index) => (
+              <div key={index} className="flex items-center bg-white border px-3 py-2 rounded-lg text-sm">
+                <span className="truncate max-w-32 mr-2">{arquivo.name}</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-5 w-5 p-0 hover:bg-red-100"
+                  onClick={() => removerArquivo(index)}
+                >
+                  <X className="h-3 w-3 text-red-500" />
+                </Button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      <div className="flex items-end space-x-2">
-        {/* Action buttons */}
-        <div className="flex space-x-1">
-          <FileAttachments
-            arquivos={[]}
-            onFileSelect={handleFileSelect}
-            onRemoveFile={() => {}} // Not needed for button-only mode
-          />
+      <div className="p-4">
+        <div className="flex items-end space-x-2">
+          {/* Action buttons */}
+          <div className="flex items-center space-x-1">
+            <FileAttachments
+              arquivos={arquivos}
+              onFileSelect={handleFileSelect}
+              onRemoveFile={removerArquivo}
+            />
 
-          <MentionsList
-            usuarios={usuarios}
-            isGroup={isGroup}
-            onMentionSelect={insertarMencao}
-            open={showMencoes}
-            onOpenChange={setShowMencoes}
-          />
+            {isGroup && (
+              <MentionsList
+                usuarios={usuarios}
+                isGroup={isGroup}
+                onMentionSelect={insertarMencao}
+                open={showMencoes}
+                onOpenChange={setShowMencoes}
+              />
+            )}
 
-          <EmojiPicker onEmojiSelect={insertarEmoji} />
+            <EmojiPicker onEmojiSelect={insertarEmoji} />
 
-          <AudioRecorder onAudioRecorded={handleAudioRecorded} />
+            <AudioRecorder onAudioRecorded={handleAudioRecorded} />
+          </div>
+
+          {/* Text field */}
+          <div className="flex-1">
+            <Textarea
+              ref={textareaRef}
+              placeholder="Digite sua mensagem..."
+              value={mensagem}
+              onChange={(e) => setMensagem(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="min-h-[40px] max-h-32 resize-none border-gray-300 focus:border-primary"
+              rows={1}
+              disabled={isEnviando}
+            />
+          </div>
+
+          {/* Send button */}
+          <Button 
+            onClick={handleEnviarMensagem}
+            disabled={!canSend}
+            className="shrink-0 px-4"
+            size="default"
+          >
+            {isEnviando ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+          </Button>
         </div>
-
-        {/* Text field */}
-        <Textarea
-          ref={textareaRef}
-          placeholder="Digite sua mensagem..."
-          value={mensagem}
-          onChange={(e) => setMensagem(e.target.value)}
-          onKeyPress={handleKeyPress}
-          className="min-h-[40px] max-h-32 resize-none"
-          rows={1}
-        />
-
-        {/* Send button */}
-        <Button 
-          onClick={handleEnviarMensagem}
-          disabled={isEnviando || (!mensagem.trim() && arquivos.length === 0)}
-          className="shrink-0"
-        >
-          {isEnviando ? (
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-          ) : (
-            <Send className="h-4 w-4" />
-          )}
-        </Button>
       </div>
     </div>
   );

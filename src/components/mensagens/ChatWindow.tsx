@@ -24,14 +24,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedUser, selectedGroup, us
 
   useEffect(() => {
     if (selectedUser) {
-      // Filtrar mensagens entre o usuário atual e o usuário selecionado
       const mensagensConversa = mensagens.filter(m => 
         (m.remetente_id === userProfile?.id && m.destinatario_id === selectedUser.id) ||
         (m.remetente_id === selectedUser.id && m.destinatario_id === userProfile?.id)
       );
       setMensagensFiltradas(mensagensConversa);
     } else if (selectedGroup) {
-      // Filtrar mensagens do grupo selecionado
       const mensagensGrupo = mensagens.filter(m => m.grupo_id === selectedGroup.id);
       setMensagensFiltradas(mensagensGrupo);
     } else {
@@ -55,28 +53,32 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedUser, selectedGroup, us
     duracaoAudio?: number,
     mencoes?: string[]
   ) => {
-    if (selectedUser) {
-      await enviarMensagem(
-        conteudo,
-        selectedUser.id,
-        undefined,
-        tipoMensagem,
-        arquivoUrl,
-        arquivoNome,
-        duracaoAudio,
-        mencoes
-      );
-    } else if (selectedGroup) {
-      await enviarMensagem(
-        conteudo,
-        undefined,
-        selectedGroup.id,
-        tipoMensagem,
-        arquivoUrl,
-        arquivoNome,
-        duracaoAudio,
-        mencoes
-      );
+    try {
+      if (selectedUser) {
+        await enviarMensagem(
+          conteudo,
+          selectedUser.id,
+          undefined,
+          tipoMensagem,
+          arquivoUrl,
+          arquivoNome,
+          duracaoAudio,
+          mencoes
+        );
+      } else if (selectedGroup) {
+        await enviarMensagem(
+          conteudo,
+          undefined,
+          selectedGroup.id,
+          tipoMensagem,
+          arquivoUrl,
+          arquivoNome,
+          duracaoAudio,
+          mencoes
+        );
+      }
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
     }
   };
 
@@ -108,7 +110,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedUser, selectedGroup, us
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="border-b">
+      <CardHeader className="border-b bg-gray-50">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Avatar className="w-10 h-10">
@@ -129,6 +131,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedUser, selectedGroup, us
               {chatSubtitle && (
                 <p className="text-sm text-gray-500">{chatSubtitle}</p>
               )}
+              {selectedUser && (
+                <span className="text-xs text-gray-400">
+                  {selectedUser.perfil.charAt(0).toUpperCase() + selectedUser.perfil.slice(1)}
+                </span>
+              )}
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -147,8 +154,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedUser, selectedGroup, us
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col p-0">
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-96">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ maxHeight: 'calc(100vh - 300px)' }}>
           {mensagensFiltradas.length > 0 ? (
             mensagensFiltradas.map((mensagem) => (
               <MensagemAvancada
@@ -172,14 +178,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedUser, selectedGroup, us
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area */}
-        <div className="border-t p-4">
-          <InputMensagemAvancado 
-            onSendMessage={handleEnviarMensagem}
-            usuarios={selectedGroup ? usuarios : []}
-            isGroup={!!selectedGroup}
-          />
-        </div>
+        <InputMensagemAvancado 
+          destinatarioId={selectedUser?.id}
+          grupoId={selectedGroup?.id}
+          onSendMessage={handleEnviarMensagem}
+          usuarios={selectedGroup ? usuarios : []}
+          isGroup={!!selectedGroup}
+        />
       </CardContent>
     </Card>
   );
