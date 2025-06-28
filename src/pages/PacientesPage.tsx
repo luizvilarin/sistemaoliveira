@@ -4,14 +4,28 @@ import { useData } from '@/contexts/DataContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, HeartPulse, DollarSign, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Edit, HeartPulse, DollarSign, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import { formatDate, formatMoney } from '@/lib/utils';
+import { useToast } from '@/components/ui/use-toast';
 import PacienteForm from '@/components/pacientes/PacienteForm';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const PacientesPage = () => {
-  const { pacientes, isLoading } = useData();
+  const { pacientes, isLoading, deletePaciente } = useData();
+  const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPaciente, setEditingPaciente] = useState(null);
+  const [deletingPaciente, setDeletingPaciente] = useState(null);
 
   const handleEdit = (paciente: any) => {
     setEditingPaciente(paciente);
@@ -21,6 +35,24 @@ const PacientesPage = () => {
   const handleCloseForm = () => {
     setIsFormOpen(false);
     setEditingPaciente(null);
+  };
+
+  const handleDelete = async (paciente: any) => {
+    try {
+      await deletePaciente(paciente.id);
+      toast({
+        title: 'Paciente removido',
+        description: `${paciente.nome} foi removido com sucesso.`,
+      });
+      setDeletingPaciente(null);
+    } catch (error) {
+      console.error('Erro ao deletar paciente:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Não foi possível remover o paciente.',
+      });
+    }
   };
 
   if (isLoading) {
@@ -170,13 +202,45 @@ const PacientesPage = () => {
                   </TableCell>
                   <TableCell>{formatDate(paciente.created_at)}</TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(paciente)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(paciente)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Confirmar Remoção</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja remover o paciente <strong>{paciente.nome}</strong>? 
+                              Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(paciente)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Remover
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

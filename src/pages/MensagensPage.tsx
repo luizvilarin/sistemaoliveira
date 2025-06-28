@@ -1,160 +1,80 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { MessageSquare, Send, Search } from 'lucide-react';
+import { MessageSquare, Users, Mail } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
+import ChatUsersList from '@/components/mensagens/ChatUsersList';
+import ChatWindow from '@/components/mensagens/ChatWindow';
+
+interface UserProfile {
+  id: string;
+  nome: string;
+  email: string;
+  perfil: string;
+  avatar_url?: string;
+  ativo: boolean;
+}
 
 const MensagensPage = () => {
   const { mensagens } = useData();
-  const [selectedContact, setSelectedContact] = useState(null);
-  const [message, setMessage] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
 
-  const handleSendMessage = () => {
-    if (message.trim()) {
-      console.log('Enviando mensagem:', message);
-      setMessage('');
-    }
+  const handleUserSelect = (user: UserProfile) => {
+    setSelectedUser(user);
   };
-
-  const filteredMensagens = mensagens.filter(mensagem =>
-    mensagem.assunto.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    mensagem.conteudo.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Mensagens</h1>
-          <p className="text-gray-600">Comunicação com clientes e cuidadores</p>
+          <p className="text-gray-600">Comunicação com usuários do sistema</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Conversas</CardTitle>
+            <CardTitle className="text-sm font-medium">Total de Mensagens</CardTitle>
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{mensagens.length}</div>
           </CardContent>
         </Card>
+        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Mensagens Não Lidas</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <Mail className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{mensagens.filter(m => !m.lida).length}</div>
           </CardContent>
         </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Usuários Ativos</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">-</div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Mensagens</CardTitle>
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar mensagens..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="space-y-1">
-              {filteredMensagens.length > 0 ? (
-                filteredMensagens.map((mensagem) => (
-                  <div
-                    key={mensagem.id}
-                    className={`p-4 cursor-pointer hover:bg-gray-50 border-b ${
-                      selectedContact?.id === mensagem.id ? 'bg-blue-50' : ''
-                    }`}
-                    onClick={() => setSelectedContact(mensagem)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <MessageSquare className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium">{mensagem.assunto}</h4>
-                          <p className="text-xs text-gray-500">Remetente</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-gray-500">
-                          {new Date(mensagem.created_at).toLocaleDateString()}
-                        </p>
-                        {!mensagem.lida && (
-                          <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium text-white bg-red-500 rounded-full">
-                            1
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1 truncate">{mensagem.conteudo}</p>
-                  </div>
-                ))
-              ) : (
-                <div className="p-4 text-center text-gray-500">
-                  Nenhuma mensagem encontrada
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="lg:col-span-1">
+          <ChatUsersList 
+            onUserSelect={handleUserSelect}
+            selectedUser={selectedUser}
+          />
+        </div>
 
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>
-              {selectedContact ? `Mensagem: ${selectedContact.assunto}` : 'Selecione uma mensagem'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {selectedContact ? (
-              <div className="flex flex-col h-96">
-                <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-                  <div className="flex justify-start">
-                    <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-gray-100 text-gray-900">
-                      <p className="text-sm">{selectedContact.conteudo}</p>
-                      <p className="text-xs mt-1 text-gray-500">
-                        {new Date(selectedContact.created_at).toLocaleTimeString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 border-t">
-                  <div className="flex space-x-2">
-                    <Input
-                      placeholder="Digite sua mensagem..."
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    />
-                    <Button onClick={handleSendMessage}>
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-96 text-gray-500">
-                <div className="text-center">
-                  <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>Selecione uma mensagem para visualizar</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <div className="lg:col-span-2">
+          <ChatWindow selectedUser={selectedUser} />
+        </div>
       </div>
     </div>
   );

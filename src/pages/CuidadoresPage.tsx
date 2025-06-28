@@ -1,17 +1,40 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useData } from '@/contexts/DataContext';
+import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Edit, User, MapPin, Users } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { useToast } from '@/components/ui/use-toast';
 import CuidadorForm from '@/components/cuidadores/CuidadorForm';
 
 const CuidadoresPage = () => {
   const { cuidadores, isLoading } = useData();
+  const { toast } = useToast();
+  const location = useLocation();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCuidador, setEditingCuidador] = useState(null);
+
+  // Verificar se há um novo usuário cuidador para editar
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const newUserId = searchParams.get('new_user');
+    
+    if (newUserId) {
+      // Encontrar o cuidador recém-criado
+      const newCuidador = cuidadores.find(c => c.id === newUserId);
+      if (newCuidador) {
+        setEditingCuidador(newCuidador);
+        setIsFormOpen(true);
+        toast({
+          title: 'Bem-vindo!',
+          description: 'Complete as informações do seu perfil de cuidador.',
+        });
+      }
+    }
+  }, [location.search, cuidadores]);
 
   const handleEdit = (cuidador: any) => {
     setEditingCuidador(cuidador);
@@ -21,6 +44,11 @@ const CuidadoresPage = () => {
   const handleCloseForm = () => {
     setIsFormOpen(false);
     setEditingCuidador(null);
+    
+    // Limpar parâmetros da URL se existirem
+    if (location.search.includes('new_user')) {
+      window.history.replaceState({}, '', location.pathname);
+    }
   };
 
   if (isLoading) {
