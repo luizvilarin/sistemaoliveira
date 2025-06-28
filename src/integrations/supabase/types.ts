@@ -9,6 +9,44 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      arquivos_mensagem: {
+        Row: {
+          created_at: string
+          id: string
+          mensagem_id: string
+          nome_arquivo: string
+          tamanho: number
+          tipo_arquivo: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mensagem_id: string
+          nome_arquivo: string
+          tamanho: number
+          tipo_arquivo: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mensagem_id?: string
+          nome_arquivo?: string
+          tamanho?: number
+          tipo_arquivo?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arquivos_mensagem_mensagem_id_fkey"
+            columns: ["mensagem_id"]
+            isOneToOne: false
+            referencedRelation: "mensagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes: {
         Row: {
           contato: string
@@ -86,6 +124,36 @@ export type Database = {
           },
         ]
       }
+      grupos_chat: {
+        Row: {
+          created_at: string
+          criado_por: string
+          descricao: string | null
+          id: string
+          imagem_url: string | null
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          criado_por: string
+          descricao?: string | null
+          id?: string
+          imagem_url?: string | null
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          criado_por?: string
+          descricao?: string | null
+          id?: string
+          imagem_url?: string | null
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lembretes: {
         Row: {
           cliente_id: string | null
@@ -152,35 +220,96 @@ export type Database = {
           },
         ]
       }
+      membros_grupo: {
+        Row: {
+          adicionado_em: string
+          grupo_id: string
+          id: string
+          papel: string
+          usuario_id: string
+        }
+        Insert: {
+          adicionado_em?: string
+          grupo_id: string
+          id?: string
+          papel?: string
+          usuario_id: string
+        }
+        Update: {
+          adicionado_em?: string
+          grupo_id?: string
+          id?: string
+          papel?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membros_grupo_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos_chat"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mensagens: {
         Row: {
+          arquivo_nome: string | null
+          arquivo_url: string | null
           assunto: string
           conteudo: string
           created_at: string
           destinatario_id: string | null
+          duracao_audio: number | null
+          emoji_reacoes: Json | null
+          grupo_id: string | null
           id: string
           lida: boolean | null
+          mencoes: string[] | null
           remetente_id: string
+          tipo_mensagem: string
         }
         Insert: {
+          arquivo_nome?: string | null
+          arquivo_url?: string | null
           assunto: string
           conteudo: string
           created_at?: string
           destinatario_id?: string | null
+          duracao_audio?: number | null
+          emoji_reacoes?: Json | null
+          grupo_id?: string | null
           id?: string
           lida?: boolean | null
+          mencoes?: string[] | null
           remetente_id: string
+          tipo_mensagem?: string
         }
         Update: {
+          arquivo_nome?: string | null
+          arquivo_url?: string | null
           assunto?: string
           conteudo?: string
           created_at?: string
           destinatario_id?: string | null
+          duracao_audio?: number | null
+          emoji_reacoes?: Json | null
+          grupo_id?: string | null
           id?: string
           lida?: boolean | null
+          mencoes?: string[] | null
           remetente_id?: string
+          tipo_mensagem?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "mensagens_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos_chat"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notificacoes: {
         Row: {
@@ -212,9 +341,11 @@ export type Database = {
           created_at: string | null
           data_criacao: string | null
           data_vencimento: string | null
+          grupo_id: string | null
           id: string
           lida: boolean | null
           mensagem: string
+          mensagem_id: string | null
           metadados: Json | null
           tipo: string
           titulo: string
@@ -225,9 +356,11 @@ export type Database = {
           created_at?: string | null
           data_criacao?: string | null
           data_vencimento?: string | null
+          grupo_id?: string | null
           id?: string
           lida?: boolean | null
           mensagem: string
+          mensagem_id?: string | null
           metadados?: Json | null
           tipo: string
           titulo: string
@@ -238,15 +371,32 @@ export type Database = {
           created_at?: string | null
           data_criacao?: string | null
           data_vencimento?: string | null
+          grupo_id?: string | null
           id?: string
           lida?: boolean | null
           mensagem?: string
+          mensagem_id?: string | null
           metadados?: Json | null
           tipo?: string
           titulo?: string
           usuario_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notificacoes_sistema_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos_chat"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notificacoes_sistema_mensagem_id_fkey"
+            columns: ["mensagem_id"]
+            isOneToOne: false
+            referencedRelation: "mensagens"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pacientes: {
         Row: {
