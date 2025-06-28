@@ -8,6 +8,7 @@ import { Send, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UserProfile {
   id: string;
@@ -28,16 +29,16 @@ interface ChatMessage {
   remetente_id: string;
   destinatario_id: string;
   created_at: string;
-  remetente?: UserProfile;
+  assunto: string;
 }
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ selectedUser }) => {
   const { userProfile } = useAuth();
-  const { addMensagem } = useData();
   const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -50,36 +51,101 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedUser }) => {
 
   useEffect(() => {
     if (selectedUser && userProfile) {
-      // Por enquanto, vamos simular algumas mensagens
-      // Em um sistema real, você buscaria as mensagens do banco de dados
+      loadMessages();
+      
+      // Configurar realtime para mensagens
+      const channel = supabase
+        .channel(`chat-${selectedUser.id}-${userProfile.id}`)
+        .on('postgres_changes', 
+          { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'mensagens',
+            filter: `or(and(remetente_id.eq.${userProfile.id},destinatario_id.eq.${selectedUser.id}),and(remetente_id.eq.${selectedUser.id},destinatario_id.eq.${userProfile.id}))`
+          }, 
+          (payload) => {
+            console.log('Nova mensagem recebida:', payload);
+            const newMsg = payload.new as ChatMessage;
+            setMessages(prev => {
+              // Evitar duplicatas
+              if (prev.some(msg => msg.id === newMsg.id)) {
+                return prev;
+              }
+              return [...prev, newMsg].sort((a, b) => 
+                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+              );
+            });
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } else {
       setMessages([]);
     }
   }, [selectedUser, userProfile]);
 
-  const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedUser || !userProfile) return;
-
+  const loadMessages = async () => {
+    if (!selectedUser || !userProfile) return;
+    
     setIsLoading(true);
     try {
-      await addMensagem({
+      console.log('Carregando mensagens entre:', userProfile.id, 'e', selectedUser.id);
+      
+      const { data, error } = await supabase
+        .from('mensagens')
+        .select('*')
+        .or(`and(remetente_id.eq.${userProfile.id},destinatario_id.eq.${selectedUser.id}),and(remetente_id.eq.${selectedUser.id},destinatario_id.eq.${userProfile.id})`)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Erro ao carregar mensagens:', error);
+        throw error;
+      }
+
+      console.log('Mensagens carregadas:', data?.length || 0);
+      setMessages(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar mensagens:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Não foi possível carregar as mensagens.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedUser || !userProfile || isSending) return;
+
+    setIsSending(true);
+    try {
+      console.log('Enviando mensagem para:', selectedUser.id);
+      
+      const messageData = {
         assunto: `Mensagem para ${selectedUser.nome}`,
-        conteudo: newMessage,
+        conteudo: newMessage.trim(),
         remetente_id: userProfile.id,
         destinatario_id: selectedUser.id,
         lida: false,
-      });
-
-      // Adicionar mensagem localmente para feedback imediato
-      const localMessage: ChatMessage = {
-        id: Date.now().toString(),
-        conteudo: newMessage,
-        remetente_id: userProfile.id,
-        destinatario_id: selectedUser.id,
-        created_at: new Date().toISOString(),
-        remetente: userProfile,
       };
 
-      setMessages(prev => [...prev, localMessage]);
+      const { data, error } = await supabase
+        .from('mensagens')
+        .insert(messageData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erro ao enviar mensagem:', error);
+        throw error;
+      }
+
+      console.log('Mensagem enviada com sucesso:', data);
       setNewMessage('');
 
       toast({
@@ -91,10 +157,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedUser }) => {
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Não foi possível enviar a mensagem.',
+        description: 'Não foi possível enviar a mensagem. Tente novamente.',
       });
     } finally {
-      setIsLoading(false);
+      setIsSending(false);
     }
   };
 
@@ -146,7 +212,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedUser }) => {
       <CardContent className="p-0">
         <div className="flex flex-col h-96">
           <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-            {messages.length > 0 ? (
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              </div>
+            ) : messages.length > 0 ? (
               messages.map((message) => (
                 <div
                   key={message.id}
@@ -163,7 +233,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedUser }) => {
                   >
                     <p className="text-sm">{message.conteudo}</p>
                     <p className="text-xs mt-1 opacity-70">
-                      {new Date(message.created_at).toLocaleTimeString()}
+                      {new Date(message.created_at).toLocaleTimeString('pt-BR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
                     </p>
                   </div>
                 </div>
@@ -182,13 +255,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedUser }) => {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                disabled={isLoading}
+                disabled={isSending}
               />
               <Button 
                 onClick={handleSendMessage} 
-                disabled={isLoading || !newMessage.trim()}
+                disabled={isSending || !newMessage.trim()}
               >
-                <Send className="h-4 w-4" />
+                {isSending ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </div>

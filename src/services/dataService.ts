@@ -38,7 +38,8 @@ export const fetchAllData = async (user: User | null) => {
         cliente:clientes(*),
         cuidador:cuidadores(*)
       `),
-      supabase.from('mensagens').select('*').eq('destinatario_id', user.id),
+      // Buscar mensagens onde o usuário é remetente OU destinatário
+      supabase.from('mensagens').select('*').or(`remetente_id.eq.${user.id},destinatario_id.eq.${user.id}`),
       supabase.from('notificacoes').select('*').eq('usuario_id', user.id),
       supabase.from('notificacoes_sistema').select('*').eq('usuario_id', user.id)
     ]);

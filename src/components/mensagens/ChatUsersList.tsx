@@ -29,21 +29,46 @@ const ChatUsersList: React.FC<ChatUsersListProps> = ({ onUserSelect, selectedUse
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+    
+    // Configurar realtime para atualizações de usuários
+    const channel = supabase
+      .channel('profiles-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'profiles' }, 
+        () => {
+          console.log('Perfil atualizado, recarregando lista de usuários');
+          fetchUsers();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userProfile]);
 
   const fetchUsers = async () => {
     try {
+      console.log('Buscando usuários ativos...');
+      
+      // Buscar todos os perfis ativos exceto o próprio usuário
       const { data, error } = await supabase
         .from('profiles')
         .select('id, nome, email, perfil, avatar_url, ativo')
-        .neq('id', userProfile?.id) // Excluir o próprio usuário
+        .neq('id', userProfile?.id)
         .eq('ativo', true)
         .order('nome');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar usuários:', error);
+        throw error;
+      }
+      
+      console.log('Usuários encontrados:', data?.length || 0);
       setUsers(data || []);
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);
+      setUsers([]);
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +106,7 @@ const ChatUsersList: React.FC<ChatUsersListProps> = ({ onUserSelect, selectedUse
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Usuários Ativos</CardTitle>
+        <CardTitle>Usuários Ativos ({filteredUsers.length})</CardTitle>
         <div className="relative">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -129,7 +154,7 @@ const ChatUsersList: React.FC<ChatUsersListProps> = ({ onUserSelect, selectedUse
             ))
           ) : (
             <div className="p-4 text-center text-gray-500">
-              {searchTerm ? 'Nenhum usuário encontrado' : 'Nenhum usuário ativo'}
+              {searchTerm ? 'Nenhum usuário encontrado' : 'Nenhum usuário ativo disponível'}
             </div>
           )}
         </div>
