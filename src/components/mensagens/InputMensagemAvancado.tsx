@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Send, X } from 'lucide-react';
 import { UserProfile } from '@/types/chat';
 import { useChat } from '@/hooks/useChat';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import EmojiPicker from './EmojiPicker';
 import MentionsList from './MentionsList';
 import FileAttachments from './FileAttachments';
@@ -85,11 +85,6 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
       setMencoes([]);
       setArquivos([]);
       onEnviar?.();
-      
-      toast({
-        title: 'Mensagem enviada',
-        description: 'Sua mensagem foi enviada com sucesso!'
-      });
       
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
@@ -171,10 +166,10 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
       const audioNome = `audio_${Date.now()}.webm`;
       
       if (onSendMessage) {
-        await onSendMessage('Áudio', 'audio', audioUrl, audioNome, duration, []);
+        await onSendMessage('🎤 Mensagem de áudio', 'audio', audioUrl, audioNome, duration, []);
       } else {
         await enviarMensagem(
-          'Áudio',
+          '🎤 Mensagem de áudio',
           destinatarioId,
           grupoId,
           'audio',
@@ -184,11 +179,6 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
           []
         );
       }
-      
-      toast({
-        title: 'Áudio enviado',
-        description: `Áudio de ${duration} segundos enviado com sucesso!`
-      });
       
     } catch (error) {
       console.error('Erro ao enviar áudio:', error);

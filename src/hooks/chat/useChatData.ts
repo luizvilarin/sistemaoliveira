@@ -15,25 +15,34 @@ export const useChatData = (userProfile: any) => {
     try {
       console.log('Carregando grupos para usuário:', userProfile.id);
       
-      // Buscar grupos onde o usuário é membro ou criador
-      const { data: gruposData, error } = await supabase
+      // Buscar grupos onde o usuário é membro
+      const { data: gruposMembros, error: errorMembros } = await supabase
         .from('grupos_chat')
         .select(`
           *,
           membros_grupo!inner(usuario_id, papel)
         `)
-        .or(`criado_por.eq.${userProfile.id},membros_grupo.usuario_id.eq.${userProfile.id}`)
+        .eq('membros_grupo.usuario_id', userProfile.id)
         .order('updated_at', { ascending: false });
 
-      if (error) {
-        console.error('Erro ao carregar grupos:', error);
-        throw error;
+      if (errorMembros) {
+        console.error('Erro ao carregar grupos como membro:', errorMembros);
       }
 
-      console.log('Grupos carregados:', gruposData);
-      
-      // Remover duplicatas baseado no ID
-      const gruposUnicos = gruposData?.reduce((acc, grupo) => {
+      // Buscar grupos criados pelo usuário
+      const { data: gruposCriados, error: errorCriados } = await supabase
+        .from('grupos_chat')
+        .select('*')
+        .eq('criado_por', userProfile.id)
+        .order('updated_at', { ascending: false });
+
+      if (errorCriados) {
+        console.error('Erro ao carregar grupos criados:', errorCriados);
+      }
+
+      // Combinar e remover duplicatas
+      const todosGrupos = [...(gruposMembros || []), ...(gruposCriados || [])];
+      const gruposUnicos = todosGrupos.reduce((acc, grupo) => {
         if (!acc.find(g => g.id === grupo.id)) {
           acc.push({
             id: grupo.id,
@@ -46,8 +55,9 @@ export const useChatData = (userProfile: any) => {
           });
         }
         return acc;
-      }, [] as GrupoChat[]) || [];
+      }, [] as GrupoChat[]);
 
+      console.log('Grupos carregados:', gruposUnicos.length);
       setGrupos(gruposUnicos);
     } catch (error) {
       console.error('Erro ao carregar grupos:', error);
@@ -99,18 +109,38 @@ export const useChatData = (userProfile: any) => {
     try {
       console.log('Carregando mensagens para usuário:', userProfile.id);
       
-      const { data, error } = await supabase
+      // Buscar mensagens individuais (onde o usuário é remetente ou destinatário)
+      const { data: mensagensIndividuais, error: errorIndividuais } = await supabase
         .from('mensagens')
         .select('*')
-        .or(`remetente_id.eq.${userProfile.id},destinatario_id.eq.${userProfile.id},grupo_id.in.(${grupos.map(g => g.id).join(',') || 'null'})`)
+        .or(`remetente_id.eq.${userProfile.id},destinatario_id.eq.${userProfile.id}`)
+        .is('grupo_id', null)
         .order('created_at', { ascending: true });
 
-      if (error) {
-        console.error('Erro ao carregar mensagens:', error);
-        throw error;
+      if (errorIndividuais) {
+        console.error('Erro ao carregar mensagens individuais:', errorIndividuais);
       }
 
-      const mensagensFormatadas: MensagensAvancada[] = (data || []).map(msg => ({
+      // Buscar mensagens de grupos (onde o usuário é membro)
+      let mensagensGrupos: any[] = [];
+      if (grupos.length > 0) {
+        const { data: mensagensGrupo, error: errorGrupos } = await supabase
+          .from('mensagens')
+          .select('*')
+          .in('grupo_id', grupos.map(g => g.id))
+          .order('created_at', { ascending: true });
+
+        if (errorGrupos) {
+          console.error('Erro ao carregar mensagens de grupos:', errorGrupos);
+        } else {
+          mensagensGrupos = mensagensGrupo || [];
+        }
+      }
+
+      // Combinar todas as mensagens
+      const todasMensagens = [...(mensagensIndividuais || []), ...mensagensGrupos];
+
+      const mensagensFormatadas: MensagensAvancada[] = todasMensagens.map(msg => ({
         ...msg,
         tipo_mensagem: msg.tipo_mensagem as 'texto' | 'imagem' | 'video' | 'audio' | 'arquivo',
         emoji_reacoes: (msg.emoji_reacoes as Record<string, string[]>) || {}

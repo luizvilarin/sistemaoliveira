@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export const useChatActions = (userProfile: any) => {
   const { toast } = useToast();
@@ -140,11 +140,6 @@ export const useChatActions = (userProfile: any) => {
       return data;
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Não foi possível enviar a mensagem. Verifique sua conexão.'
-      });
       throw error;
     }
   };

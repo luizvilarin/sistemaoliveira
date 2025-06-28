@@ -27,17 +27,27 @@ export const useChat = () => {
   } = useChatActions(userProfile);
 
   // Setup realtime subscriptions
-  useChatRealtime(userProfile, carregarGrupos, setMensagens);
+  useChatRealtime(userProfile, carregarGrupos, carregarMensagens, setMensagens);
 
   useEffect(() => {
     if (userProfile) {
+      console.log('Carregando dados do chat para:', userProfile.nome);
       Promise.all([
-        carregarGrupos(),
         carregarUsuarios(),
-        carregarMensagens()
-      ]).finally(() => setLoading(false));
+        carregarGrupos()
+      ]).then(() => {
+        // Carregar mensagens após carregar grupos para ter acesso aos IDs dos grupos
+        carregarMensagens();
+      }).finally(() => setLoading(false));
     }
   }, [userProfile]);
+
+  // Recarregar mensagens quando grupos mudarem
+  useEffect(() => {
+    if (userProfile && grupos.length >= 0) {
+      carregarMensagens();
+    }
+  }, [grupos, userProfile]);
 
   return {
     grupos,
