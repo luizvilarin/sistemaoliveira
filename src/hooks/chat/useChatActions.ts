@@ -104,7 +104,7 @@ export const useChatActions = (userProfile: any) => {
 
     try {
       console.log('Enviando mensagem:', {
-        conteudo,
+        conteudo: conteudo.substring(0, 50) + '...',
         destinatarioId,
         grupoId,
         tipoMensagem,
@@ -136,7 +136,7 @@ export const useChatActions = (userProfile: any) => {
         throw error;
       }
 
-      console.log('Mensagem enviada com sucesso:', data);
+      console.log('Mensagem enviada com sucesso:', data.id);
       return data;
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);

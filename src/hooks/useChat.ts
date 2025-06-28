@@ -31,23 +31,26 @@ export const useChat = () => {
 
   useEffect(() => {
     if (userProfile) {
-      console.log('Carregando dados do chat para:', userProfile.nome);
+      console.log('Iniciando carregamento de dados do chat para:', userProfile.nome);
+      setLoading(true);
+      
+      // Carregar dados em paralelo de forma otimizada
       Promise.all([
         carregarUsuarios(),
-        carregarGrupos()
-      ]).then(() => {
-        // Carregar mensagens após carregar grupos para ter acesso aos IDs dos grupos
-        carregarMensagens();
-      }).finally(() => setLoading(false));
+        carregarGrupos(),
+        carregarMensagens() // Não depende mais dos grupos
+      ])
+      .then(() => {
+        console.log('Todos os dados do chat carregados com sucesso');
+      })
+      .catch((error) => {
+        console.error('Erro ao carregar dados do chat:', error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
     }
   }, [userProfile]);
-
-  // Recarregar mensagens quando grupos mudarem
-  useEffect(() => {
-    if (userProfile && grupos.length >= 0) {
-      carregarMensagens();
-    }
-  }, [grupos, userProfile]);
 
   return {
     grupos,

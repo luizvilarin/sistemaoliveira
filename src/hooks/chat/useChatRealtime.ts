@@ -14,7 +14,7 @@ export const useChatRealtime = (
 
     console.log('Configurando realtime para usuário:', userProfile.id);
 
-    // Setup realtime subscriptions
+    // Canal para grupos - recarregar quando houver mudanças
     const gruposChannel = supabase
       .channel('grupos-realtime')
       .on('postgres_changes', { 
@@ -35,6 +35,7 @@ export const useChatRealtime = (
       })
       .subscribe();
 
+    // Canal para mensagens - adicionar em tempo real
     const mensagensChannel = supabase
       .channel('mensagens-realtime')
       .on('postgres_changes', { 
@@ -44,22 +45,28 @@ export const useChatRealtime = (
       }, (payload) => {
         console.log('Nova mensagem inserida:', payload);
         const novaMensagem = payload.new as any;
-        const mensagemFormatada: MensagensAvancada = {
-          ...novaMensagem,
-          tipo_mensagem: novaMensagem.tipo_mensagem as 'texto' | 'imagem' | 'video' | 'audio' | 'arquivo',
-          emoji_reacoes: novaMensagem.emoji_reacoes as Record<string, string[]> || {}
-        };
         
-        // Só adicionar se a mensagem é relevante para o usuário atual
-        if (novaMensagem.remetente_id === userProfile.id || 
-            novaMensagem.destinatario_id === userProfile.id ||
-            novaMensagem.grupo_id) {
+        // Verificar se a mensagem é relevante para o usuário
+        const isRelevant = 
+          novaMensagem.remetente_id === userProfile.id || 
+          novaMensagem.destinatario_id === userProfile.id ||
+          novaMensagem.grupo_id; // Grupos serão filtrados pelo RLS
+
+        if (isRelevant) {
+          const mensagemFormatada: MensagensAvancada = {
+            ...novaMensagem,
+            tipo_mensagem: novaMensagem.tipo_mensagem as 'texto' | 'imagem' | 'video' | 'audio' | 'arquivo',
+            emoji_reacoes: novaMensagem.emoji_reacoes as Record<string, string[]> || {}
+          };
+          
           setMensagens(prev => {
             // Evitar duplicatas
             if (prev.find(m => m.id === mensagemFormatada.id)) {
               return prev;
             }
-            return [...prev, mensagemFormatada];
+            return [...prev, mensagemFormatada].sort((a, b) => 
+              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            );
           });
         }
       })
@@ -75,7 +82,10 @@ export const useChatRealtime = (
           tipo_mensagem: mensagemAtualizada.tipo_mensagem as 'texto' | 'imagem' | 'video' | 'audio' | 'arquivo',
           emoji_reacoes: mensagemAtualizada.emoji_reacoes as Record<string, string[]> || {}
         };
-        setMensagens(prev => prev.map(m => m.id === mensagemFormatada.id ? mensagemFormatada : m));
+        
+        setMensagens(prev => 
+          prev.map(m => m.id === mensagemFormatada.id ? mensagemFormatada : m)
+        );
       })
       .subscribe();
 

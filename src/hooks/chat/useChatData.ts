@@ -80,13 +80,10 @@ export const useChatData = (userProfile: any) => {
 
       // Aplicar filtros baseados no perfil do usuário
       if (userProfile.perfil === 'gestor') {
-        // Gestores podem ver admins, outros gestores e cuidadores
         query = query.in('perfil', ['admin', 'gestor', 'cuidador']);
       } else if (userProfile.perfil === 'cuidador') {
-        // Cuidadores podem ver gestores e outros cuidadores
         query = query.in('perfil', ['gestor', 'cuidador']);
       }
-      // Admins já podem ver todos devido às políticas RLS
 
       const { data, error } = await query;
 
@@ -109,38 +106,34 @@ export const useChatData = (userProfile: any) => {
     try {
       console.log('Carregando mensagens para usuário:', userProfile.id);
       
-      // Buscar mensagens individuais (onde o usuário é remetente ou destinatário)
-      const { data: mensagensIndividuais, error: errorIndividuais } = await supabase
+      // Buscar TODAS as mensagens relevantes em uma única consulta otimizada
+      const { data: todasMensagens, error } = await supabase
         .from('mensagens')
         .select('*')
-        .or(`remetente_id.eq.${userProfile.id},destinatario_id.eq.${userProfile.id}`)
-        .is('grupo_id', null)
+        .or(`remetente_id.eq.${userProfile.id},destinatario_id.eq.${userProfile.id},grupo_id.not.is.null`)
         .order('created_at', { ascending: true });
 
-      if (errorIndividuais) {
-        console.error('Erro ao carregar mensagens individuais:', errorIndividuais);
+      if (error) {
+        console.error('Erro ao carregar mensagens:', error);
+        throw error;
       }
 
-      // Buscar mensagens de grupos (onde o usuário é membro)
-      let mensagensGrupos: any[] = [];
-      if (grupos.length > 0) {
-        const { data: mensagensGrupo, error: errorGrupos } = await supabase
-          .from('mensagens')
-          .select('*')
-          .in('grupo_id', grupos.map(g => g.id))
-          .order('created_at', { ascending: true });
-
-        if (errorGrupos) {
-          console.error('Erro ao carregar mensagens de grupos:', errorGrupos);
-        } else {
-          mensagensGrupos = mensagensGrupo || [];
+      // Filtrar mensagens relevantes no cliente (mais eficiente que múltiplas consultas)
+      const mensagensRelevantes = todasMensagens?.filter(msg => {
+        // Mensagens individuais onde o usuário é remetente ou destinatário
+        if (msg.remetente_id === userProfile.id || msg.destinatario_id === userProfile.id) {
+          return true;
         }
-      }
+        
+        // Mensagens de grupo - será filtrado posteriormente pelo sistema de realtime
+        if (msg.grupo_id) {
+          return true; // Deixamos o RLS filtrar isso
+        }
+        
+        return false;
+      }) || [];
 
-      // Combinar todas as mensagens
-      const todasMensagens = [...(mensagensIndividuais || []), ...mensagensGrupos];
-
-      const mensagensFormatadas: MensagensAvancada[] = todasMensagens.map(msg => ({
+      const mensagensFormatadas: MensagensAvancada[] = mensagensRelevantes.map(msg => ({
         ...msg,
         tipo_mensagem: msg.tipo_mensagem as 'texto' | 'imagem' | 'video' | 'audio' | 'arquivo',
         emoji_reacoes: (msg.emoji_reacoes as Record<string, string[]>) || {}
