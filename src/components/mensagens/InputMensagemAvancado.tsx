@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send } from 'lucide-react';
+import { Send, X } from 'lucide-react';
 import { UserProfile } from '@/types/chat';
 import { useChat } from '@/hooks/useChat';
 import EmojiPicker from './EmojiPicker';
