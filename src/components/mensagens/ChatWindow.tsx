@@ -154,8 +154,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedUser, selectedGroup, us
               <MensagemAvancada
                 key={mensagem.id}
                 mensagem={mensagem}
-                isOwn={mensagem.remetente_id === userProfile?.id}
                 usuarios={usuarios}
+                isGroup={!!selectedGroup}
                 onAddReaction={(emoji) => adicionarReacao(mensagem.id, emoji)}
                 onMarkAsRead={() => marcarComoLida(mensagem.id)}
               />

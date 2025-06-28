@@ -25,6 +25,15 @@ interface InputMensagemAvancadoProps {
   destinatarioId?: string;
   grupoId?: string;
   usuarios: UserProfile[];
+  isGroup?: boolean;
+  onSendMessage?: (
+    conteudo: string,
+    tipoMensagem?: 'texto' | 'imagem' | 'video' | 'audio' | 'arquivo',
+    arquivoUrl?: string,
+    arquivoNome?: string,
+    duracaoAudio?: number,
+    mencoes?: string[]
+  ) => Promise<void>;
   onEnviar?: () => void;
 }
 
@@ -39,6 +48,8 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
   destinatarioId,
   grupoId,
   usuarios,
+  isGroup = false,
+  onSendMessage,
   onEnviar
 }) => {
   const { enviarMensagem } = useChat();
@@ -58,7 +69,9 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
 
     setIsEnviando(true);
     try {
-      if (arquivos.length > 0) {
+      if (onSendMessage) {
+        await onSendMessage(mensagem, 'texto', undefined, undefined, undefined, mencoes);
+      } else if (arquivos.length > 0) {
         // TODO: Implementar upload de arquivos
         console.log('Upload de arquivos não implementado ainda');
       } else {
@@ -219,32 +232,34 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
           />
 
           {/* Menções */}
-          <Popover open={showMencoes} onOpenChange={setShowMencoes}>
-            <PopoverTrigger asChild>
-              <Button size="sm" variant="ghost">
-                <AtSign className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64 p-2">
-              <div className="max-h-48 overflow-y-auto">
-                {usuarios.map(usuario => (
-                  <div
-                    key={usuario.id}
-                    className="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded cursor-pointer"
-                    onClick={() => insertarMencao(usuario)}
-                  >
-                    <Avatar className="w-6 h-6">
-                      <AvatarImage src={usuario.avatar_url} alt={usuario.nome} />
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                        {getInitials(usuario.nome)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm">{usuario.nome}</span>
-                  </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+          {isGroup && (
+            <Popover open={showMencoes} onOpenChange={setShowMencoes}>
+              <PopoverTrigger asChild>
+                <Button size="sm" variant="ghost">
+                  <AtSign className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-2">
+                <div className="max-h-48 overflow-y-auto">
+                  {usuarios.map(usuario => (
+                    <div
+                      key={usuario.id}
+                      className="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded cursor-pointer"
+                      onClick={() => insertarMencao(usuario)}
+                    >
+                      <Avatar className="w-6 h-6">
+                        <AvatarImage src={usuario.avatar_url} alt={usuario.nome} />
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                          {getInitials(usuario.nome)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm">{usuario.nome}</span>
+                    </div>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
 
           {/* Emojis */}
           <Popover>

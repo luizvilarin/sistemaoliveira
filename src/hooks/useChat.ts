@@ -33,11 +33,21 @@ export const useChat = () => {
         .channel('mensagens-realtime')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'mensagens' }, (payload) => {
           if (payload.eventType === 'INSERT') {
-            const novaMensagem = payload.new as MensagensAvancada;
-            setMensagens(prev => [...prev, novaMensagem]);
+            const novaMensagem = payload.new as any;
+            const mensagemFormatada: MensagensAvancada = {
+              ...novaMensagem,
+              tipo_mensagem: novaMensagem.tipo_mensagem as 'texto' | 'imagem' | 'video' | 'audio' | 'arquivo',
+              emoji_reacoes: novaMensagem.emoji_reacoes as Record<string, string[]> || {}
+            };
+            setMensagens(prev => [...prev, mensagemFormatada]);
           } else if (payload.eventType === 'UPDATE') {
-            const mensagemAtualizada = payload.new as MensagensAvancada;
-            setMensagens(prev => prev.map(m => m.id === mensagemAtualizada.id ? mensagemAtualizada : m));
+            const mensagemAtualizada = payload.new as any;
+            const mensagemFormatada: MensagensAvancada = {
+              ...mensagemAtualizada,
+              tipo_mensagem: mensagemAtualizada.tipo_mensagem as 'texto' | 'imagem' | 'video' | 'audio' | 'arquivo',
+              emoji_reacoes: mensagemAtualizada.emoji_reacoes as Record<string, string[]> || {}
+            };
+            setMensagens(prev => prev.map(m => m.id === mensagemFormatada.id ? mensagemFormatada : m));
           }
         })
         .subscribe();
@@ -87,12 +97,13 @@ export const useChat = () => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      // Fazer cast explícito para garantir compatibilidade de tipos
-      const mensagensTyped = (data || []).map(msg => ({
+      // Converter os dados do banco para o formato esperado
+      const mensagensFormatadas: MensagensAvancada[] = (data || []).map(msg => ({
         ...msg,
-        tipo_mensagem: msg.tipo_mensagem as 'texto' | 'imagem' | 'video' | 'audio' | 'arquivo'
+        tipo_mensagem: msg.tipo_mensagem as 'texto' | 'imagem' | 'video' | 'audio' | 'arquivo',
+        emoji_reacoes: (msg.emoji_reacoes as Record<string, string[]>) || {}
       }));
-      setMensagens(mensagensTyped);
+      setMensagens(mensagensFormatadas);
     } catch (error) {
       console.error('Erro ao carregar mensagens:', error);
     }

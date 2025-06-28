@@ -28,12 +28,13 @@ import {
 } from "@/components/ui/popover";
 import { MensagensAvancada, UserProfile } from '@/types/chat';
 import { useAuth } from '@/contexts/AuthContext';
-import { useChat } from '@/hooks/useChat';
 
 interface MensagemAvancadaProps {
   mensagem: MensagensAvancada;
   usuarios: UserProfile[];
   isGroup?: boolean;
+  onAddReaction?: (emoji: string) => Promise<void>;
+  onMarkAsRead?: () => Promise<void>;
 }
 
 const emojis = ['👍', '❤️', '😂', '😮', '😢', '😡', '👏', '🎉'];
@@ -41,10 +42,11 @@ const emojis = ['👍', '❤️', '😂', '😮', '😢', '😡', '👏', '🎉'
 const MensagemAvancada: React.FC<MensagemAvancadaProps> = ({ 
   mensagem, 
   usuarios, 
-  isGroup = false 
+  isGroup = false,
+  onAddReaction,
+  onMarkAsRead
 }) => {
   const { userProfile } = useAuth();
-  const { adicionarReacao, marcarComoLida } = useChat();
   const [isPlaying, setIsPlaying] = useState(false);
   
   const remetente = usuarios.find(u => u.id === mensagem.remetente_id);
@@ -77,7 +79,9 @@ const MensagemAvancada: React.FC<MensagemAvancadaProps> = ({
   };
 
   const handleReacao = async (emoji: string) => {
-    await adicionarReacao(mensagem.id, emoji);
+    if (onAddReaction) {
+      await onAddReaction(emoji);
+    }
   };
 
   const renderConteudoMensagem = () => {
@@ -86,10 +90,10 @@ const MensagemAvancada: React.FC<MensagemAvancadaProps> = ({
         return (
           <div className="max-w-xs">
             <img 
-              src={mensagem.arquivo_url} 
+              src={mensagem.arquivo_url || ''} 
               alt={mensagem.arquivo_nome || 'Imagem'}
               className="rounded-lg max-w-full h-auto cursor-pointer hover:opacity-90"
-              onClick={() => window.open(mensagem.arquivo_url, '_blank')}
+              onClick={() => window.open(mensagem.arquivo_url || '', '_blank')}
             />
             {mensagem.conteudo && (
               <p className="mt-2 text-sm">{mensagem.conteudo}</p>
@@ -105,7 +109,7 @@ const MensagemAvancada: React.FC<MensagemAvancadaProps> = ({
               className="rounded-lg max-w-full h-auto"
               preload="metadata"
             >
-              <source src={mensagem.arquivo_url} type="video/mp4" />
+              <source src={mensagem.arquivo_url || ''} type="video/mp4" />
               Seu navegador não suporta vídeo.
             </video>
             {mensagem.conteudo && (
@@ -133,7 +137,7 @@ const MensagemAvancada: React.FC<MensagemAvancadaProps> = ({
               )}
             </div>
             <audio
-              src={mensagem.arquivo_url}
+              src={mensagem.arquivo_url || ''}
               onPlay={() => setIsPlaying(true)}
               onPause={() => setIsPlaying(false)}
               onEnded={() => setIsPlaying(false)}
@@ -156,7 +160,7 @@ const MensagemAvancada: React.FC<MensagemAvancadaProps> = ({
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => window.open(mensagem.arquivo_url, '_blank')}
+              onClick={() => window.open(mensagem.arquivo_url || '', '_blank')}
             >
               <Download className="h-4 w-4" />
             </Button>
@@ -176,13 +180,18 @@ const MensagemAvancada: React.FC<MensagemAvancadaProps> = ({
   };
 
   const renderReacoes = () => {
-    if (!mensagem.emoji_reacoes || Object.keys(mensagem.emoji_reacoes).length === 0) {
+    if (!mensagem.emoji_reacoes || typeof mensagem.emoji_reacoes !== 'object') {
+      return null;
+    }
+
+    const reacoes = mensagem.emoji_reacoes as Record<string, string[]>;
+    if (Object.keys(reacoes).length === 0) {
       return null;
     }
 
     return (
       <div className="flex flex-wrap gap-1 mt-2">
-        {Object.entries(mensagem.emoji_reacoes).map(([emoji, userIds]) => (
+        {Object.entries(reacoes).map(([emoji, userIds]) => (
           <Badge
             key={emoji}
             variant="secondary"
@@ -197,7 +206,7 @@ const MensagemAvancada: React.FC<MensagemAvancadaProps> = ({
   };
 
   return (
-    <div className={`flex ${isMyMessage ? 'justify-end' : 'justify-start'} mb-4`}>
+    <div className={`flex ${isMyMessage ? 'justify-end' : 'justify-start'} mb-4 group`}>
       <div className={`max-w-xs lg:max-w-md ${isMyMessage ? 'order-2' : 'order-1'}`}>
         {/* Avatar e info do remetente (apenas para grupos e mensagens dos outros) */}
         {!isMyMessage && (
