@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +12,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import RedefinirSenha from '@/components/configuracoes/RedefinirSenha';
 
 const profileSchema = z.object({
   nome: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres' }),
@@ -88,7 +89,6 @@ const ConfiguracoesPage = () => {
     try {
       let avatarUrl = userProfile?.avatar_url;
 
-      // Upload do avatar se houver
       if (avatar) {
         const uploadedAvatarUrl = await uploadAvatar(avatar);
         if (uploadedAvatarUrl) {
@@ -96,7 +96,6 @@ const ConfiguracoesPage = () => {
         }
       }
 
-      // Atualizar perfil no banco
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
@@ -108,14 +107,12 @@ const ConfiguracoesPage = () => {
 
       if (profileError) throw profileError;
 
-      // Atualizar email no auth se mudou
       if (values.email !== userProfile?.email) {
         const { error: authError } = await supabase.auth.updateUser({
           email: values.email,
         });
 
         if (authError) {
-          // Se erro no auth, reverter mudança no profile
           await supabase
             .from('profiles')
             .update({ email: userProfile?.email })
@@ -124,7 +121,6 @@ const ConfiguracoesPage = () => {
         }
       }
 
-      // Refresh do perfil
       await refreshProfile();
 
       toast({
@@ -132,7 +128,6 @@ const ConfiguracoesPage = () => {
         description: 'Suas informações foram salvas com sucesso!',
       });
 
-      // Limpar preview
       setAvatar(null);
       setAvatarPreview(null);
     } catch (error: any) {
@@ -160,115 +155,128 @@ const ConfiguracoesPage = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Configurações</h1>
-        <p className="text-gray-600">Gerencie suas informações pessoais</p>
+        <p className="text-gray-600">Gerencie suas informações pessoais e configurações</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Informações Pessoais</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="nome"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Seu nome completo" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+      <Tabs defaultValue="perfil" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="perfil">Perfil</TabsTrigger>
+          <TabsTrigger value="senha">Senha</TabsTrigger>
+        </TabsList>
 
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="email" placeholder="seu@email.com" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+        <TabsContent value="perfil">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Informações Pessoais</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="nome"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nome</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Seu nome completo" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <Button type="submit" disabled={isLoading}>
-                    <Save className="h-4 w-4 mr-2" />
-                    {isLoading ? 'Salvando...' : 'Salvar Alterações'}
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        </div>
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="email" placeholder="seu@email.com" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Foto de Perfil</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col items-center space-y-4">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage 
-                    src={avatarPreview || userProfile?.avatar_url || ''} 
-                    alt={userProfile?.nome || ''} 
-                  />
-                  <AvatarFallback className="text-lg">
-                    {userProfile?.nome ? getInitials(userProfile.nome) : <User className="h-8 w-8" />}
-                  </AvatarFallback>
-                </Avatar>
-                
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                  className="hidden"
-                />
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Camera className="h-4 w-4 mr-2" />
-                  Alterar Foto
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                      <Button type="submit" disabled={isLoading}>
+                        <Save className="h-4 w-4 mr-2" />
+                        {isLoading ? 'Salvando...' : 'Salvar Alterações'}
+                      </Button>
+                    </form>
+                  </Form>
+                </CardContent>
+              </Card>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Informações da Conta</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div>
-                <Label className="text-sm font-medium text-gray-500">Perfil</Label>
-                <p className="text-sm">{userProfile?.perfil}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-500">Data de Criação</Label>
-                <p className="text-sm">
-                  {userProfile?.created_at 
-                    ? new Date(userProfile.created_at).toLocaleDateString('pt-BR')
-                    : 'N/A'
-                  }
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            <div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Foto de Perfil</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-col items-center space-y-4">
+                    <Avatar className="h-24 w-24">
+                      <AvatarImage 
+                        src={avatarPreview || userProfile?.avatar_url || ''} 
+                        alt={userProfile?.nome || ''} 
+                      />
+                      <AvatarFallback className="text-lg">
+                        {userProfile?.nome ? getInitials(userProfile.nome) : <User className="h-8 w-8" />}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="hidden"
+                    />
+                    
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Camera className="h-4 w-4 mr-2" />
+                      Alterar Foto
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Informações da Conta</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-500">Perfil</Label>
+                    <p className="text-sm">{userProfile?.perfil}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-500">Data de Criação</Label>
+                    <p className="text-sm">
+                      {userProfile?.created_at 
+                        ? new Date(userProfile.created_at).toLocaleDateString('pt-BR')
+                        : 'N/A'
+                      }
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="senha">
+          <RedefinirSenha />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
