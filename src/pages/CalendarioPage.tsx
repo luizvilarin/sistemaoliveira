@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { Calendar, Plus, Clock, MapPin, User, Edit, Trash2, AlertTriangle } from 'lucide-react';
 import LembreteForm from '@/components/lembretes/LembreteForm';
+import CalendarioInterativo from '@/components/calendario/CalendarioInterativo';
 import { formatDate } from '@/lib/utils';
 import {
   AlertDialog,
@@ -25,6 +26,7 @@ const CalendarioPage = () => {
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingLembrete, setEditingLembrete] = useState(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   if (isLoading) {
     return (
@@ -58,6 +60,12 @@ const CalendarioPage = () => {
   const handleCloseForm = () => {
     setIsFormOpen(false);
     setEditingLembrete(null);
+    setSelectedDate(null);
+  };
+
+  const handleCreateFromCalendar = (data: Date) => {
+    setSelectedDate(data);
+    setIsFormOpen(true);
   };
 
   const getStatusBadge = (status: string) => {
@@ -98,36 +106,36 @@ const CalendarioPage = () => {
   }, {} as Record<string, typeof lembretes>);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-6 p-2 md:p-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Calendário e Lembretes</h1>
-          <p className="text-gray-600">Gerencie os lembretes e agendamentos</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Calendário e Lembretes</h1>
+          <p className="text-gray-600 text-sm md:text-base">Gerencie os lembretes e agendamentos</p>
         </div>
-        <Button onClick={() => setIsFormOpen(true)}>
+        <Button onClick={() => setIsFormOpen(true)} className="w-full md:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Novo Lembrete
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-4 md:mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Lembretes</CardTitle>
+            <CardTitle className="text-xs md:text-sm font-medium">Total de Lembretes</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{lembretes.length}</div>
+            <div className="text-xl md:text-2xl font-bold">{lembretes.length}</div>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Hoje</CardTitle>
+            <CardTitle className="text-xs md:text-sm font-medium">Hoje</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-xl md:text-2xl font-bold">
               {lembretesPorData[new Date().toISOString().split('T')[0]]?.length || 0}
             </div>
           </CardContent>
@@ -135,11 +143,11 @@ const CalendarioPage = () => {
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Esta Semana</CardTitle>
+            <CardTitle className="text-xs md:text-sm font-medium">Esta Semana</CardTitle>
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-xl md:text-2xl font-bold">
               {lembretes.filter(l => {
                 const lembreteDate = new Date(l.dia);
                 const today = new Date();
@@ -153,36 +161,43 @@ const CalendarioPage = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Urgentes</CardTitle>
+            <CardTitle className="text-xs md:text-sm font-medium">Urgentes</CardTitle>
             <AlertTriangle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-xl md:text-2xl font-bold text-red-600">
               {lembretes.filter(l => l.urgente).length}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="space-y-6">
+      {/* Calendário Interativo */}
+      <CalendarioInterativo 
+        lembretes={lembretes} 
+        onCreateLembrete={handleCreateFromCalendar}
+      />
+
+      {/* Lista de lembretes por data */}
+      <div className="space-y-4 md:space-y-6">
         {Object.keys(lembretesPorData)
           .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
           .map((data) => (
             <Card key={data}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                  <Calendar className="h-4 md:h-5 w-4 md:w-5" />
                   {formatDate(data)}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-3 md:space-y-4">
                   {lembretesPorData[data].map((lembrete) => (
-                    <div key={lembrete.id} className={`p-4 border rounded-lg ${lembrete.urgente ? 'border-red-200 bg-red-50' : ''}`}>
-                      <div className="flex items-start justify-between">
+                    <div key={lembrete.id} className={`p-3 md:p-4 border rounded-lg ${lembrete.urgente ? 'border-red-200 bg-red-50' : ''}`}>
+                      <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
                         <div className="space-y-2 flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold">{lembrete.titulo}</h3>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-semibold text-sm md:text-base">{lembrete.titulo}</h3>
                             {lembrete.urgente && <AlertTriangle className="h-4 w-4 text-red-500" />}
                           </div>
                           
@@ -197,48 +212,51 @@ const CalendarioPage = () => {
                           </div>
 
                           {lembrete.descricao && (
-                            <p className="text-gray-600">{lembrete.descricao}</p>
+                            <p className="text-gray-600 text-sm">{lembrete.descricao}</p>
                           )}
                           
-                          <div className="flex items-center gap-4 text-sm text-gray-500">
+                          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-500">
                             <div className="flex items-center gap-1">
-                              <MapPin className="h-4 w-4" />
+                              <MapPin className="h-3 md:h-4 w-3 md:w-4" />
                               {lembrete.residencia}
                             </div>
                             {lembrete.hora && (
                               <div className="flex items-center gap-1">
-                                <Clock className="h-4 w-4" />
+                                <Clock className="h-3 md:h-4 w-3 md:w-4" />
                                 {lembrete.hora}
                               </div>
                             )}
                             {lembrete.cliente && (
                               <div className="flex items-center gap-1">
-                                <User className="h-4 w-4" />
+                                <User className="h-3 md:h-4 w-3 md:w-4" />
                                 Cliente: {lembrete.cliente.nome}
                               </div>
                             )}
                             {lembrete.cuidador && (
                               <div className="flex items-center gap-1">
-                                <User className="h-4 w-4" />
+                                <User className="h-3 md:h-4 w-3 md:w-4" />
                                 Cuidador: {lembrete.cuidador.nome}
                               </div>
                             )}
                           </div>
                         </div>
                         
-                        <div className="flex items-center gap-2 ml-4">
+                        <div className="flex items-center gap-2 w-full md:w-auto">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleEditLembrete(lembrete)}
+                            className="flex-1 md:flex-none"
                           >
                             <Edit className="h-4 w-4" />
+                            <span className="md:hidden ml-2">Editar</span>
                           </Button>
                           
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="destructive" size="sm">
+                              <Button variant="destructive" size="sm" className="flex-1 md:flex-none">
                                 <Trash2 className="h-4 w-4" />
+                                <span className="md:hidden ml-2">Excluir</span>
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
@@ -289,6 +307,7 @@ const CalendarioPage = () => {
         isOpen={isFormOpen}
         onClose={handleCloseForm}
         lembreteToEdit={editingLembrete}
+        selectedDate={selectedDate}
       />
     </div>
   );

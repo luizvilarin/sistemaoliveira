@@ -37,12 +37,14 @@ const MensagensPage = () => {
   });
 
   const handleUserSelect = (user: UserProfile) => {
+    console.log('Usuário selecionado:', user.nome);
     setSelectedUser(user);
     setSelectedGroup(null);
     setActiveTab('usuarios');
   };
 
   const handleGroupSelect = (group: GrupoChat) => {
+    console.log('Grupo selecionado:', group.nome);
     setSelectedGroup(group);
     setSelectedUser(null);
     setActiveTab('grupos');
@@ -57,52 +59,52 @@ const MensagensPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 p-2 md:p-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Mensagens</h1>
-          <p className="text-gray-600">Sistema de comunicação avançado</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Mensagens</h1>
+          <p className="text-gray-600 text-sm md:text-base">Sistema de comunicação avançado</p>
         </div>
       </div>
 
       {/* Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6 mb-4 md:mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Conversas Ativas</CardTitle>
+            <CardTitle className="text-xs md:text-sm font-medium">Conversas Ativas</CardTitle>
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{conversasUnicas.size}</div>
+            <div className="text-xl md:text-2xl font-bold">{conversasUnicas.size}</div>
             <p className="text-xs text-gray-500">Entre usuários e grupos</p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Não Lidas</CardTitle>
+            <CardTitle className="text-xs md:text-sm font-medium">Não Lidas</CardTitle>
             <Mail className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{mensagensNaoLidas}</div>
+            <div className="text-xl md:text-2xl font-bold text-red-600">{mensagensNaoLidas}</div>
             <p className="text-xs text-gray-500">Mensagens pendentes</p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Usuários Online</CardTitle>
+            <CardTitle className="text-xs md:text-sm font-medium">Usuários Disponíveis</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{usuarios.length}</div>
+            <div className="text-xl md:text-2xl font-bold text-green-600">{usuarios.length}</div>
             <p className="text-xs text-gray-500">Disponíveis para chat</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Interface principal */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         <div className="lg:col-span-1">
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'usuarios' | 'grupos')}>
             <TabsList className="grid w-full grid-cols-2">
@@ -124,7 +126,7 @@ const MensagensPage = () => {
                 {/* Lista de grupos */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Meus Grupos ({grupos.length})</CardTitle>
+                    <CardTitle className="text-base md:text-lg">Meus Grupos ({grupos.length})</CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
                     <div className="space-y-1 max-h-96 overflow-y-auto">
@@ -138,8 +140,8 @@ const MensagensPage = () => {
                             onClick={() => handleGroupSelect(grupo)}
                           >
                             <div className="flex items-center space-x-3">
-                              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                                <Users className="h-5 w-5 text-primary" />
+                              <div className="w-8 h-8 md:w-10 md:h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                                <Users className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-gray-900 truncate">
