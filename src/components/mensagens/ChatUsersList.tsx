@@ -8,6 +8,7 @@ import { Search, MessageCircle, Users } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/hooks/useChat';
 import { UserProfile } from '@/types/chat';
+import UserStatusIndicator from '../usuarios/UserStatusIndicator';
 
 interface ChatUsersListProps {
   onUserSelect: (user: UserProfile) => void;
@@ -55,12 +56,15 @@ const ChatUsersList: React.FC<ChatUsersListProps> = ({ onUserSelect, selectedUse
       .toUpperCase();
   };
 
+  // Contar usuários online
+  const onlineUsersCount = filteredUsers.filter(user => user.status_online === 'online').length;
+
   return (
     <Card className="h-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MessageCircle className="h-5 w-5" />
-          Conversas ({filteredUsers.length})
+          Conversas ({onlineUsersCount} online)
         </CardTitle>
         <div className="relative">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -95,7 +99,9 @@ const ChatUsersList: React.FC<ChatUsersListProps> = ({ onUserSelect, selectedUse
                           {getInitials(user.nome)}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                      <div className="absolute -bottom-1 -right-1">
+                        <UserStatusIndicator status={user.status_online || 'offline'} size="sm" />
+                      </div>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
@@ -108,9 +114,15 @@ const ChatUsersList: React.FC<ChatUsersListProps> = ({ onUserSelect, selectedUse
                           </Badge>
                         )}
                       </div>
-                      <p className="text-xs text-gray-500 truncate">
-                        {user.perfil.charAt(0).toUpperCase() + user.perfil.slice(1)}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs text-gray-500 truncate">
+                          {user.perfil.charAt(0).toUpperCase() + user.perfil.slice(1)}
+                        </p>
+                        <span className="text-xs text-gray-400">•</span>
+                        <span className="text-xs text-gray-400 capitalize">
+                          {user.status_online || 'offline'}
+                        </span>
+                      </div>
                       {lastMessage && (
                         <p className="text-xs text-gray-400 truncate mt-1">
                           {lastMessage.remetente_id === userProfile?.id ? 'Você: ' : ''}

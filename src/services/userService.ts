@@ -82,6 +82,40 @@ export const userService = {
 
     console.log('Atualizando cargo do usuário:', userId, 'para:', newRole);
 
+    // Verificar permissões do usuário atual
+    const { data: currentUser, error: currentUserError } = await supabase
+      .from('profiles')
+      .select('perfil')
+      .eq('id', session.user.id)
+      .single();
+
+    if (currentUserError) {
+      console.error('Erro ao verificar usuário atual:', currentUserError);
+      throw new Error('Erro ao verificar permissões');
+    }
+
+    // Verificar usuário alvo
+    const { data: targetUser, error: targetUserError } = await supabase
+      .from('profiles')
+      .select('perfil, email')
+      .eq('id', userId)
+      .single();
+
+    if (targetUserError) {
+      console.error('Erro ao verificar usuário alvo:', targetUserError);
+      throw new Error('Usuário não encontrado');
+    }
+
+    // Verificar se pode editar o cargo
+    if (!this.canEditUserRole(currentUser.perfil, targetUser.perfil)) {
+      throw new Error('Você não tem permissão para alterar o cargo deste usuário');
+    }
+
+    // Proteger o usuário proprietário
+    if (targetUser.email === 'luizvilarinho.nave@gmail.com') {
+      throw new Error('O cargo do usuário proprietário não pode ser alterado');
+    }
+
     const { data, error } = await supabase
       .from('profiles')
       .update({ perfil: newRole })
@@ -128,9 +162,18 @@ export const userService = {
     const users = (data || [])
       .filter(user => user.email !== 'luizvilarinho.nave@gmail.com') // Ocultar usuário técnico
       .map(user => ({
-        ...user,
+        id: user.id,
+        nome: user.nome,
+        email: user.email,
+        perfil: user.perfil as 'admin' | 'gestor' | 'cuidador',
+        avatar_url: user.avatar_url || undefined,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        ativo: user.ativo || false,
         canDelete: user.email !== 'luizvilarinho.nave@gmail.com',
-        status_online: (user.status_online as 'online' | 'offline' | 'ausente' | 'ocupado') || 'offline'
+        status_online: (user.status_online as 'online' | 'offline' | 'ausente' | 'ocupado') || 'offline',
+        ultima_atividade: user.ultima_atividade || undefined,
+        senha_hash: user.senha_hash || undefined
       }));
 
     return users;

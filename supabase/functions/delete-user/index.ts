@@ -81,6 +81,49 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Deletando usuário:', userId, targetProfile?.email);
 
+    // Limpar dados relacionados antes de deletar o usuário
+    console.log('Limpando convites relacionados...');
+    await supabase
+      .from('user_invites')
+      .delete()
+      .eq('invited_by', userId);
+
+    console.log('Limpando mensagens como remetente...');
+    await supabase
+      .from('mensagens')
+      .delete()
+      .eq('remetente_id', userId);
+
+    console.log('Atualizando mensagens como destinatário...');
+    await supabase
+      .from('mensagens')
+      .update({ destinatario_id: null })
+      .eq('destinatario_id', userId);
+
+    console.log('Limpando membros de grupo...');
+    await supabase
+      .from('membros_grupo')
+      .delete()
+      .eq('usuario_id', userId);
+
+    console.log('Limpando grupos criados...');
+    await supabase
+      .from('grupos_chat')
+      .delete()
+      .eq('criado_por', userId);
+
+    console.log('Limpando notificações...');
+    await supabase
+      .from('notificacoes_sistema')
+      .delete()
+      .eq('usuario_id', userId);
+
+    console.log('Limpando lembretes...');
+    await supabase
+      .from('lembretes')
+      .delete()
+      .eq('responsavel_id', userId);
+
     // Deletar usuário do auth usando service key
     const { error: authError } = await supabase.auth.admin.deleteUser(userId);
     

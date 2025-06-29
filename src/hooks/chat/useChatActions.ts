@@ -1,17 +1,12 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 export const useChatActions = (userProfile: any) => {
-  const { toast } = useToast();
-
-  const criarGrupo = async (nome: string, descricao?: string, membros: string[] = []) => {
-    if (!userProfile) {
-      throw new Error('Usuário não autenticado');
-    }
+  const criarGrupo = async (nome: string, descricao?: string, membros?: string[]) => {
+    if (!userProfile) throw new Error('Usuário não autenticado');
 
     try {
-      console.log('Criando grupo:', { nome, descricao, membros, userId: userProfile.id });
+      console.log('Criando grupo:', nome);
       
       // Criar o grupo
       const { data: grupo, error: grupoError } = await supabase
@@ -31,8 +26,8 @@ export const useChatActions = (userProfile: any) => {
 
       console.log('Grupo criado:', grupo);
 
-      // Adicionar o criador como admin
-      const { error: criadorError } = await supabase
+      // Adicionar o criador como administrador
+      const { error: membroError } = await supabase
         .from('membros_grupo')
         .insert({
           grupo_id: grupo.id,
@@ -40,22 +35,22 @@ export const useChatActions = (userProfile: any) => {
           papel: 'admin'
         });
 
-      if (criadorError) {
-        console.error('Erro ao adicionar criador:', criadorError);
-        throw criadorError;
+      if (membroError) {
+        console.error('Erro ao adicionar criador ao grupo:', membroError);
+        throw membroError;
       }
 
-      // Adicionar outros membros
-      if (membros.length > 0) {
+      // Adicionar outros membros se fornecidos
+      if (membros && membros.length > 0) {
+        const membrosData = membros.map(membroId => ({
+          grupo_id: grupo.id,
+          usuario_id: membroId,
+          papel: 'membro'
+        }));
+
         const { error: membrosError } = await supabase
           .from('membros_grupo')
-          .insert(
-            membros.map(userId => ({
-              grupo_id: grupo.id,
-              usuario_id: userId,
-              papel: 'membro' as const
-            }))
-          );
+          .insert(membrosData);
 
         if (membrosError) {
           console.error('Erro ao adicionar membros:', membrosError);
@@ -63,19 +58,9 @@ export const useChatActions = (userProfile: any) => {
         }
       }
 
-      toast({
-        title: 'Grupo criado',
-        description: `O grupo "${nome}" foi criado com sucesso!`
-      });
-
       return grupo;
     } catch (error) {
       console.error('Erro ao criar grupo:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Não foi possível criar o grupo. Tente novamente.'
-      });
       throw error;
     }
   };
@@ -91,44 +76,33 @@ export const useChatActions = (userProfile: any) => {
     mencoes?: string[]
   ) => {
     if (!userProfile) {
-      console.error('Usuário não autenticado');
       throw new Error('Usuário não autenticado');
     }
 
     if (!destinatarioId && !grupoId) {
-      console.error('É necessário especificar um destinatário ou grupo');
-      throw new Error('É necessário especificar um destinatário ou grupo');
-    }
-
-    if (!conteudo.trim() && !arquivoUrl) {
-      console.error('Mensagem não pode estar vazia');
-      throw new Error('Mensagem não pode estar vazia');
+      throw new Error('Destinatário ou grupo deve ser especificado');
     }
 
     try {
       console.log('Enviando mensagem:', {
-        conteudo: conteudo.substring(0, 50) + '...',
+        conteudo: conteudo.substring(0, 50),
         destinatarioId,
         grupoId,
-        tipoMensagem,
-        remetente: userProfile.id
+        tipoMensagem
       });
 
       const mensagemData = {
-        assunto: grupoId ? `Mensagem no grupo` : `Mensagem privada`,
-        conteudo: conteudo.trim(),
         remetente_id: userProfile.id,
         destinatario_id: destinatarioId || null,
         grupo_id: grupoId || null,
+        conteudo,
         tipo_mensagem: tipoMensagem,
         arquivo_url: arquivoUrl || null,
         arquivo_nome: arquivoNome || null,
         duracao_audio: duracaoAudio || null,
-        mencoes: mencoes || [],
-        lida: false
+        mencoes: mencoes || null,
+        assunto: tipoMensagem === 'texto' ? 'Mensagem' : `${tipoMensagem.charAt(0).toUpperCase() + tipoMensagem.slice(1)}`
       };
-
-      console.log('Dados da mensagem para inserir:', mensagemData);
 
       const { data, error } = await supabase
         .from('mensagens')
@@ -137,57 +111,48 @@ export const useChatActions = (userProfile: any) => {
         .single();
 
       if (error) {
-        console.error('Erro ao inserir mensagem no banco:', error);
+        console.error('Erro ao enviar mensagem:', error);
         throw error;
       }
 
       console.log('Mensagem enviada com sucesso:', data);
-      
-      toast({
-        title: 'Mensagem enviada',
-        description: 'Sua mensagem foi enviada com sucesso!'
-      });
-
       return data;
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao enviar',
-        description: 'Não foi possível enviar a mensagem. Tente novamente.'
-      });
       throw error;
     }
   };
 
   const adicionarReacao = async (mensagemId: string, emoji: string) => {
-    if (!userProfile) return;
+    if (!userProfile) throw new Error('Usuário não autenticado');
 
     try {
-      console.log('Adicionando reação:', { mensagemId, emoji, userId: userProfile.id });
-
-      const { data: mensagem, error: buscarError } = await supabase
+      // Buscar mensagem atual
+      const { data: mensagem, error: fetchError } = await supabase
         .from('mensagens')
         .select('emoji_reacoes')
         .eq('id', mensagemId)
         .single();
 
-      if (buscarError) {
-        console.error('Erro ao buscar mensagem:', buscarError);
-        throw buscarError;
-      }
+      if (fetchError) throw fetchError;
 
-      const reacoesAtuais = (mensagem.emoji_reacoes as Record<string, string[]>) || {};
-      const usuariosEmoji = reacoesAtuais[emoji] || [];
+      const reacoesAtuais = mensagem.emoji_reacoes || {};
+      const usuariosReacao = reacoesAtuais[emoji] || [];
 
-      const novasReacoes = { ...reacoesAtuais };
-      if (usuariosEmoji.includes(userProfile.id)) {
-        novasReacoes[emoji] = usuariosEmoji.filter(id => id !== userProfile.id);
-        if (novasReacoes[emoji].length === 0) {
-          delete novasReacoes[emoji];
+      // Toggle da reação
+      let novasReacoes;
+      if (usuariosReacao.includes(userProfile.id)) {
+        // Remover reação
+        const usuariosFiltrados = usuariosReacao.filter((id: string) => id !== userProfile.id);
+        if (usuariosFiltrados.length === 0) {
+          delete reacoesAtuais[emoji];
+          novasReacoes = reacoesAtuais;
+        } else {
+          novasReacoes = { ...reacoesAtuais, [emoji]: usuariosFiltrados };
         }
       } else {
-        novasReacoes[emoji] = [...usuariosEmoji, userProfile.id];
+        // Adicionar reação
+        novasReacoes = { ...reacoesAtuais, [emoji]: [...usuariosReacao, userProfile.id] };
       }
 
       const { error } = await supabase
@@ -195,19 +160,10 @@ export const useChatActions = (userProfile: any) => {
         .update({ emoji_reacoes: novasReacoes })
         .eq('id', mensagemId);
 
-      if (error) {
-        console.error('Erro ao atualizar reações:', error);
-        throw error;
-      }
-
-      console.log('Reação adicionada com sucesso');
+      if (error) throw error;
     } catch (error) {
       console.error('Erro ao adicionar reação:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Não foi possível adicionar a reação.'
-      });
+      throw error;
     }
   };
 
@@ -215,20 +171,20 @@ export const useChatActions = (userProfile: any) => {
     if (!userProfile) return;
 
     try {
-      console.log('Marcando mensagem como lida:', mensagemId);
-
       const { error } = await supabase
         .from('mensagens')
-        .update({ lida: true })
+        .update({ 
+          lida: true,
+          visualizada: true,
+          data_visualizacao: new Date().toISOString()
+        })
         .eq('id', mensagemId)
-        .eq('destinatario_id', userProfile.id); // Só marcar se for destinatário
+        .eq('destinatario_id', userProfile.id);
 
       if (error) {
-        console.error('Erro ao marcar como lida:', error);
+        console.error('Erro ao marcar mensagem como lida:', error);
         throw error;
       }
-
-      console.log('Mensagem marcada como lida');
     } catch (error) {
       console.error('Erro ao marcar como lida:', error);
     }

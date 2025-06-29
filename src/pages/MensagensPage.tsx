@@ -36,6 +36,9 @@ const MensagensPage = () => {
     }
   });
 
+  // Contar usuários online
+  const usuariosOnline = usuarios.filter(user => user.status_online === 'online').length;
+
   const handleUserSelect = (user: UserProfile) => {
     console.log('Usuário selecionado:', user.nome);
     setSelectedUser(user);
@@ -93,12 +96,12 @@ const MensagensPage = () => {
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs md:text-sm font-medium">Usuários Disponíveis</CardTitle>
+            <CardTitle className="text-xs md:text-sm font-medium">Usuários Online</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl md:text-2xl font-bold text-green-600">{usuarios.length}</div>
-            <p className="text-xs text-gray-500">Disponíveis para chat</p>
+            <div className="text-xl md:text-2xl font-bold text-green-600">{usuariosOnline}</div>
+            <p className="text-xs text-gray-500">de {usuarios.length} usuários</p>
           </CardContent>
         </Card>
       </div>
