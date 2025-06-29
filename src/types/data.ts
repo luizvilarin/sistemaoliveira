@@ -27,4 +27,6 @@ export type Profile = Tables<'profiles'>;
 // Usuario type combining profile with auth info
 export type Usuario = Profile & {
   canDelete?: boolean;
+  status_online?: 'online' | 'offline' | 'ausente' | 'ocupado';
+  ultima_atividade?: string;
 };

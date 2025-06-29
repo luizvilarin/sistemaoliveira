@@ -1,9 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useUserStatus } from '@/hooks/useUserStatus';
+import UserStatusSelector from '@/components/usuarios/UserStatusSelector';
 import { 
   User, 
   LayoutDashboard, 
@@ -71,6 +73,10 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
 
 const DashboardSidebar = () => {
   const { userProfile, signOut } = useAuth();
+  const { setUserStatus } = useUserStatus();
+  const [currentStatus, setCurrentStatus] = useState<'online' | 'offline' | 'ausente' | 'ocupado'>(
+    userProfile?.status_online as 'online' | 'offline' | 'ausente' | 'ocupado' || 'online'
+  );
 
   const getInitials = (name: string) => {
     return name
@@ -79,6 +85,10 @@ const DashboardSidebar = () => {
       .join('')
       .substring(0, 2)
       .toUpperCase();
+  };
+
+  const handleStatusChange = (newStatus: 'online' | 'offline' | 'ausente' | 'ocupado') => {
+    setCurrentStatus(newStatus);
   };
 
   return (
@@ -96,10 +106,17 @@ const DashboardSidebar = () => {
               {userProfile?.nome ? getInitials(userProfile.nome) : <User size={20} />}
             </AvatarFallback>
           </Avatar>
-          <div className="ml-3">
+          <div className="ml-3 flex-1">
             <p className="text-sm font-medium">{userProfile?.nome || 'Usuário'}</p>
             <p className="text-xs text-gray-500 capitalize">{userProfile?.perfil || 'cuidador'}</p>
           </div>
+        </div>
+        
+        <div className="mt-3">
+          <UserStatusSelector 
+            currentStatus={currentStatus} 
+            onStatusChange={handleStatusChange}
+          />
         </div>
       </div>
       

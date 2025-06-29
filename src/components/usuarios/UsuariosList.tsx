@@ -1,47 +1,44 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useToast } from '@/components/ui/use-toast';
-import { Trash2, UserPlus, Loader2, User } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { UserPlus, Trash2, Users } from 'lucide-react';
 import { Usuario } from '@/types/data';
 import { userService } from '@/services/userService';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import UserStatusIndicator from './UserStatusIndicator';
+import UserRoleEditor from './UserRoleEditor';
 
-interface UsuariosListProps {
+interface UsersListProps {
   users: Usuario[];
   onRefresh: () => void;
   onNewUser: () => void;
   isGestor?: boolean;
 }
 
-const UsuariosList: React.FC<UsuariosListProps> = ({ users, onRefresh, onNewUser, isGestor = false }) => {
+const UsuariosList: React.FC<UsersListProps> = ({ 
+  users, 
+  onRefresh, 
+  onNewUser, 
+  isGestor = false 
+}) => {
   const { toast } = useToast();
   const { userProfile } = useAuth();
-  const [deletingUserId, setDeletingUserId] = React.useState<string | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
-  const handleDeleteUser = async (userId: string, userEmail: string) => {
+  const handleDeleteUser = async (userId: string, userName: string, userProfile: string) => {
+    setDeletingUserId(userId);
+    
     try {
-      setDeletingUserId(userId);
       await userService.deleteUser(userId);
       
       toast({
-        title: 'Usuário deletado',
-        description: `O usuário ${userEmail} foi removido do sistema.`,
+        title: 'Usuário removido',
+        description: `${userName} foi removido do sistema com sucesso.`,
       });
       
       onRefresh();
@@ -49,34 +46,16 @@ const UsuariosList: React.FC<UsuariosListProps> = ({ users, onRefresh, onNewUser
       console.error('Erro ao deletar usuário:', error);
       toast({
         variant: 'destructive',
-        title: 'Erro',
-        description: error.message || 'Não foi possível deletar o usuário.',
+        title: 'Erro ao remover usuário',
+        description: error.message || 'Não foi possível remover o usuário. Tente novamente.',
       });
     } finally {
       setDeletingUserId(null);
     }
   };
 
-  const canDeleteUser = (targetUser: Usuario) => {
-    if (!userProfile) return false;
-    
-    // Se o usuário alvo é o técnico, não pode deletar
-    if (targetUser.email === 'luizvilarinho.nave@gmail.com') return false;
-    
-    return userService.canGestorDeleteUser(userProfile.perfil, targetUser.perfil);
-  };
-
-  const getPerfilBadge = (perfil: string) => {
-    switch (perfil) {
-      case 'admin':
-        return <Badge variant="destructive">Admin</Badge>;
-      case 'gestor':
-        return <Badge variant="default">Gestor</Badge>;
-      case 'cuidador':
-        return <Badge variant="secondary">Cuidador</Badge>;
-      default:
-        return <Badge variant="outline">{perfil}</Badge>;
-    }
+  const canDeleteUser = (targetUserPerfil: string) => {
+    return userService.canGestorDeleteUser(userProfile?.perfil || '', targetUserPerfil);
   };
 
   const getInitials = (name: string) => {
@@ -88,108 +67,133 @@ const UsuariosList: React.FC<UsuariosListProps> = ({ users, onRefresh, onNewUser
       .toUpperCase();
   };
 
-  // Filtrar usuários que o gestor pode ver
-  const filteredUsers = isGestor 
-    ? users.filter(user => user.email !== 'luizvilarinho.nave@gmail.com')
-    : users;
+  const getPerfilColor = (perfil: string) => {
+    switch (perfil) {
+      case 'admin':
+        return 'bg-red-100 text-red-700';
+      case 'gestor':
+        return 'bg-blue-100 text-blue-700';
+      case 'cuidador':
+        return 'bg-green-100 text-green-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const getPerfilLabel = (perfil: string) => {
+    switch (perfil) {
+      case 'admin':
+        return 'Admin';
+      case 'gestor':
+        return 'Gestor';
+      case 'cuidador':
+        return 'Cuidador';
+      default:
+        return perfil;
+    }
+  };
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5" />
-            Gestão de Usuários
-          </CardTitle>
-          <Button onClick={onNewUser}>
-            <UserPlus className="h-4 w-4 mr-2" />
+          <div className="flex items-center space-x-2">
+            <Users className="h-5 w-5" />
+            <CardTitle>Usuários ({users.length})</CardTitle>
+          </div>
+          <Button onClick={onNewUser} className="flex items-center gap-2">
+            <UserPlus className="h-4 w-4" />
             Convidar Usuário
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-        {filteredUsers.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Usuário</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Perfil</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.avatar_url || ''} alt={user.nome} />
-                        <AvatarFallback className="text-xs">
-                          {user.nome ? getInitials(user.nome) : <User className="h-4 w-4" />}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">{user.nome}</span>
+        {users.length > 0 ? (
+          <div className="space-y-4">
+            {users.map((user) => (
+              <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center space-x-4">
+                  <Avatar>
+                    <AvatarImage src={user.avatar_url || ''} alt={user.nome} />
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {getInitials(user.nome)}
+                    </AvatarFallback>
+                  </Avatar>
+                  
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium">{user.nome}</h4>
+                      <UserStatusIndicator 
+                        status={user.status_online as 'online' | 'offline' | 'ausente' | 'ocupado' || 'offline'} 
+                        size="sm" 
+                      />
+                      {user.email === 'luizvilarinho.nave@gmail.com' && (
+                        <Badge variant="outline" className="text-xs">
+                          Técnico
+                        </Badge>
+                      )}
                     </div>
-                  </TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{getPerfilBadge(user.perfil)}</TableCell>
-                  <TableCell>
-                    <Badge variant={user.ativo ? "default" : "secondary"}>
-                      {user.ativo ? "Ativo" : "Inativo"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {user.email === 'luizvilarinho.nave@gmail.com' ? (
-                      <Badge variant="outline" className="text-xs">
-                        Técnico
+                    <p className="text-sm text-gray-500">{user.email}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge className={getPerfilColor(user.perfil)}>
+                        {getPerfilLabel(user.perfil)}
                       </Badge>
-                    ) : canDeleteUser(user) ? (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            disabled={deletingUserId === user.id}
+                      {user.ultima_atividade && (
+                        <span className="text-xs text-gray-400">
+                          Última atividade: {new Date(user.ultima_atividade).toLocaleDateString('pt-BR')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  <UserRoleEditor 
+                    user={user} 
+                    onRoleUpdated={onRefresh}
+                  />
+                  
+                  {user.canDelete && canDeleteUser(user.perfil) && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          disabled={deletingUserId === user.id}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Remover usuário</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Tem certeza que deseja remover <strong>{user.nome}</strong> do sistema?
+                            Esta ação não pode ser desfeita.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteUser(user.id, user.nome, user.perfil)}
+                            className="bg-red-600 hover:bg-red-700"
                           >
-                            {deletingUserId === user.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Deletar usuário</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Tem certeza que deseja deletar o usuário <strong>{user.nome}</strong>? 
-                              Esta ação não pode ser desfeita.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDeleteUser(user.id, user.email)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              Deletar
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">Sem permissão</span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                            Remover
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
-          <div className="text-center py-4 text-sm text-muted-foreground">
-            Nenhum usuário encontrado
+          <div className="text-center py-8 text-gray-500">
+            <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p className="text-lg font-medium mb-2">Nenhum usuário encontrado</p>
+            <p className="text-sm">Comece convidando o primeiro usuário para o sistema.</p>
           </div>
         )}
       </CardContent>

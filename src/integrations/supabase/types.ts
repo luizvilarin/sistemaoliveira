@@ -259,15 +259,19 @@ export type Database = {
           assunto: string
           conteudo: string
           created_at: string
+          data_entrega: string | null
+          data_visualizacao: string | null
           destinatario_id: string | null
           duracao_audio: number | null
           emoji_reacoes: Json | null
+          entregue: boolean | null
           grupo_id: string | null
           id: string
           lida: boolean | null
           mencoes: string[] | null
           remetente_id: string
           tipo_mensagem: string
+          visualizada: boolean | null
         }
         Insert: {
           arquivo_nome?: string | null
@@ -275,15 +279,19 @@ export type Database = {
           assunto: string
           conteudo: string
           created_at?: string
+          data_entrega?: string | null
+          data_visualizacao?: string | null
           destinatario_id?: string | null
           duracao_audio?: number | null
           emoji_reacoes?: Json | null
+          entregue?: boolean | null
           grupo_id?: string | null
           id?: string
           lida?: boolean | null
           mencoes?: string[] | null
           remetente_id: string
           tipo_mensagem?: string
+          visualizada?: boolean | null
         }
         Update: {
           arquivo_nome?: string | null
@@ -291,15 +299,19 @@ export type Database = {
           assunto?: string
           conteudo?: string
           created_at?: string
+          data_entrega?: string | null
+          data_visualizacao?: string | null
           destinatario_id?: string | null
           duracao_audio?: number | null
           emoji_reacoes?: Json | null
+          entregue?: boolean | null
           grupo_id?: string | null
           id?: string
           lida?: boolean | null
           mencoes?: string[] | null
           remetente_id?: string
           tipo_mensagem?: string
+          visualizada?: boolean | null
         }
         Relationships: [
           {
@@ -459,6 +471,8 @@ export type Database = {
           nome: string
           perfil: string
           senha_hash: string | null
+          status_online: string | null
+          ultima_atividade: string | null
           updated_at: string
         }
         Insert: {
@@ -470,6 +484,8 @@ export type Database = {
           nome: string
           perfil: string
           senha_hash?: string | null
+          status_online?: string | null
+          ultima_atividade?: string | null
           updated_at?: string
         }
         Update: {
@@ -481,6 +497,8 @@ export type Database = {
           nome?: string
           perfil?: string
           senha_hash?: string | null
+          status_online?: string | null
+          ultima_atividade?: string | null
           updated_at?: string
         }
         Relationships: []

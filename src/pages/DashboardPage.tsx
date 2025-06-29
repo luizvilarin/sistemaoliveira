@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
+import { useUserStatus } from '@/hooks/useUserStatus';
 import StatCard from '@/components/dashboard/StatCard';
 import RecentTransactions from '@/components/dashboard/RecentTransactions';
 import GrowthChart from '@/components/dashboard/GrowthChart';
@@ -24,6 +26,9 @@ const DashboardPage = () => {
   const { isAdmin, userProfile } = useAuth();
   const { clientes, pacientes, cuidadores, transacoes, lembretes } = useData();
   const { toast } = useToast();
+  
+  // Inicializar hook de status do usuário
+  useUserStatus();
   
   const [isUsuarioFormOpen, setIsUsuarioFormOpen] = useState(false);
   const [users, setUsers] = useState<Usuario[]>([]);

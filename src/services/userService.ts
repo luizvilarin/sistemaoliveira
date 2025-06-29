@@ -35,6 +35,8 @@ export const userService = {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Não autenticado');
 
+    console.log('Tentando deletar usuário:', userId);
+
     const { data, error } = await supabase.functions.invoke('delete-user', {
       body: { userId },
       headers: {
@@ -43,9 +45,16 @@ export const userService = {
     });
 
     if (error) {
-      throw error;
+      console.error('Erro ao chamar função de deletar:', error);
+      throw new Error(error.message || 'Erro ao deletar usuário');
     }
 
+    if (data?.error) {
+      console.error('Erro retornado pela função:', data.error);
+      throw new Error(data.error);
+    }
+
+    console.log('Usuário deletado com sucesso:', data);
     return data;
   },
 
@@ -65,6 +74,46 @@ export const userService = {
     }
 
     return data;
+  },
+
+  async updateUserRole(userId: string, newRole: 'admin' | 'gestor' | 'cuidador') {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Não autenticado');
+
+    console.log('Atualizando cargo do usuário:', userId, 'para:', newRole);
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ perfil: newRole })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao atualizar cargo:', error);
+      throw error;
+    }
+
+    console.log('Cargo atualizado com sucesso:', data);
+    return data;
+  },
+
+  async updateUserStatus(status: 'online' | 'offline' | 'ausente' | 'ocupado') {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Não autenticado');
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ 
+        status_online: status,
+        ultima_atividade: new Date().toISOString()
+      })
+      .eq('id', session.user.id);
+
+    if (error) {
+      console.error('Erro ao atualizar status:', error);
+      throw error;
+    }
   },
 
   async getAllUsers(): Promise<Usuario[]> {
@@ -98,6 +147,13 @@ export const userService = {
 
   // Função para verificar se um usuário pode ser deletado por um gestor
   canGestorDeleteUser(currentUserPerfil: string, targetUserPerfil: string): boolean {
+    if (currentUserPerfil === 'admin') return true;
+    if (currentUserPerfil === 'gestor' && targetUserPerfil === 'cuidador') return true;
+    return false;
+  },
+
+  // Função para verificar se um usuário pode editar cargo de outro
+  canEditUserRole(currentUserPerfil: string, targetUserPerfil: string): boolean {
     if (currentUserPerfil === 'admin') return true;
     if (currentUserPerfil === 'gestor' && targetUserPerfil === 'cuidador') return true;
     return false;
