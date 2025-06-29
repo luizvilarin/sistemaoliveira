@@ -9,6 +9,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Trash2, UserPlus, Loader2, User } from 'lucide-react';
 import { Usuario } from '@/types/data';
 import { userService } from '@/services/userService';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,10 +26,12 @@ interface UsuariosListProps {
   users: Usuario[];
   onRefresh: () => void;
   onNewUser: () => void;
+  isGestor?: boolean;
 }
 
-const UsuariosList: React.FC<UsuariosListProps> = ({ users, onRefresh, onNewUser }) => {
+const UsuariosList: React.FC<UsuariosListProps> = ({ users, onRefresh, onNewUser, isGestor = false }) => {
   const { toast } = useToast();
+  const { userProfile } = useAuth();
   const [deletingUserId, setDeletingUserId] = React.useState<string | null>(null);
 
   const handleDeleteUser = async (userId: string, userEmail: string) => {
@@ -54,6 +57,15 @@ const UsuariosList: React.FC<UsuariosListProps> = ({ users, onRefresh, onNewUser
     }
   };
 
+  const canDeleteUser = (targetUser: Usuario) => {
+    if (!userProfile) return false;
+    
+    // Se o usuário alvo é o técnico, não pode deletar
+    if (targetUser.email === 'luizvilarinho.nave@gmail.com') return false;
+    
+    return userService.canGestorDeleteUser(userProfile.perfil, targetUser.perfil);
+  };
+
   const getPerfilBadge = (perfil: string) => {
     switch (perfil) {
       case 'admin':
@@ -76,6 +88,11 @@ const UsuariosList: React.FC<UsuariosListProps> = ({ users, onRefresh, onNewUser
       .toUpperCase();
   };
 
+  // Filtrar usuários que o gestor pode ver
+  const filteredUsers = isGestor 
+    ? users.filter(user => user.email !== 'luizvilarinho.nave@gmail.com')
+    : users;
+
   return (
     <Card>
       <CardHeader>
@@ -91,7 +108,7 @@ const UsuariosList: React.FC<UsuariosListProps> = ({ users, onRefresh, onNewUser
         </div>
       </CardHeader>
       <CardContent>
-        {users.length > 0 ? (
+        {filteredUsers.length > 0 ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -103,7 +120,7 @@ const UsuariosList: React.FC<UsuariosListProps> = ({ users, onRefresh, onNewUser
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -124,7 +141,11 @@ const UsuariosList: React.FC<UsuariosListProps> = ({ users, onRefresh, onNewUser
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {user.canDelete ? (
+                    {user.email === 'luizvilarinho.nave@gmail.com' ? (
+                      <Badge variant="outline" className="text-xs">
+                        Técnico
+                      </Badge>
+                    ) : canDeleteUser(user) ? (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
@@ -159,9 +180,7 @@ const UsuariosList: React.FC<UsuariosListProps> = ({ users, onRefresh, onNewUser
                         </AlertDialogContent>
                       </AlertDialog>
                     ) : (
-                      <Badge variant="outline" className="text-xs">
-                        Proprietário
-                      </Badge>
+                      <span className="text-xs text-muted-foreground">Sem permissão</span>
                     )}
                   </TableCell>
                 </TableRow>

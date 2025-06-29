@@ -75,11 +75,13 @@ export const userService = {
 
     if (error) throw error;
 
-    // Marcar quais usuários podem ser deletados
-    const users = (data || []).map(user => ({
-      ...user,
-      canDelete: user.email !== 'luizvilarinho.nave@gmail.com'
-    }));
+    // Filtrar o usuário técnico e marcar quais usuários podem ser deletados
+    const users = (data || [])
+      .filter(user => user.email !== 'luizvilarinho.nave@gmail.com') // Ocultar usuário técnico
+      .map(user => ({
+        ...user,
+        canDelete: user.email !== 'luizvilarinho.nave@gmail.com'
+      }));
 
     return users;
   },
@@ -92,5 +94,12 @@ export const userService = {
 
     if (error) throw error;
     return data || [];
+  },
+
+  // Função para verificar se um usuário pode ser deletado por um gestor
+  canGestorDeleteUser(currentUserPerfil: string, targetUserPerfil: string): boolean {
+    if (currentUserPerfil === 'admin') return true;
+    if (currentUserPerfil === 'gestor' && targetUserPerfil === 'cuidador') return true;
+    return false;
   }
 };

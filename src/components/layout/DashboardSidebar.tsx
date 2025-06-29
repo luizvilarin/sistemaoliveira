@@ -23,12 +23,33 @@ interface SidebarLinkProps {
   icon: React.ReactNode;
   label: string;
   adminOnly?: boolean;
+  gestorAndAdminOnly?: boolean;
+  excludeCuidador?: boolean;
 }
 
-const SidebarLink: React.FC<SidebarLinkProps> = ({ to, icon, label, adminOnly = false }) => {
-  const { isAdmin } = useAuth();
+const SidebarLink: React.FC<SidebarLinkProps> = ({ 
+  to, 
+  icon, 
+  label, 
+  adminOnly = false, 
+  gestorAndAdminOnly = false,
+  excludeCuidador = false 
+}) => {
+  const { userProfile } = useAuth();
+  const perfil = userProfile?.perfil;
 
-  if (adminOnly && !isAdmin) {
+  // Admin pode ver tudo
+  if (adminOnly && perfil !== 'admin') {
+    return null;
+  }
+
+  // Gestor e Admin podem ver
+  if (gestorAndAdminOnly && !['admin', 'gestor'].includes(perfil || '')) {
+    return null;
+  }
+
+  // Excluir cuidador
+  if (excludeCuidador && perfil === 'cuidador') {
     return null;
   }
 
@@ -90,8 +111,18 @@ const DashboardSidebar = () => {
         <SidebarLink to="/calendario" icon={<Calendar size={18} />} label="Calendário" />
         <SidebarLink to="/tarefas" icon={<List size={18} />} label="Tarefas" />
         <SidebarLink to="/mensagens" icon={<MessageSquare size={18} />} label="Mensagens" />
-        <SidebarLink to="/relatorios" icon={<FileText size={18} />} label="Relatórios" />
-        <SidebarLink to="/transacoes" icon={<DollarSign size={18} />} label="Transações" adminOnly={true} />
+        <SidebarLink 
+          to="/relatorios" 
+          icon={<FileText size={18} />} 
+          label="Relatórios" 
+          excludeCuidador={true}
+        />
+        <SidebarLink 
+          to="/transacoes" 
+          icon={<DollarSign size={18} />} 
+          label="Transações" 
+          adminOnly={true} 
+        />
         <SidebarLink to="/configuracoes" icon={<Settings size={18} />} label="Configurações" />
       </nav>
       

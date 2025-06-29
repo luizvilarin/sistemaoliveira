@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
@@ -22,7 +21,7 @@ import { userService } from '@/services/userService';
 import { useToast } from '@/components/ui/use-toast';
 
 const DashboardPage = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, userProfile } = useAuth();
   const { clientes, pacientes, cuidadores, transacoes, lembretes } = useData();
   const { toast } = useToast();
   
@@ -31,7 +30,9 @@ const DashboardPage = () => {
   const [invites, setInvites] = useState<UserInvite[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   
-  // ... keep existing code (calculations for faturamentoDiario, tempoMedio, agendaSemana)
+  const isGestor = userProfile?.perfil === 'gestor';
+  const canManageUsers = isAdmin || isGestor;
+  
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
@@ -59,7 +60,7 @@ const DashboardPage = () => {
   }).length;
 
   const loadUsers = async () => {
-    if (!isAdmin) return;
+    if (!canManageUsers) return;
     
     try {
       setLoadingUsers(true);
@@ -82,10 +83,10 @@ const DashboardPage = () => {
   };
 
   useEffect(() => {
-    if (isAdmin) {
+    if (canManageUsers) {
       loadUsers();
     }
-  }, [isAdmin]);
+  }, [canManageUsers]);
 
   const handleCloseUsuarioForm = () => {
     setIsUsuarioFormOpen(false);
@@ -178,8 +179,8 @@ const DashboardPage = () => {
         {isAdmin && <RecentTransactions />}
       </div>
 
-      {/* Seção de Gestão de Usuários - Apenas para Administradores */}
-      {isAdmin && (
+      {/* Seção de Gestão de Usuários - Para Administradores e Gestores */}
+      {canManageUsers && (
         <div className="space-y-6">
           <ConvitesPendentes
             invites={invites}
@@ -191,6 +192,7 @@ const DashboardPage = () => {
             users={users}
             onRefresh={loadUsers}
             onNewUser={() => setIsUsuarioFormOpen(true)}
+            isGestor={isGestor}
           />
         </div>
       )}
@@ -199,6 +201,7 @@ const DashboardPage = () => {
         isOpen={isUsuarioFormOpen}
         onClose={handleCloseUsuarioForm}
         onSuccess={handleUsuarioFormSuccess}
+        isGestor={isGestor}
       />
     </div>
   );
