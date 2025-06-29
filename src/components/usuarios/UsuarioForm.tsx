@@ -34,9 +34,10 @@ interface UsuarioFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  isGestor?: boolean;
 }
 
-const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, onSuccess }) => {
+const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, onSuccess, isGestor = false }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -147,8 +148,8 @@ const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, onSuccess })
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="admin">Administrador</SelectItem>
-                      <SelectItem value="gestor">Gestor</SelectItem>
+                      {!isGestor && <SelectItem value="admin">Administrador</SelectItem>}
+                      {!isGestor && <SelectItem value="gestor">Gestor</SelectItem>}
                       <SelectItem value="cuidador">Cuidador</SelectItem>
                     </SelectContent>
                   </Select>
