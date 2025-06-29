@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Send, X } from 'lucide-react';
 import { UserProfile } from '@/types/chat';
-import { useChat } from '@/hooks/useChat';
 import { useToast } from '@/hooks/use-toast';
 import EmojiPicker from './EmojiPicker';
 import MentionsList from './MentionsList';
@@ -16,7 +15,7 @@ interface InputMensagemAvancadoProps {
   grupoId?: string;
   usuarios: UserProfile[];
   isGroup?: boolean;
-  onSendMessage?: (
+  onSendMessage: (
     conteudo: string,
     tipoMensagem?: 'texto' | 'imagem' | 'video' | 'audio' | 'arquivo',
     arquivoUrl?: string,
@@ -35,7 +34,6 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
   onSendMessage,
   onEnviar
 }) => {
-  const { enviarMensagem } = useChat();
   const { toast } = useToast();
   const [mensagem, setMensagem] = useState('');
   const [isEnviando, setIsEnviando] = useState(false);
@@ -45,11 +43,15 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleEnviarMensagem = async () => {
+    console.log('Tentando enviar mensagem:', { mensagem: mensagem.trim(), arquivos: arquivos.length });
+
     if ((!mensagem.trim() && arquivos.length === 0) || isEnviando) {
+      console.log('Mensagem vazia ou já enviando');
       return;
     }
 
     if (!destinatarioId && !grupoId) {
+      console.log('Sem destinatário ou grupo');
       toast({
         variant: 'destructive',
         title: 'Erro',
@@ -61,24 +63,10 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
     setIsEnviando(true);
     
     try {
-      if (onSendMessage) {
-        await onSendMessage(mensagem, 'texto', undefined, undefined, undefined, mencoes);
-      } else {
-        const resultado = await enviarMensagem(
-          mensagem,
-          destinatarioId,
-          grupoId,
-          'texto',
-          undefined,
-          undefined,
-          undefined,
-          mencoes
-        );
-        
-        if (!resultado) {
-          throw new Error('Falha ao enviar mensagem');
-        }
-      }
+      console.log('Enviando mensagem via onSendMessage...');
+      await onSendMessage(mensagem.trim(), 'texto', undefined, undefined, undefined, mencoes);
+      
+      console.log('Mensagem enviada com sucesso, limpando campos...');
       
       // Limpar campos após envio bem-sucedido
       setMensagem('');
@@ -165,20 +153,7 @@ const InputMensagemAvancado: React.FC<InputMensagemAvancadoProps> = ({
       const audioUrl = URL.createObjectURL(audioBlob);
       const audioNome = `audio_${Date.now()}.webm`;
       
-      if (onSendMessage) {
-        await onSendMessage('🎤 Mensagem de áudio', 'audio', audioUrl, audioNome, duration, []);
-      } else {
-        await enviarMensagem(
-          '🎤 Mensagem de áudio',
-          destinatarioId,
-          grupoId,
-          'audio',
-          audioUrl,
-          audioNome,
-          duration,
-          []
-        );
-      }
+      await onSendMessage('🎤 Mensagem de áudio', 'audio', audioUrl, audioNome, duration, []);
       
     } catch (error) {
       console.error('Erro ao enviar áudio:', error);

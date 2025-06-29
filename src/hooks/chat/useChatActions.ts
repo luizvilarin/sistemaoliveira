@@ -74,7 +74,7 @@ export const useChatActions = (userProfile: any) => {
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Não foi possível criar o grupo. Verifique suas permissões.'
+        description: 'Não foi possível criar o grupo. Tente novamente.'
       });
       throw error;
     }
@@ -91,14 +91,17 @@ export const useChatActions = (userProfile: any) => {
     mencoes?: string[]
   ) => {
     if (!userProfile) {
+      console.error('Usuário não autenticado');
       throw new Error('Usuário não autenticado');
     }
 
     if (!destinatarioId && !grupoId) {
+      console.error('É necessário especificar um destinatário ou grupo');
       throw new Error('É necessário especificar um destinatário ou grupo');
     }
 
     if (!conteudo.trim() && !arquivoUrl) {
+      console.error('Mensagem não pode estar vazia');
       throw new Error('Mensagem não pode estar vazia');
     }
 
@@ -125,6 +128,8 @@ export const useChatActions = (userProfile: any) => {
         lida: false
       };
 
+      console.log('Dados da mensagem para inserir:', mensagemData);
+
       const { data, error } = await supabase
         .from('mensagens')
         .insert(mensagemData)
@@ -132,14 +137,25 @@ export const useChatActions = (userProfile: any) => {
         .single();
 
       if (error) {
-        console.error('Erro ao inserir mensagem:', error);
+        console.error('Erro ao inserir mensagem no banco:', error);
         throw error;
       }
 
-      console.log('Mensagem enviada com sucesso:', data.id);
+      console.log('Mensagem enviada com sucesso:', data);
+      
+      toast({
+        title: 'Mensagem enviada',
+        description: 'Sua mensagem foi enviada com sucesso!'
+      });
+
       return data;
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao enviar',
+        description: 'Não foi possível enviar a mensagem. Tente novamente.'
+      });
       throw error;
     }
   };
@@ -148,13 +164,18 @@ export const useChatActions = (userProfile: any) => {
     if (!userProfile) return;
 
     try {
+      console.log('Adicionando reação:', { mensagemId, emoji, userId: userProfile.id });
+
       const { data: mensagem, error: buscarError } = await supabase
         .from('mensagens')
         .select('emoji_reacoes')
         .eq('id', mensagemId)
         .single();
 
-      if (buscarError) throw buscarError;
+      if (buscarError) {
+        console.error('Erro ao buscar mensagem:', buscarError);
+        throw buscarError;
+      }
 
       const reacoesAtuais = (mensagem.emoji_reacoes as Record<string, string[]>) || {};
       const usuariosEmoji = reacoesAtuais[emoji] || [];
@@ -174,7 +195,12 @@ export const useChatActions = (userProfile: any) => {
         .update({ emoji_reacoes: novasReacoes })
         .eq('id', mensagemId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao atualizar reações:', error);
+        throw error;
+      }
+
+      console.log('Reação adicionada com sucesso');
     } catch (error) {
       console.error('Erro ao adicionar reação:', error);
       toast({
@@ -186,13 +212,23 @@ export const useChatActions = (userProfile: any) => {
   };
 
   const marcarComoLida = async (mensagemId: string) => {
+    if (!userProfile) return;
+
     try {
+      console.log('Marcando mensagem como lida:', mensagemId);
+
       const { error } = await supabase
         .from('mensagens')
         .update({ lida: true })
-        .eq('id', mensagemId);
+        .eq('id', mensagemId)
+        .eq('destinatario_id', userProfile.id); // Só marcar se for destinatário
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao marcar como lida:', error);
+        throw error;
+      }
+
+      console.log('Mensagem marcada como lida');
     } catch (error) {
       console.error('Erro ao marcar como lida:', error);
     }

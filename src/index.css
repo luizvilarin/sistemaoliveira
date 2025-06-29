@@ -140,10 +140,6 @@
       @apply px-2;
     }
     
-    .grid {
-      @apply gap-2;
-    }
-    
     .space-y-6 > * + * {
       @apply mt-3;
     }
@@ -197,13 +193,17 @@
     }
   }
 
-  /* Melhorias para o calendário */
+  /* Estilos para o calendário */
+  .calendario-custom {
+    font-family: 'Roboto', sans-serif !important;
+  }
+
   .rbc-calendar {
-    @apply bg-white rounded-lg border;
+    @apply bg-white rounded-lg border border-gray-200;
   }
   
   .rbc-header {
-    @apply bg-gray-50 font-medium text-gray-700 border-b;
+    @apply bg-gray-50 font-medium text-gray-700 border-b border-gray-200 p-3;
   }
   
   .rbc-today {
@@ -211,11 +211,43 @@
   }
   
   .rbc-event {
-    @apply rounded-md shadow-sm;
+    @apply rounded-md shadow-sm border-0;
   }
   
   .rbc-selected {
     @apply bg-blue-500;
+  }
+
+  .rbc-toolbar {
+    @apply mb-4 flex items-center justify-between flex-wrap gap-2;
+  }
+
+  .rbc-toolbar button {
+    @apply px-3 py-2 border border-gray-300 bg-white text-gray-700 rounded-md hover:bg-gray-50 transition-colors;
+  }
+
+  .rbc-toolbar button.rbc-active {
+    @apply bg-blue-500 text-white border-blue-500;
+  }
+
+  .rbc-toolbar-label {
+    @apply text-lg font-semibold text-gray-900;
+  }
+
+  .rbc-month-view {
+    @apply border border-gray-200;
+  }
+
+  .rbc-date-cell {
+    @apply p-2 text-center border-r border-gray-200;
+  }
+
+  .rbc-off-range-bg {
+    @apply bg-gray-50;
+  }
+
+  .rbc-day-bg:hover {
+    @apply bg-gray-50;
   }
 
   /* Responsividade do calendário */
@@ -238,6 +270,28 @@
     
     .rbc-btn-group button {
       @apply text-xs px-2 py-1;
+    }
+
+    .rbc-header {
+      @apply p-2 text-xs;
+    }
+
+    .rbc-date-cell {
+      @apply p-1 text-xs;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .rbc-calendar {
+      @apply text-xs;
+    }
+
+    .rbc-toolbar-label {
+      @apply text-sm;
+    }
+
+    .rbc-event {
+      @apply text-xs p-1;
     }
   }
 }

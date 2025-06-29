@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'moment/locale/pt-br';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +21,7 @@ interface CalendarioInterativoProps {
   onCreateLembrete?: (data: Date) => void;
 }
 
-// Feriados nacionais e de Goiânia
+// Feriados nacionais e de Goiânia para 2024
 const feriados2024 = [
   { date: '2024-01-01', name: 'Confraternização Universal' },
   { date: '2024-02-12', name: 'Carnaval' },
@@ -49,14 +50,24 @@ const CalendarioInterativo: React.FC<CalendarioInterativoProps> = ({
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   // Converter lembretes para eventos do calendário
-  const eventos = lembretes.map(lembrete => ({
-    id: lembrete.id,
-    title: lembrete.titulo,
-    start: moment(lembrete.dia).toDate(),
-    end: moment(lembrete.dia).add(1, 'hour').toDate(),
-    resource: lembrete,
-    allDay: !lembrete.hora
-  }));
+  const eventos = lembretes.map(lembrete => {
+    const startDate = lembrete.hora 
+      ? moment(`${lembrete.dia} ${lembrete.hora}`).toDate()
+      : moment(lembrete.dia).toDate();
+    
+    const endDate = lembrete.hora 
+      ? moment(`${lembrete.dia} ${lembrete.hora}`).add(1, 'hour').toDate()
+      : moment(lembrete.dia).add(1, 'day').toDate();
+
+    return {
+      id: lembrete.id,
+      title: lembrete.titulo,
+      start: startDate,
+      end: endDate,
+      resource: lembrete,
+      allDay: !lembrete.hora
+    };
+  });
 
   // Adicionar feriados como eventos
   const feriadosEventos = feriados2024.map(feriado => ({
@@ -81,12 +92,9 @@ const CalendarioInterativo: React.FC<CalendarioInterativoProps> = ({
   const handleSelectSlot = ({ start }: { start: Date }) => {
     setSelectedDate(start);
     setShowCreateForm(true);
-  };
-
-  const getLembretesDaData = (data: Date) => {
-    return lembretes.filter(lembrete => 
-      moment(lembrete.dia).isSame(moment(data), 'day')
-    );
+    if (onCreateLembrete) {
+      onCreateLembrete(start);
+    }
   };
 
   const eventStyleGetter = (event: any) => {
@@ -140,12 +148,12 @@ const CalendarioInterativo: React.FC<CalendarioInterativoProps> = ({
     <div className="space-y-4">
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
             <h3 className="text-lg font-semibold flex items-center gap-2">
               <CalendarIcon className="h-5 w-5" />
               Calendário de Lembretes
             </h3>
-            <div className="flex gap-2 text-sm">
+            <div className="flex flex-wrap gap-2 text-sm">
               <Badge variant="outline" className="bg-blue-50">
                 <div className="w-3 h-3 bg-blue-500 rounded mr-2"></div>
                 Geral
@@ -169,7 +177,7 @@ const CalendarioInterativo: React.FC<CalendarioInterativoProps> = ({
             </div>
           </div>
           
-          <div style={{ height: '600px' }} className="w-full">
+          <div className="w-full bg-white border rounded-lg overflow-hidden" style={{ height: '600px' }}>
             <Calendar
               localizer={localizer}
               events={todosEventos}
@@ -180,11 +188,11 @@ const CalendarioInterativo: React.FC<CalendarioInterativoProps> = ({
               selectable
               eventPropGetter={eventStyleGetter}
               messages={messages}
-              className="rbc-calendar"
               views={['month', 'week', 'day', 'agenda']}
               defaultView="month"
               popup
-              style={{ height: '100%' }}
+              style={{ height: '100%', padding: '10px' }}
+              className="calendario-custom"
             />
           </div>
         </CardContent>
@@ -234,22 +242,14 @@ const CalendarioInterativo: React.FC<CalendarioInterativoProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para criar lembrete */}
-      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5" />
-              Criar Lembrete
-            </DialogTitle>
-          </DialogHeader>
-          <LembreteForm
-            isOpen={showCreateForm}
-            onClose={() => setShowCreateForm(false)}
-            selectedDate={selectedDate}
-          />
-        </DialogContent>
-      </Dialog>
+      {/* Form para criar lembrete */}
+      {showCreateForm && (
+        <LembreteForm
+          isOpen={showCreateForm}
+          onClose={() => setShowCreateForm(false)}
+          selectedDate={selectedDate}
+        />
+      )}
     </div>
   );
 };
