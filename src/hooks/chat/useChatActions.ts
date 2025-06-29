@@ -136,7 +136,7 @@ export const useChatActions = (userProfile: any) => {
 
       if (fetchError) throw fetchError;
 
-      const reacoesAtuais = mensagem.emoji_reacoes || {};
+      const reacoesAtuais = mensagem?.emoji_reacoes || {};
       const usuariosReacao = reacoesAtuais[emoji] || [];
 
       // Toggle da reação
@@ -145,8 +145,8 @@ export const useChatActions = (userProfile: any) => {
         // Remover reação
         const usuariosFiltrados = usuariosReacao.filter((id: string) => id !== userProfile.id);
         if (usuariosFiltrados.length === 0) {
-          delete reacoesAtuais[emoji];
-          novasReacoes = reacoesAtuais;
+          const { [emoji]: removed, ...rest } = reacoesAtuais;
+          novasReacoes = rest;
         } else {
           novasReacoes = { ...reacoesAtuais, [emoji]: usuariosFiltrados };
         }
