@@ -73,7 +73,7 @@ export const useChatData = (userProfile: any) => {
       
       let query = supabase
         .from('profiles')
-        .select('id, nome, email, perfil, avatar_url, ativo')
+        .select('id, nome, email, perfil, avatar_url, ativo, created_at, status_online, ultima_atividade')
         .eq('ativo', true)
         .neq('id', userProfile.id)
         .order('nome');
@@ -92,8 +92,21 @@ export const useChatData = (userProfile: any) => {
         throw error;
       }
 
-      console.log('Usuários carregados:', data?.length);
-      setUsuarios(data || []);
+      // Mapear dados para o tipo UserProfile
+      const usuariosFormatados: UserProfile[] = (data || []).map(user => ({
+        id: user.id,
+        nome: user.nome,
+        email: user.email,
+        perfil: user.perfil as 'admin' | 'gestor' | 'cuidador',
+        avatar_url: user.avatar_url || undefined,
+        status_online: (user.status_online as 'online' | 'offline' | 'ausente' | 'ocupado') || 'offline',
+        ultima_atividade: user.ultima_atividade || undefined,
+        created_at: user.created_at,
+        ativo: user.ativo || false
+      }));
+
+      console.log('Usuários carregados:', usuariosFormatados.length);
+      setUsuarios(usuariosFormatados);
     } catch (error) {
       console.error('Erro ao carregar usuários:', error);
       setUsuarios([]);
