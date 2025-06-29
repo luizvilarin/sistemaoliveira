@@ -193,105 +193,222 @@
     }
   }
 
-  /* Estilos para o calendário */
-  .calendario-custom {
-    font-family: 'Roboto', sans-serif !important;
+  /* Estilos modernos para o calendário */
+  .calendario-moderno {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid rgba(148, 163, 184, 0.1);
   }
 
-  .rbc-calendar {
-    @apply bg-white rounded-lg border border-gray-200;
+  .calendario-custom-moderno {
+    font-family: 'Inter', 'Roboto', sans-serif !important;
+  }
+
+  .calendario-custom-moderno .rbc-calendar {
+    @apply bg-transparent;
+    border: none;
   }
   
-  .rbc-header {
-    @apply bg-gray-50 font-medium text-gray-700 border-b border-gray-200 p-3;
+  .calendario-custom-moderno .rbc-header {
+    @apply bg-gradient-to-r from-slate-50 to-gray-50 font-semibold text-gray-800 border-b border-gray-100 p-4;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
   
-  .rbc-today {
-    @apply bg-blue-50;
+  .calendario-custom-moderno .rbc-today {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 197, 253, 0.05) 100%) !important;
+    border-radius: 8px;
   }
   
-  .rbc-event {
-    @apply rounded-md shadow-sm border-0;
+  .calendario-custom-moderno .rbc-event {
+    @apply rounded-lg shadow-sm border-0;
+    font-weight: 500;
+    font-size: 12px;
+    padding: 4px 8px;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+  }
+
+  .calendario-custom-moderno .rbc-event:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   }
   
-  .rbc-selected {
-    @apply bg-blue-500;
+  .calendario-custom-moderno .rbc-selected {
+    @apply bg-gradient-to-r from-blue-500 to-blue-600;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
   }
 
-  .rbc-toolbar {
-    @apply mb-4 flex items-center justify-between flex-wrap gap-2;
+  .calendario-custom-moderno .rbc-toolbar {
+    @apply mb-6 flex items-center justify-between flex-wrap gap-4 p-4 bg-gradient-to-r from-white to-gray-50 rounded-xl border border-gray-100 shadow-sm;
   }
 
-  .rbc-toolbar button {
-    @apply px-3 py-2 border border-gray-300 bg-white text-gray-700 rounded-md hover:bg-gray-50 transition-colors;
+  .calendario-custom-moderno .rbc-toolbar button {
+    @apply px-4 py-2 border-0 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-all shadow-sm;
+    font-weight: 500;
+    font-size: 13px;
   }
 
-  .rbc-toolbar button.rbc-active {
-    @apply bg-blue-500 text-white border-blue-500;
+  .calendario-custom-moderno .rbc-toolbar button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
   }
 
-  .rbc-toolbar-label {
-    @apply text-lg font-semibold text-gray-900;
+  .calendario-custom-moderno .rbc-toolbar button.rbc-active {
+    @apply bg-gradient-to-r from-blue-500 to-blue-600 text-white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
   }
 
-  .rbc-month-view {
-    @apply border border-gray-200;
+  .calendario-custom-moderno .rbc-toolbar-label {
+    @apply text-xl font-bold text-gray-900;
+    background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
-  .rbc-date-cell {
-    @apply p-2 text-center border-r border-gray-200;
+  .calendario-custom-moderno .rbc-month-view {
+    @apply border-0;
   }
 
-  .rbc-off-range-bg {
-    @apply bg-gray-50;
+  .calendario-custom-moderno .rbc-date-cell {
+    @apply p-3 text-center border-r border-gray-100;
+    font-weight: 500;
+    color: #374151;
+    transition: all 0.2s ease;
   }
 
-  .rbc-day-bg:hover {
-    @apply bg-gray-50;
+  .calendario-custom-moderno .rbc-date-cell:hover {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(147, 197, 253, 0.02) 100%);
   }
 
-  /* Responsividade do calendário */
+  .calendario-custom-moderno .rbc-off-range-bg {
+    @apply bg-gray-25;
+    opacity: 0.3;
+  }
+
+  .calendario-custom-moderno .rbc-day-bg {
+    border-right: 1px solid rgba(229, 231, 235, 0.5);
+    border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+  }
+
+  .calendario-custom-moderno .rbc-day-bg:hover {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.02) 0%, rgba(147, 197, 253, 0.01) 100%);
+  }
+
+  .calendario-custom-moderno .rbc-month-row {
+    border-bottom: 1px solid rgba(229, 231, 235, 0.3);
+  }
+
+  .calendario-custom-moderno .rbc-row-bg .rbc-day-bg {
+    min-height: 80px;
+  }
+
+  /* Popup moderno */
+  .calendario-custom-moderno .rbc-overlay {
+    @apply rounded-xl shadow-2xl border-0 bg-white;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  .calendario-custom-moderno .rbc-overlay-header {
+    @apply bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold p-3 rounded-t-xl;
+  }
+
+  /* Responsividade do calendário moderno */
   @media (max-width: 768px) {
-    .rbc-calendar {
+    .calendario-custom-moderno {
       @apply text-xs;
     }
     
-    .rbc-toolbar {
-      @apply flex-col space-y-2;
+    .calendario-custom-moderno .rbc-toolbar {
+      @apply flex-col space-y-3 p-3;
     }
     
-    .rbc-toolbar-label {
-      @apply text-base;
+    .calendario-custom-moderno .rbc-toolbar-label {
+      @apply text-lg;
     }
     
-    .rbc-btn-group {
-      @apply flex flex-wrap gap-1;
+    .calendario-custom-moderno .rbc-btn-group {
+      @apply flex flex-wrap gap-2 justify-center;
     }
     
-    .rbc-btn-group button {
-      @apply text-xs px-2 py-1;
+    .calendario-custom-moderno .rbc-btn-group button {
+      @apply text-xs px-3 py-2;
     }
 
-    .rbc-header {
+    .calendario-custom-moderno .rbc-header {
       @apply p-2 text-xs;
     }
 
-    .rbc-date-cell {
+    .calendario-custom-moderno .rbc-date-cell {
       @apply p-1 text-xs;
+    }
+
+    .calendario-custom-moderno .rbc-event {
+      @apply text-xs p-1;
+    }
+
+    .calendario-moderno {
+      height: 500px !important;
     }
   }
 
   @media (max-width: 480px) {
-    .rbc-calendar {
-      @apply text-xs;
+    .calendario-custom-moderno .rbc-toolbar-label {
+      @apply text-base;
     }
 
-    .rbc-toolbar-label {
-      @apply text-sm;
-    }
-
-    .rbc-event {
+    .calendario-custom-moderno .rbc-event {
       @apply text-xs p-1;
+      font-size: 10px;
     }
+
+    .calendario-moderno {
+      height: 450px !important;
+    }
+  }
+
+  /* Animações para o calendário */
+  .calendario-custom-moderno .rbc-event {
+    animation: fadeInScale 0.3s ease-out;
+  }
+
+  @keyframes fadeInScale {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Melhorias visuais adicionais */
+  .calendario-custom-moderno .rbc-show-more {
+    @apply bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs px-2 py-1 rounded-md;
+    font-weight: 500;
+  }
+
+  .calendario-custom-moderno .rbc-month-header {
+    border-bottom: 2px solid rgba(59, 130, 246, 0.1);
+  }
+
+  /* Estilo para o dia atual destacado */
+  .rbc-today-modern {
+    position: relative;
+  }
+
+  .rbc-today-modern::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 8px;
+    height: 8px;
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
   }
 }
