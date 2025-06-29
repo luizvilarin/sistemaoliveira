@@ -1,70 +1,59 @@
+import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
-export interface GrupoChat {
-  id: string;
-  nome: string;
-  descricao?: string;
-  imagem_url?: string;
-  criado_por: string;
-  created_at: string;
-  updated_at: string;
-}
+// Type definitions based on Supabase schema
+export type Cliente = Tables<'clientes'>;
+export type Cuidador = Tables<'cuidadores'> & {
+  cliente?: Cliente | null;
+};
+export type Paciente = Tables<'pacientes'> & {
+  cliente?: Cliente | null;
+  cuidador?: Cuidador | null;
+};
+export type Transacao = Tables<'transacoes'> & {
+  cliente?: Cliente | null;
+};
+export type Tarefa = Tables<'tarefas'>;
+export type Lembrete = Tables<'lembretes'> & {
+  cliente?: Cliente | null;
+  cuidador?: Cuidador | null;
+};
+export type Mensagem = Tables<'mensagens'>;
+export type Notificacao = Tables<'notificacoes'>;
+export type NotificacaoSistema = Tables<'notificacoes_sistema'>;
+export type UserInvite = Tables<'user_invites'>;
+export type Profile = Tables<'profiles'>;
 
-export interface MembroGrupo {
-  id: string;
-  grupo_id: string;
-  usuario_id: string;
-  papel: 'admin' | 'membro';
-  adicionado_em: string;
-}
-
-export interface MensagensAvancada {
-  id: string;
-  assunto: string;
-  conteudo: string;
-  remetente_id: string;
-  destinatario_id?: string;
-  grupo_id?: string;
-  tipo_mensagem: 'texto' | 'imagem' | 'video' | 'audio' | 'arquivo';
-  arquivo_url?: string;
-  arquivo_nome?: string;
-  duracao_audio?: number;
-  mencoes?: string[];
-  emoji_reacoes?: Record<string, string[]>; // emoji -> array de user_ids
-  lida: boolean;
-  created_at: string;
-}
-
-export interface ArquivoMensagem {
-  id: string;
-  mensagem_id: string;
-  nome_arquivo: string;
-  tipo_arquivo: string;
-  tamanho: number;
-  url: string;
-  created_at: string;
-}
+export interface GrupoChat extends Tables<'grupos_chat'> { }
+export interface MembroGrupo extends Tables<'membros_grupo'> { }
 
 export interface UserProfile {
   id: string;
   nome: string;
   email: string;
-  perfil: string;
   avatar_url?: string;
-  ativo: boolean;
+  perfil: 'admin' | 'gestor' | 'cuidador';
+  status_online?: 'online' | 'offline' | 'ausente' | 'ocupado';
+  ultima_atividade?: string;
+  created_at: string;
+  ativo?: boolean;
 }
 
-export interface NotificacaoSistema {
+export interface MensagensAvancada {
   id: string;
-  usuario_id: string;
-  tipo: string;
-  titulo: string;
-  mensagem: string;
-  data_criacao: string;
-  created_at?: string; // adicionar esta propriedade opcional
-  data_vencimento?: string;
-  lida: boolean;
-  acao_url?: string;
-  metadados?: any;
+  conteudo: string;
+  remetente_id: string;
+  destinatario_id?: string;
   grupo_id?: string;
-  mensagem_id?: string;
+  created_at: string;
+  tipo_mensagem: 'texto' | 'imagem' | 'video' | 'audio' | 'arquivo';
+  arquivo_url?: string;
+  arquivo_nome?: string;
+  lida?: boolean;
+  entregue?: boolean;
+  visualizada?: boolean;
+  data_entrega?: string;
+  data_visualizacao?: string;
+  emoji_reacoes?: Record<string, string[]>;
+  mencoes?: string[];
+  duracao_audio?: number;
 }

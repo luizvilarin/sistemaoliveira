@@ -70,7 +70,7 @@ const MensagemAvancada: React.FC<MensagemAvancadaProps> = ({
               {remetente?.nome || 'Usuário'}
             </span>
             <UserStatusIndicator 
-              status={remetente?.status_online as 'online' | 'offline' | 'ausente' | 'ocupado' || 'offline'} 
+              status={remetente?.status_online || 'offline'} 
               size="sm" 
             />
           </div>

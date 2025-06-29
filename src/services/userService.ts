@@ -129,7 +129,8 @@ export const userService = {
       .filter(user => user.email !== 'luizvilarinho.nave@gmail.com') // Ocultar usuário técnico
       .map(user => ({
         ...user,
-        canDelete: user.email !== 'luizvilarinho.nave@gmail.com'
+        canDelete: user.email !== 'luizvilarinho.nave@gmail.com',
+        status_online: (user.status_online as 'online' | 'offline' | 'ausente' | 'ocupado') || 'offline'
       }));
 
     return users;
