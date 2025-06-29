@@ -136,17 +136,28 @@ export const useChatActions = (userProfile: any) => {
 
       if (fetchError) throw fetchError;
 
-      const reacoesAtuais = mensagem?.emoji_reacoes || {};
+      // Garantir que emoji_reacoes seja um objeto válido
+      let reacoesAtuais: Record<string, string[]> = {};
+      
+      if (mensagem?.emoji_reacoes && typeof mensagem.emoji_reacoes === 'object' && !Array.isArray(mensagem.emoji_reacoes)) {
+        reacoesAtuais = mensagem.emoji_reacoes as Record<string, string[]>;
+      }
+
       const usuariosReacao = reacoesAtuais[emoji] || [];
 
       // Toggle da reação
-      let novasReacoes;
+      let novasReacoes: Record<string, string[]>;
       if (usuariosReacao.includes(userProfile.id)) {
         // Remover reação
         const usuariosFiltrados = usuariosReacao.filter((id: string) => id !== userProfile.id);
         if (usuariosFiltrados.length === 0) {
-          const { [emoji]: removed, ...rest } = reacoesAtuais;
-          novasReacoes = rest;
+          // Criar novo objeto sem o emoji
+          novasReacoes = Object.keys(reacoesAtuais).reduce((acc, key) => {
+            if (key !== emoji) {
+              acc[key] = reacoesAtuais[key];
+            }
+            return acc;
+          }, {} as Record<string, string[]>);
         } else {
           novasReacoes = { ...reacoesAtuais, [emoji]: usuariosFiltrados };
         }
