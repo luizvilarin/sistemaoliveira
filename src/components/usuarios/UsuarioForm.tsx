@@ -22,7 +22,7 @@ import { Loader2 } from 'lucide-react';
 const formSchema = z.object({
   nome: z.string().min(3, { message: 'Nome deve ter pelo menos 3 caracteres' }),
   email: z.string().email({ message: 'E-mail inválido' }),
-  perfil: z.enum(['admin', 'gestor', 'cuidador'], {
+  perfil: z.enum(['admin', 'gestor'], {
     required_error: 'Perfil é obrigatório',
   }),
   resend: z.boolean().default(false),
@@ -46,7 +46,7 @@ const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, onSuccess, i
     defaultValues: {
       nome: '',
       email: '',
-      perfil: 'cuidador',
+      perfil: 'gestor',
       resend: false,
     },
   });
@@ -150,7 +150,6 @@ const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, onSuccess, i
                     <SelectContent>
                       {!isGestor && <SelectItem value="admin">Administrador</SelectItem>}
                       {!isGestor && <SelectItem value="gestor">Gestor</SelectItem>}
-                      <SelectItem value="cuidador">Cuidador</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

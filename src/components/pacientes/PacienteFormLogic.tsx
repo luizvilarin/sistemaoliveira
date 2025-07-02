@@ -11,9 +11,6 @@ const formSchema = z.object({
   cliente_id: z.string().min(1, { message: 'Cliente é obrigatório' }),
   cuidador_id: z.string().optional(),
   historico_medico: z.string().optional(),
-  contrato_ativo: z.boolean().default(true),
-  valor_contrato: z.string().optional(),
-  pagamento_realizado: z.boolean().default(false),
 });
 
 export type FormData = z.infer<typeof formSchema>;
@@ -24,7 +21,7 @@ interface UsePacienteFormProps {
 }
 
 export const usePacienteForm = ({ pacienteToEdit, onClose }: UsePacienteFormProps) => {
-  const { addPaciente, updatePaciente, addTransacao } = useData();
+  const { addPaciente, updatePaciente } = useData();
   const { toast } = useToast();
   const isEditing = !!pacienteToEdit;
 
@@ -35,9 +32,6 @@ export const usePacienteForm = ({ pacienteToEdit, onClose }: UsePacienteFormProp
       cliente_id: '',
       cuidador_id: undefined,
       historico_medico: '',
-      contrato_ativo: true,
-      valor_contrato: '',
-      pagamento_realizado: false,
     },
   });
 
@@ -48,9 +42,6 @@ export const usePacienteForm = ({ pacienteToEdit, onClose }: UsePacienteFormProp
         cliente_id: pacienteToEdit.cliente_id || '',
         cuidador_id: pacienteToEdit.cuidador_id || undefined,
         historico_medico: pacienteToEdit.historico_medico || '',
-        contrato_ativo: pacienteToEdit.contrato_ativo ?? true,
-        valor_contrato: pacienteToEdit.valor_contrato?.toString() || '',
-        pagamento_realizado: false,
       });
     } else {
       form.reset({
@@ -58,9 +49,6 @@ export const usePacienteForm = ({ pacienteToEdit, onClose }: UsePacienteFormProp
         cliente_id: '',
         cuidador_id: undefined,
         historico_medico: '',
-        contrato_ativo: true,
-        valor_contrato: '',
-        pagamento_realizado: false,
       });
     }
   }, [pacienteToEdit, form]);
@@ -72,42 +60,19 @@ export const usePacienteForm = ({ pacienteToEdit, onClose }: UsePacienteFormProp
         cliente_id: values.cliente_id,
         cuidador_id: values.cuidador_id || null,
         historico_medico: values.historico_medico || null,
-        contrato_ativo: values.contrato_ativo,
-        valor_contrato: values.valor_contrato ? parseFloat(values.valor_contrato) : null,
       };
-
-      let pacienteId: string;
 
       if (isEditing) {
         await updatePaciente(pacienteToEdit.id, pacienteData);
-        pacienteId = pacienteToEdit.id;
         toast({
           title: 'Paciente atualizado',
           description: 'O paciente foi atualizado com sucesso!',
         });
       } else {
-        const newPaciente = await addPaciente(pacienteData);
-        pacienteId = newPaciente.id;
+        await addPaciente(pacienteData);
         toast({
           title: 'Paciente adicionado',
           description: 'O paciente foi adicionado com sucesso!',
-        });
-      }
-
-      // Criar transação automaticamente se há valor de contrato e não está editando
-      if (!isEditing && values.valor_contrato && parseFloat(values.valor_contrato) > 0) {
-        const transacaoData = {
-          cliente_id: values.cliente_id,
-          valor: parseFloat(values.valor_contrato),
-          status: values.pagamento_realizado ? 'confirmado' as const : 'aguardando' as const,
-          data: new Date().toISOString(),
-        };
-
-        await addTransacao(transacaoData);
-        
-        toast({
-          title: 'Transação criada',
-          description: `Transação de ${values.pagamento_realizado ? 'pagamento confirmado' : 'pagamento pendente'} foi criada automaticamente.`,
         });
       }
       

@@ -63,10 +63,12 @@ const PacientesPage = () => {
     );
   }
 
-  const contratosAtivos = pacientes.filter(p => p.contrato_ativo).length;
-  const valorTotal = pacientes
-    .filter(p => p.contrato_ativo)
-    .reduce((acc, p) => acc + (p.valor_contrato || 0), 0);
+  // Os contratos agora estão nos clientes, não nos pacientes
+  const { clientes } = useData();
+  const contratosAtivos = clientes.filter(c => c.contrato_ativo).length;
+  const valorTotal = clientes
+    .filter(c => c.contrato_ativo)
+    .reduce((acc, c) => acc + (c.valor_contrato || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -136,8 +138,8 @@ const PacientesPage = () => {
                 <TableHead>Nome</TableHead>
                 <TableHead>Cliente/Família</TableHead>
                 <TableHead>Cuidador(a)</TableHead>
-                <TableHead>Contrato</TableHead>
-                <TableHead>Valor</TableHead>
+                <TableHead>Status Cliente</TableHead>
+                <TableHead>Cliente</TableHead>
                 <TableHead>Histórico Médico</TableHead>
                 <TableHead>Data de Cadastro</TableHead>
                 <TableHead>Ações</TableHead>
@@ -174,25 +176,33 @@ const PacientesPage = () => {
                     )}
                   </TableCell>
                   <TableCell>
-                    {paciente.contrato_ativo ? (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Ativo
+                    {paciente.cliente?.status ? (
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        paciente.cliente.status === 'ativo' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {paciente.cliente.status}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                        <XCircle className="h-3 w-3 mr-1" />
-                        Inativo
-                      </span>
+                      <span className="text-gray-400 text-sm">N/A</span>
                     )}
                   </TableCell>
                   <TableCell>
-                    {paciente.valor_contrato ? (
-                      <div className="font-medium">
-                        {formatMoney(paciente.valor_contrato)}
+                    {paciente.cliente?.contrato_ativo ? (
+                      <div className="space-y-1">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Contrato Ativo
+                        </span>
+                        {paciente.cliente.valor_contrato && (
+                          <div className="text-sm font-medium">
+                            {formatMoney(paciente.cliente.valor_contrato)}
+                          </div>
+                        )}
                       </div>
                     ) : (
-                      <span className="text-gray-400 text-sm">Não informado</span>
+                      <span className="text-gray-400 text-sm">Sem contrato</span>
                     )}
                   </TableCell>
                   <TableCell className="max-w-xs">

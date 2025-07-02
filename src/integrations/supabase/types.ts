@@ -50,33 +50,42 @@ export type Database = {
       clientes: {
         Row: {
           contato: string
+          contrato_ativo: boolean | null
           created_at: string
           endereco: string | null
           id: string
           nome: string
           status: string
+          status_pagamento: string | null
           tipo: string
           updated_at: string
+          valor_contrato: number | null
         }
         Insert: {
           contato: string
+          contrato_ativo?: boolean | null
           created_at?: string
           endereco?: string | null
           id?: string
           nome: string
           status: string
+          status_pagamento?: string | null
           tipo: string
           updated_at?: string
+          valor_contrato?: number | null
         }
         Update: {
           contato?: string
+          contrato_ativo?: boolean | null
           created_at?: string
           endereco?: string | null
           id?: string
           nome?: string
           status?: string
+          status_pagamento?: string | null
           tipo?: string
           updated_at?: string
+          valor_contrato?: number | null
         }
         Relationships: []
       }
@@ -167,6 +176,7 @@ export type Database = {
           responsavel_id: string
           status: string | null
           tags: string[] | null
+          tempo_antecedencia: number | null
           tipo: string | null
           titulo: string
           urgente: boolean | null
@@ -183,6 +193,7 @@ export type Database = {
           responsavel_id: string
           status?: string | null
           tags?: string[] | null
+          tempo_antecedencia?: number | null
           tipo?: string | null
           titulo: string
           urgente?: boolean | null
@@ -199,6 +210,7 @@ export type Database = {
           responsavel_id?: string
           status?: string | null
           tags?: string[] | null
+          tempo_antecedencia?: number | null
           tipo?: string | null
           titulo?: string
           urgente?: boolean | null
@@ -413,36 +425,30 @@ export type Database = {
       pacientes: {
         Row: {
           cliente_id: string
-          contrato_ativo: boolean | null
           created_at: string
           cuidador_id: string | null
           historico_medico: string | null
           id: string
           nome: string
           updated_at: string
-          valor_contrato: number | null
         }
         Insert: {
           cliente_id: string
-          contrato_ativo?: boolean | null
           created_at?: string
           cuidador_id?: string | null
           historico_medico?: string | null
           id?: string
           nome: string
           updated_at?: string
-          valor_contrato?: number | null
         }
         Update: {
           cliente_id?: string
-          contrato_ativo?: boolean | null
           created_at?: string
           cuidador_id?: string | null
           historico_medico?: string | null
           id?: string
           nome?: string
           updated_at?: string
-          valor_contrato?: number | null
         }
         Relationships: [
           {

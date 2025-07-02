@@ -33,6 +33,7 @@ const formSchema = z.object({
   urgente: z.boolean().default(false),
   tipo: z.string().default('geral'),
   tags: z.array(z.string()).default([]),
+  tempo_antecedencia: z.string().default('60'),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -64,6 +65,7 @@ const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose, lembreteTo
       urgente: false,
       tipo: 'geral',
       tags: [],
+      tempo_antecedencia: '60',
     },
   });
 
@@ -82,6 +84,7 @@ const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose, lembreteTo
         urgente: lembreteToEdit.urgente || false,
         tipo: lembreteToEdit.tipo || 'geral',
         tags: lembreteToEdit.tags || [],
+        tempo_antecedencia: lembreteToEdit.tempo_antecedencia?.toString() || '60',
       });
     } else {
       // Se há uma data selecionada, usar ela como padrão
@@ -97,6 +100,7 @@ const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose, lembreteTo
         urgente: false,
         tipo: 'geral',
         tags: [],
+        tempo_antecedencia: '60',
       });
     }
   }, [lembreteToEdit, selectedDate, form]);
@@ -131,6 +135,7 @@ const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose, lembreteTo
         tipo: values.tipo,
         tags: values.tags,
         status: 'pendente',
+        tempo_antecedencia: parseInt(values.tempo_antecedencia),
       };
 
       if (isEditing) {
@@ -354,6 +359,36 @@ const LembreteForm: React.FC<LembreteFormProps> = ({ isOpen, onClose, lembreteTo
                 ))}
               </div>
             </div>
+
+            <FormField
+              control={form.control}
+              name="tempo_antecedencia"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tempo de Antecedência para Notificação</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tempo de antecedência" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="15">15 minutos antes</SelectItem>
+                      <SelectItem value="30">30 minutos antes</SelectItem>
+                      <SelectItem value="60">1 hora antes</SelectItem>
+                      <SelectItem value="120">2 horas antes</SelectItem>
+                      <SelectItem value="1440">1 dia antes</SelectItem>
+                      <SelectItem value="2880">2 dias antes</SelectItem>
+                      <SelectItem value="10080">1 semana antes</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

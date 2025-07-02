@@ -34,14 +34,14 @@ const RelatoriosPage = () => {
 
   const tarefasConcluidas = tarefas.filter(t => t.status === 'done').length;
   const clientesAtivos = clientes.filter(c => c.status === 'ativo').length;
-  const contratosAtivos = pacientes.filter(p => p.contrato_ativo).length;
+  const contratosAtivos = clientes.filter(c => c.contrato_ativo).length;
   const cuidadoresDisponiveis = cuidadores.filter(c => !c.cliente_id).length;
   
   // Calcular crescimento baseado em dados reais
   const taxaEficiencia = tarefas.length > 0 ? (tarefasConcluidas / tarefas.length) * 100 : 0;
-  const valorTotalContratos = pacientes
-    .filter(p => p.contrato_ativo)
-    .reduce((acc, p) => acc + (p.valor_contrato || 0), 0);
+  const valorTotalContratos = clientes
+    .filter(c => c.contrato_ativo)
+    .reduce((acc, c) => acc + (c.valor_contrato || 0), 0);
 
   const exportToExcel = (relatorioId: string) => {
     console.log(`Exportando relatório ${relatorioId} para Excel...`);

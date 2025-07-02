@@ -26,6 +26,11 @@ const formSchema = z.object({
   status: z.enum(['ativo', 'pausado', 'terceirizado'], {
     required_error: 'Status é obrigatório',
   }),
+  contrato_ativo: z.boolean().optional(),
+  valor_contrato: z.string().optional(),
+  status_pagamento: z.enum(['aguardando', 'vencido', 'confirmado'], {
+    required_error: 'Status do pagamento é obrigatório',
+  }).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -39,11 +44,14 @@ interface ClienteFormProps {
     contato: string;
     tipo: 'fixo' | 'temporario';
     status: 'ativo' | 'pausado' | 'terceirizado';
+    contrato_ativo?: boolean;
+    valor_contrato?: number;
+    status_pagamento?: 'aguardando' | 'vencido' | 'confirmado';
   };
 }
 
 const ClienteForm: React.FC<ClienteFormProps> = ({ isOpen, onClose, clienteToEdit }) => {
-  const { addCliente, updateCliente } = useData();
+  const { addCliente, updateCliente, addTransacao } = useData();
   const { toast } = useToast();
   const isEditing = !!clienteToEdit;
 
@@ -54,6 +62,9 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ isOpen, onClose, clienteToEdi
       contato: '',
       tipo: 'fixo',
       status: 'ativo',
+      contrato_ativo: false,
+      valor_contrato: '',
+      status_pagamento: 'aguardando',
     },
   });
 
@@ -66,6 +77,9 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ isOpen, onClose, clienteToEdi
         contato: clienteToEdit.contato,
         tipo: clienteToEdit.tipo,
         status: clienteToEdit.status,
+        contrato_ativo: clienteToEdit.contrato_ativo || false,
+        valor_contrato: clienteToEdit.valor_contrato?.toString() || '',
+        status_pagamento: clienteToEdit.status_pagamento || 'aguardando',
       });
     } else {
       form.reset({
@@ -73,23 +87,44 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ isOpen, onClose, clienteToEdi
         contato: '',
         tipo: 'fixo',
         status: 'ativo',
+        contrato_ativo: false,
+        valor_contrato: '',
+        status_pagamento: 'aguardando',
       });
     }
   }, [clienteToEdit, form]);
 
-  function onSubmit(values: FormData) {
+  async function onSubmit(values: FormData) {
     try {
-      // Cast values to the required type since Zod validation ensures all fields are present
-      const clienteData = values as Required<FormData>;
+      const clienteData = {
+        nome: values.nome,
+        contato: values.contato,
+        tipo: values.tipo,
+        status: values.status,
+        contrato_ativo: values.contrato_ativo || false,
+        valor_contrato: values.valor_contrato ? parseFloat(values.valor_contrato) : null,
+        status_pagamento: values.status_pagamento || 'aguardando',
+      };
       
       if (isEditing && clienteToEdit) {
-        updateCliente(clienteToEdit.id, clienteData);
+        await updateCliente(clienteToEdit.id, clienteData);
         toast({
           title: 'Cliente atualizado',
           description: 'O cliente foi atualizado com sucesso!',
         });
       } else {
-        addCliente(clienteData);
+        const novoCliente = await addCliente(clienteData);
+        
+        // Se há valor de contrato, criar transação automaticamente
+        if (clienteData.valor_contrato && clienteData.valor_contrato > 0) {
+          await addTransacao({
+            cliente_id: novoCliente.id,
+            valor: clienteData.valor_contrato,
+            status: clienteData.status_pagamento as 'confirmado' | 'aguardando' | 'expirado',
+            data: new Date().toISOString(),
+          });
+        }
+        
         toast({
           title: 'Cliente adicionado',
           description: 'O cliente foi adicionado com sucesso!',
@@ -189,6 +224,78 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ isOpen, onClose, clienteToEdi
                 </FormItem>
               )}
             />
+            
+            {/* Campos de contrato */}
+            <div className="border-t pt-4 mt-4">
+              <h3 className="text-lg font-medium mb-3">Informações do Contrato</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="contrato_ativo"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                          className="rounded border border-gray-300"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Contrato Ativo</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="valor_contrato"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor do Contrato (R$)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          type="number" 
+                          step="0.01" 
+                          placeholder="0.00"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="status_pagamento"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status do Pagamento</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o status do pagamento" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="aguardando">Aguardando Pagamento</SelectItem>
+                        <SelectItem value="vencido">Vencido</SelectItem>
+                        <SelectItem value="confirmado">Confirmado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
             <div className="flex justify-end gap-3">
               <Button variant="outline" type="button" onClick={onClose}>
                 Cancelar
