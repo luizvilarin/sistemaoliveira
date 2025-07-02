@@ -148,8 +148,8 @@ const UsuarioForm: React.FC<UsuarioFormProps> = ({ isOpen, onClose, onSuccess, i
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {!isGestor && <SelectItem value="admin">Administrador</SelectItem>}
-                      {!isGestor && <SelectItem value="gestor">Gestor</SelectItem>}
+                      <SelectItem value="admin">Administrador</SelectItem>
+                      <SelectItem value="gestor">Gestor</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
