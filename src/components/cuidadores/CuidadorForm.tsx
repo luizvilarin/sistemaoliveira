@@ -45,7 +45,7 @@ const CuidadorForm: React.FC<CuidadorFormProps> = ({ isOpen, onClose, cuidadorTo
       especializacao: cuidadorToEdit?.especializacao || '',
       telefone: cuidadorToEdit?.telefone || '',
       email: cuidadorToEdit?.email || '',
-      cliente_id: cuidadorToEdit?.cliente_id || '',
+      cliente_id: cuidadorToEdit?.cliente_id || 'none',
     },
   });
 
@@ -56,7 +56,7 @@ const CuidadorForm: React.FC<CuidadorFormProps> = ({ isOpen, onClose, cuidadorTo
         especializacao: values.especializacao,
         telefone: values.telefone || undefined,
         email: values.email || undefined,
-        cliente_id: values.cliente_id || null,
+        cliente_id: values.cliente_id === 'none' ? null : values.cliente_id || null,
         disponibilidade: { seg: true, ter: true, qua: true, qui: true, sex: true }
       };
 
@@ -162,7 +162,7 @@ const CuidadorForm: React.FC<CuidadorFormProps> = ({ isOpen, onClose, cuidadorTo
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Nenhuma família</SelectItem>
+                      <SelectItem value="none">Nenhuma família</SelectItem>
                       {clientes.map((cliente) => (
                         <SelectItem key={cliente.id} value={cliente.id}>
                           {cliente.nome}
