@@ -17,7 +17,8 @@ import {
   DollarSign,
   LogOut,
   List,
-  Settings
+  Settings,
+  HelpCircle
 } from 'lucide-react';
 
 interface SidebarLinkProps {
@@ -140,6 +141,7 @@ const DashboardSidebar = () => {
           label="Transações" 
           adminOnly={true} 
         />
+        <SidebarLink to="/suporte" icon={<HelpCircle size={18} />} label="Suporte" />
         <SidebarLink to="/configuracoes" icon={<Settings size={18} />} label="Configurações" />
       </nav>
       

@@ -1,10 +1,11 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { DataContextType } from './DataContextTypes';
 import { fetchAllData } from '@/services/dataService';
 import { useCrudOperations } from '@/hooks/useCrudOperations';
+import useTaskNotifications from '@/hooks/useTaskNotifications';
 import {
   Cliente,
   Cuidador,
@@ -22,6 +23,9 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  // Usar hook de notificações de tarefas
+  useTaskNotifications();
   
   // State
   const [clientes, setClientes] = useState<Cliente[]>([]);

@@ -19,6 +19,7 @@ import TarefasPage from "./pages/TarefasPage";
 import MensagensPage from "./pages/MensagensPage";
 import RelatoriosPage from "./pages/RelatoriosPage";
 import ConfiguracoesPage from "./pages/ConfiguracoesPage";
+import SuportePage from "./pages/SuportePage";
 import NotFound from "./pages/NotFound";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
 import CompleteSignupPage from "./pages/CompleteSignupPage";
@@ -50,6 +51,7 @@ const App = () => (
                 <Route path="/tarefas" element={<TarefasPage />} />
                 <Route path="/mensagens" element={<MensagensPage />} />
                 <Route path="/relatorios" element={<RelatoriosPage />} />
+                <Route path="/suporte" element={<SuportePage />} />
                 <Route path="/configuracoes" element={<ConfiguracoesPage />} />
               </Route>
               

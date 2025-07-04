@@ -509,6 +509,39 @@ export type Database = {
         }
         Relationships: []
       }
+      support_requests: {
+        Row: {
+          assunto: string
+          created_at: string | null
+          email: string
+          id: string
+          mensagem: string
+          nome: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assunto: string
+          created_at?: string | null
+          email: string
+          id?: string
+          mensagem: string
+          nome: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assunto?: string
+          created_at?: string | null
+          email?: string
+          id?: string
+          mensagem?: string
+          nome?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       tarefas: {
         Row: {
           cliente_id: string
@@ -641,6 +674,10 @@ export type Database = {
       is_current_user_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      notificar_tarefas_pendentes: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
     }
     Enums: {
