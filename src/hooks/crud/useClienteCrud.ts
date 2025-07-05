@@ -20,6 +20,39 @@ export const useClienteCrud = (
   };
 
   const deleteCliente = async (id: string) => {
+    // Primeiro deletar tarefas dos cuidadores associados ao cliente
+    const { error: tarefasError } = await supabase
+      .from('tarefas')
+      .delete()
+      .eq('cliente_id', id);
+      
+    if (tarefasError) throw tarefasError;
+    
+    // Deletar pacientes associados ao cliente
+    const { error: pacientesError } = await supabase
+      .from('pacientes')
+      .delete()
+      .eq('cliente_id', id);
+      
+    if (pacientesError) throw pacientesError;
+    
+    // Deletar lembretes associados ao cliente
+    const { error: lembretesError } = await supabase
+      .from('lembretes')
+      .delete()
+      .eq('cliente_id', id);
+      
+    if (lembretesError) throw lembretesError;
+    
+    // Remover associação dos cuidadores com este cliente
+    const { error: cuidadoresError } = await supabase
+      .from('cuidadores')
+      .update({ cliente_id: null })
+      .eq('cliente_id', id);
+      
+    if (cuidadoresError) throw cuidadoresError;
+    
+    // Por último, deletar o cliente
     const { error } = await supabase.from('clientes').delete().eq('id', id);
     if (error) throw error;
     setClientes(prev => prev.filter(c => c.id !== id));

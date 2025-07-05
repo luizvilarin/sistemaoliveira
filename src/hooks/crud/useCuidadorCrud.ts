@@ -54,6 +54,18 @@ export const useCuidadorCrud = (
   const deleteCuidador = async (id: string) => {
     console.log('Deletando cuidador:', id);
     
+    // Primeiro deletar tarefas associadas ao cuidador
+    const { error: tarefasError } = await supabase
+      .from('tarefas')
+      .delete()
+      .eq('cuidador_id', id);
+      
+    if (tarefasError) {
+      console.error('Erro ao deletar tarefas do cuidador:', tarefasError);
+      throw tarefasError;
+    }
+    
+    // Depois deletar o cuidador
     const { error } = await supabase
       .from('cuidadores')
       .delete()
