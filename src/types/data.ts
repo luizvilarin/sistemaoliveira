@@ -25,6 +25,18 @@ export type UserInvite = Tables<'user_invites'>;
 export type Profile = Tables<'profiles'>;
 
 // Usuario type combining profile with auth info
+// Novos tipos para as funcionalidades implementadas
+export type Boleto = Tables<'boletos'> & {
+  cliente?: Cliente | null;
+};
+
+export type PagamentoFuncionario = Tables<'pagamentos_funcionarios'> & {
+  cuidador?: Cuidador | null;
+};
+
+export type Financeiro = Tables<'financeiro'>;
+
+// Usuario type combining profile with auth info
 export type Usuario = Profile & {
   canDelete?: boolean;
   status_online?: 'online' | 'offline' | 'ausente' | 'ocupado';

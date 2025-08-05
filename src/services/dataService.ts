@@ -16,7 +16,10 @@ export const fetchAllData = async (user: User | null) => {
       lembretesRes,
       mensagensRes,
       notificacoesRes,
-      notificacoesSistemaRes
+      notificacoesSistemaRes,
+      boletosRes,
+      pagamentosFuncionariosRes,
+      financeiroRes
     ] = await Promise.all([
       supabase.from('clientes').select('*'),
       supabase.from('cuidadores').select(`
@@ -41,7 +44,10 @@ export const fetchAllData = async (user: User | null) => {
       // Buscar mensagens onde o usuário é remetente OU destinatário
       supabase.from('mensagens').select('*').or(`remetente_id.eq.${user.id},destinatario_id.eq.${user.id}`),
       supabase.from('notificacoes').select('*').eq('usuario_id', user.id),
-      supabase.from('notificacoes_sistema').select('*').eq('usuario_id', user.id)
+      supabase.from('notificacoes_sistema').select('*').eq('usuario_id', user.id),
+      supabase.from('boletos').select(`*, cliente:clientes(*)`),
+      supabase.from('pagamentos_funcionarios').select(`*, cuidador:cuidadores(*)`),
+      supabase.from('financeiro').select('*')
     ]);
 
     return {
@@ -53,7 +59,10 @@ export const fetchAllData = async (user: User | null) => {
       lembretes: lembretesRes.data || [],
       mensagens: mensagensRes.data || [],
       notificacoes: notificacoesRes.data || [],
-      notificacoesSistema: notificacoesSistemaRes.data || []
+      notificacoesSistema: notificacoesSistemaRes.data || [],
+      boletos: boletosRes.data || [],
+      pagamentosFuncionarios: pagamentosFuncionariosRes.data || [],
+      financeiro: financeiroRes.data || []
     };
   } catch (error) {
     console.error('Error fetching data:', error);

@@ -52,14 +52,72 @@ export type Database = {
           },
         ]
       }
+      boletos: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          cuidadoras: string[]
+          data_envio: string | null
+          data_pagamento: string | null
+          dia_vencimento: number
+          id: string
+          observacoes: string | null
+          status: string
+          tipo_plantao: string
+          updated_at: string
+          valor: number
+          valor_personalizado: number | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          cuidadoras?: string[]
+          data_envio?: string | null
+          data_pagamento?: string | null
+          dia_vencimento: number
+          id?: string
+          observacoes?: string | null
+          status?: string
+          tipo_plantao: string
+          updated_at?: string
+          valor: number
+          valor_personalizado?: number | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          cuidadoras?: string[]
+          data_envio?: string | null
+          data_pagamento?: string | null
+          dia_vencimento?: number
+          id?: string
+          observacoes?: string | null
+          status?: string
+          tipo_plantao?: string
+          updated_at?: string
+          valor?: number
+          valor_personalizado?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "boletos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes: {
         Row: {
           contato: string
           contrato_ativo: boolean | null
+          cpf: string | null
           created_at: string
           endereco: string | null
           id: string
           nome: string
+          nome_completo: string | null
           status: string
           status_pagamento: string | null
           tipo: string
@@ -69,10 +127,12 @@ export type Database = {
         Insert: {
           contato: string
           contrato_ativo?: boolean | null
+          cpf?: string | null
           created_at?: string
           endereco?: string | null
           id?: string
           nome: string
+          nome_completo?: string | null
           status: string
           status_pagamento?: string | null
           tipo: string
@@ -82,10 +142,12 @@ export type Database = {
         Update: {
           contato?: string
           contrato_ativo?: boolean | null
+          cpf?: string | null
           created_at?: string
           endereco?: string | null
           id?: string
           nome?: string
+          nome_completo?: string | null
           status?: string
           status_pagamento?: string | null
           tipo?: string
@@ -137,6 +199,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      financeiro: {
+        Row: {
+          categoria: string
+          created_at: string
+          created_by: string | null
+          data_transacao: string
+          descricao: string
+          id: string
+          referencia_id: string | null
+          referencia_tipo: string | null
+          tipo: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          created_by?: string | null
+          data_transacao: string
+          descricao: string
+          id?: string
+          referencia_id?: string | null
+          referencia_tipo?: string | null
+          tipo: string
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          created_by?: string | null
+          data_transacao?: string
+          descricao?: string
+          id?: string
+          referencia_id?: string | null
+          referencia_tipo?: string | null
+          tipo?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: []
       }
       grupos_chat: {
         Row: {
@@ -472,6 +576,56 @@ export type Database = {
           },
         ]
       }
+      pagamentos_funcionarios: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          cuidador_id: string
+          data_pagamento: string
+          descricao: string | null
+          id: string
+          referencia: string
+          status: string
+          tipo_pagamento: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          cuidador_id: string
+          data_pagamento: string
+          descricao?: string | null
+          id?: string
+          referencia: string
+          status?: string
+          tipo_pagamento?: string
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          cuidador_id?: string
+          data_pagamento?: string
+          descricao?: string | null
+          id?: string
+          referencia?: string
+          status?: string
+          tipo_pagamento?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagamentos_funcionarios_cuidador_id_fkey"
+            columns: ["cuidador_id"]
+            isOneToOne: false
+            referencedRelation: "cuidadores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           ativo: boolean | null
@@ -672,11 +826,19 @@ export type Database = {
         Args: { user_id_to_delete: string }
         Returns: boolean
       }
+      criar_lembretes_boletos: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
       is_current_user_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_current_user_admin_plus: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }

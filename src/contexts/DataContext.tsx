@@ -15,7 +15,10 @@ import {
   Lembrete,
   Mensagem,
   Notificacao,
-  NotificacaoSistema
+  NotificacaoSistema,
+  Boleto,
+  PagamentoFuncionario,
+  Financeiro
 } from '@/types/data';
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -37,6 +40,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
   const [notificacoesSistema, setNotificacoesSistema] = useState<NotificacaoSistema[]>([]);
+  const [boletos, setBoletos] = useState<Boleto[]>([]);
+  const [pagamentosFuncionarios, setPagamentosFuncionarios] = useState<PagamentoFuncionario[]>([]);
+  const [financeiro, setFinanceiro] = useState<Financeiro[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Get CRUD operations
@@ -49,7 +55,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setLembretes,
     setMensagens,
     setNotificacoes,
-    setNotificacoesSistema
+    setNotificacoesSistema,
+    setBoletos,
+    setPagamentosFuncionarios,
+    setFinanceiro
   );
 
   // Fetch all data
@@ -70,6 +79,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setMensagens(data.mensagens);
         setNotificacoes(data.notificacoes);
         setNotificacoesSistema(data.notificacoesSistema);
+        setBoletos(data.boletos);
+        setPagamentosFuncionarios(data.pagamentosFuncionarios);
+        setFinanceiro(data.financeiro);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -103,6 +115,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setMensagens([]);
       setNotificacoes([]);
       setNotificacoesSistema([]);
+      setBoletos([]);
+      setPagamentosFuncionarios([]);
+      setFinanceiro([]);
       setIsLoading(false);
     }
   }, [user]);
@@ -120,6 +135,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         mensagens,
         notificacoes,
         notificacoesSistema,
+        boletos,
+        pagamentosFuncionarios,
+        financeiro,
         
         // Loading
         isLoading,

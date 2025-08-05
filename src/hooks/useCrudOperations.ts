@@ -8,7 +8,10 @@ import {
   Lembrete,
   Mensagem,
   Notificacao,
-  NotificacaoSistema
+  NotificacaoSistema,
+  Boleto,
+  PagamentoFuncionario,
+  Financeiro
 } from '@/types/data';
 import { useClienteCrud } from './crud/useClienteCrud';
 import { useCuidadorCrud } from './crud/useCuidadorCrud';
@@ -18,6 +21,9 @@ import { useTarefaCrud } from './crud/useTarefaCrud';
 import { useLembreteCrud } from './crud/useLembreteCrud';
 import { useMensagemCrud } from './crud/useMensagemCrud';
 import { useNotificacaoCrud } from './crud/useNotificacaoCrud';
+import { useBoletoCrud } from './crud/useBoletoCrud';
+import { usePagamentoFuncionarioCrud } from './crud/usePagamentoFuncionarioCrud';
+import { useFinanceiroCrud } from './crud/useFinanceiroCrud';
 
 export const useCrudOperations = (
   setClientes: React.Dispatch<React.SetStateAction<Cliente[]>>,
@@ -28,7 +34,10 @@ export const useCrudOperations = (
   setLembretes: React.Dispatch<React.SetStateAction<Lembrete[]>>,
   setMensagens: React.Dispatch<React.SetStateAction<Mensagem[]>>,
   setNotificacoes: React.Dispatch<React.SetStateAction<Notificacao[]>>,
-  setNotificacoesSistema: React.Dispatch<React.SetStateAction<NotificacaoSistema[]>>
+  setNotificacoesSistema: React.Dispatch<React.SetStateAction<NotificacaoSistema[]>>,
+  setBoletos: React.Dispatch<React.SetStateAction<Boleto[]>>,
+  setPagamentosFuncionarios: React.Dispatch<React.SetStateAction<PagamentoFuncionario[]>>,
+  setFinanceiro: React.Dispatch<React.SetStateAction<Financeiro[]>>
 ) => {
   const clienteCrud = useClienteCrud(setClientes);
   const cuidadorCrud = useCuidadorCrud(setCuidadores);
@@ -38,6 +47,9 @@ export const useCrudOperations = (
   const lembreteCrud = useLembreteCrud(setLembretes);
   const mensagemCrud = useMensagemCrud(setMensagens);
   const notificacaoCrud = useNotificacaoCrud(setNotificacoes, setNotificacoesSistema);
+  const boletoCrud = useBoletoCrud(setBoletos);
+  const pagamentoFuncionarioCrud = usePagamentoFuncionarioCrud(setPagamentosFuncionarios);
+  const financeiroCrud = useFinanceiroCrud(setFinanceiro);
 
   return {
     ...clienteCrud,
@@ -48,5 +60,14 @@ export const useCrudOperations = (
     ...lembreteCrud,
     ...mensagemCrud,
     ...notificacaoCrud,
+    addBoleto: boletoCrud.addBoleto,
+    updateBoleto: boletoCrud.updateBoleto,
+    deleteBoleto: boletoCrud.deleteBoleto,
+    addPagamentoFuncionario: pagamentoFuncionarioCrud.addPagamento,
+    updatePagamentoFuncionario: pagamentoFuncionarioCrud.updatePagamento,
+    deletePagamentoFuncionario: pagamentoFuncionarioCrud.deletePagamento,
+    addFinanceiro: financeiroCrud.addFinanceiro,
+    updateFinanceiro: financeiroCrud.updateFinanceiro,
+    deleteFinanceiro: financeiroCrud.deleteFinanceiro,
   };
 };

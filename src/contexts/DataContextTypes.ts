@@ -9,7 +9,10 @@ import {
   Lembrete,
   Mensagem,
   Notificacao,
-  NotificacaoSistema
+  NotificacaoSistema,
+  Boleto,
+  PagamentoFuncionario,
+  Financeiro
 } from '@/types/data';
 
 export interface DataContextType {
@@ -23,6 +26,9 @@ export interface DataContextType {
   mensagens: Mensagem[];
   notificacoes: Notificacao[];
   notificacoesSistema: NotificacaoSistema[];
+  boletos: Boleto[];
+  pagamentosFuncionarios: PagamentoFuncionario[];
+  financeiro: Financeiro[];
   
   // Loading states
   isLoading: boolean;
@@ -66,4 +72,17 @@ export interface DataContextType {
   addNotificacaoSistema: (notificacao: TablesInsert<'notificacoes_sistema'>) => Promise<void>;
   updateNotificacaoSistema: (id: string, updates: TablesUpdate<'notificacoes_sistema'>) => Promise<void>;
   deleteNotificacaoSistema: (id: string) => Promise<void>;
+
+  // Novas operações CRUD
+  addBoleto: (boleto: TablesInsert<'boletos'>) => Promise<Boleto>;
+  updateBoleto: (id: string, updates: TablesUpdate<'boletos'>) => Promise<Boleto>;
+  deleteBoleto: (id: string) => Promise<void>;
+
+  addPagamentoFuncionario: (pagamento: TablesInsert<'pagamentos_funcionarios'>) => Promise<PagamentoFuncionario>;
+  updatePagamentoFuncionario: (id: string, updates: TablesUpdate<'pagamentos_funcionarios'>) => Promise<PagamentoFuncionario>;
+  deletePagamentoFuncionario: (id: string) => Promise<void>;
+
+  addFinanceiro: (item: TablesInsert<'financeiro'>) => Promise<Financeiro>;
+  updateFinanceiro: (id: string, updates: TablesUpdate<'financeiro'>) => Promise<Financeiro>;
+  deleteFinanceiro: (id: string) => Promise<void>;
 }
