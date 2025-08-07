@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { NavLink } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { AuthContext } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUserStatus } from '@/hooks/useUserStatus';
@@ -38,7 +38,7 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
   gestorAndAdminOnly = false,
   excludeCuidador = false 
 }) => {
-  const authContext = useAuth();
+  const authContext = useContext(AuthContext);
   
   // Proteção contra renderização fora do AuthProvider
   if (!authContext) {
@@ -81,7 +81,7 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
 };
 
 const DashboardSidebar = () => {
-  const authContext = useAuth();
+  const authContext = useContext(AuthContext);
   
   // Proteção contra renderização fora do AuthProvider
   if (!authContext) {

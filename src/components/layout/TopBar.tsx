@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { useContext } from 'react';
+import { AuthContext } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Settings, LogOut, User } from 'lucide-react';
@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const TopBar = () => {
-  const authContext = useAuth();
+  const authContext = useContext(AuthContext);
   
   // Proteção contra renderização fora do AuthProvider
   if (!authContext) {
