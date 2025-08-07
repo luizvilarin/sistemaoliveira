@@ -1,18 +1,10 @@
 
-import { useEffect, useContext } from 'react';
-import { AuthContext } from '@/contexts/AuthContext';
+import { useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { userService } from '@/services/userService';
 
 export const useUserStatus = () => {
-  const authContext = useContext(AuthContext);
-  
-  // Proteção contra uso fora do AuthProvider
-  if (!authContext) {
-    console.error('useUserStatus sendo usado fora do AuthProvider');
-    return { setUserStatus: async () => {} };
-  }
-  
-  const { userProfile } = authContext;
+  const { userProfile } = useAuth();
 
   useEffect(() => {
     if (!userProfile) return;

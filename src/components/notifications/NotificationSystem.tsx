@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '@/contexts/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,15 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import { NotificacaoSistema } from '@/types/chat';
 
 const NotificationSystem = () => {
-  const authContext = useContext(AuthContext);
-  
-  // Proteção contra renderização fora do AuthProvider
-  if (!authContext) {
-    console.error('NotificationSystem sendo renderizado fora do AuthProvider');
-    return null;
-  }
-  
-  const { user } = authContext;
+  const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [notificacoes, setNotificacoes] = useState<NotificacaoSistema[]>([]);

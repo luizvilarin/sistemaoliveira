@@ -1,7 +1,7 @@
 
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { AuthContext } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUserStatus } from '@/hooks/useUserStatus';
@@ -38,15 +38,7 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
   gestorAndAdminOnly = false,
   excludeCuidador = false 
 }) => {
-  const authContext = useContext(AuthContext);
-  
-  // Proteção contra renderização fora do AuthProvider
-  if (!authContext) {
-    console.error('SidebarLink sendo renderizado fora do AuthProvider');
-    return null;
-  }
-  
-  const { userProfile } = authContext;
+  const { userProfile } = useAuth();
   const perfil = userProfile?.perfil;
 
   // Admin pode ver tudo
@@ -81,15 +73,7 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
 };
 
 const DashboardSidebar = () => {
-  const authContext = useContext(AuthContext);
-  
-  // Proteção contra renderização fora do AuthProvider
-  if (!authContext) {
-    console.error('DashboardSidebar sendo renderizado fora do AuthProvider');
-    return null;
-  }
-  
-  const { userProfile, signOut } = authContext;
+  const { userProfile, signOut } = useAuth();
   const { setUserStatus } = useUserStatus();
   const [currentStatus, setCurrentStatus] = useState<'online' | 'offline' | 'ausente' | 'ocupado'>(
     userProfile?.status_online as 'online' | 'offline' | 'ausente' | 'ocupado' || 'online'
