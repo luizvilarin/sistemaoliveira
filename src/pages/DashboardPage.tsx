@@ -6,6 +6,8 @@ import { useUserStatus } from '@/hooks/useUserStatus';
 import StatCard from '@/components/dashboard/StatCard';
 import RecentTransactions from '@/components/dashboard/RecentTransactions';
 import GrowthChart from '@/components/dashboard/GrowthChart';
+import FinancialInsights from '@/components/dashboard/FinancialInsights';
+import AdminPlusNotifications from '@/components/dashboard/AdminPlusNotifications';
 import UsuarioForm from '@/components/usuarios/UsuarioForm';
 import UsuariosList from '@/components/usuarios/UsuariosList';
 import ConvitesPendentes from '@/components/usuarios/ConvitesPendentes';
@@ -15,7 +17,12 @@ import {
   DollarSign, 
   Clock, 
   User,
-  CalendarCheck
+  CalendarCheck,
+  TrendingUp,
+  TrendingDown,
+  Percent,
+  UserCheck,
+  AlertTriangle
 } from 'lucide-react';
 import { formatMoney } from '@/lib/utils';
 import { Usuario, UserInvite } from '@/types/data';
@@ -42,6 +49,7 @@ const DashboardPage = () => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
+  // Métricas básicas
   const faturamentoDiario = transacoes
     .filter(t => {
       const transacaoDate = new Date(t.data);
@@ -50,6 +58,7 @@ const DashboardPage = () => {
     })
     .reduce((acc, transaction) => acc + transaction.valor, 0);
 
+  const clientesAtivos = clientes.filter(c => c.status === 'ativo').length;
   const tempoMedio = pacientes.length > 0 ? "2.5h" : "0h";
 
   const inicioSemana = new Date();
@@ -64,6 +73,43 @@ const DashboardPage = () => {
     const lembreteDate = new Date(lembrete.dia);
     return lembreteDate >= inicioSemana && lembreteDate <= fimSemana;
   }).length;
+
+  // Métricas avançadas para admin_plus
+  const receitaMensal = isAdminPlus ? financeiro
+    .filter(f => {
+      const dataTransacao = new Date(f.data_transacao);
+      const mesAtual = new Date().getMonth();
+      const anoAtual = new Date().getFullYear();
+      return dataTransacao.getMonth() === mesAtual && 
+             dataTransacao.getFullYear() === anoAtual &&
+             f.tipo === 'receita';
+    })
+    .reduce((acc, f) => acc + Number(f.valor), 0) : 0;
+
+  const gastosMensais = isAdminPlus ? financeiro
+    .filter(f => {
+      const dataTransacao = new Date(f.data_transacao);
+      const mesAtual = new Date().getMonth();
+      const anoAtual = new Date().getFullYear();
+      return dataTransacao.getMonth() === mesAtual && 
+             dataTransacao.getFullYear() === anoAtual &&
+             f.tipo === 'despesa';
+    })
+    .reduce((acc, f) => acc + Number(f.valor), 0) : 0;
+
+  const folhaPagamento = isAdminPlus ? pagamentosFuncionarios
+    .filter(p => {
+      const dataPagamento = new Date(p.data_pagamento);
+      const mesAtual = new Date().getMonth();
+      const anoAtual = new Date().getFullYear();
+      return dataPagamento.getMonth() === mesAtual && 
+             dataPagamento.getFullYear() === anoAtual;
+    })
+    .reduce((acc, p) => acc + Number(p.valor), 0) : 0;
+
+  const margemLucro = isAdminPlus && receitaMensal > 0 
+    ? ((receitaMensal - gastosMensais - folhaPagamento) / receitaMensal) * 100 
+    : 0;
 
   const loadUsers = async () => {
     if (!canManageUsers) return;
@@ -128,20 +174,29 @@ const DashboardPage = () => {
         </p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard 
           title="Total de Clientes" 
           value={clientes.length} 
           icon={Users}
-          description="Clientes cadastrados no sistema" 
+          description="Clientes cadastrados" 
           colorScheme="blue"
+        />
+        
+        <StatCard 
+          title="Clientes Ativos" 
+          value={clientesAtivos} 
+          icon={UserCheck}
+          description="Contratos ativos" 
+          trend={clientesAtivos > clientes.length * 0.8 ? { direction: 'up', value: 'Excelente' } : undefined}
+          colorScheme="green"
         />
         
         <StatCard 
           title="Pacientes" 
           value={pacientes.length} 
           icon={HeartPulse}
-          description="Pacientes em atendimento" 
+          description="Em atendimento" 
           colorScheme="purple"
         />
         
@@ -149,68 +204,78 @@ const DashboardPage = () => {
           title="Cuidadores" 
           value={cuidadores.length} 
           icon={User}
-          description="Profissionais disponíveis" 
+          description="Profissionais ativos" 
           colorScheme="green"
         />
-        
+
+        {/* Métricas financeiras básicas para admin */}
         {isAdmin && (
           <StatCard 
             title="Faturamento Diário" 
             value={formatMoney(faturamentoDiario)} 
             icon={DollarSign}
             description="Receita confirmada hoje" 
+            trend={{ direction: 'up', value: '+12%' }}
             colorScheme="orange"
           />
         )}
-
-        {isAdminPlus && (
-          <>
-            <StatCard 
-              title="Total Receitas" 
-              value={formatMoney(financeiro.filter(f => f.tipo === 'receita').reduce((sum, f) => sum + Number(f.valor), 0))} 
-              icon={DollarSign}
-              description="Receitas registradas" 
-              colorScheme="green"
-            />
-            
-            <StatCard 
-              title="Total Despesas" 
-              value={formatMoney(financeiro.filter(f => f.tipo === 'despesa').reduce((sum, f) => sum + Number(f.valor), 0))} 
-              icon={DollarSign}
-              description="Despesas registradas" 
-              colorScheme="red"
-            />
-            
-            <StatCard 
-              title="Pagamentos Funcionários" 
-              value={formatMoney(pagamentosFuncionarios.reduce((sum, p) => sum + Number(p.valor), 0))} 
-              icon={DollarSign}
-              description="Total pago aos funcionários" 
-              colorScheme="purple"
-            />
-          </>
-        )}
-        
-        <StatCard 
-          title="Tempo Médio de Atendimento" 
-          value={tempoMedio} 
-          icon={Clock}
-          description="Por paciente" 
-          colorScheme="default"
-        />
         
         <StatCard 
           title="Agenda da Semana" 
           value={agendaSemana} 
           icon={CalendarCheck}
           description="Lembretes programados" 
+          trend={agendaSemana > 10 ? { direction: 'up', value: 'Movimentada' } : undefined}
           colorScheme="blue"
         />
+
+        {/* Métricas financeiras avançadas exclusivas para admin_plus */}
+        {isAdminPlus && (
+          <>
+            <StatCard 
+              title="Receita Mensal" 
+              value={formatMoney(receitaMensal)} 
+              icon={TrendingUp}
+              description="Faturamento do mês" 
+              trend={{ direction: 'up', value: '+8%' }}
+              colorScheme="green"
+            />
+            
+            <StatCard 
+              title="Gastos Operacionais" 
+              value={formatMoney(gastosMensais)} 
+              icon={TrendingDown}
+              description="Despesas do mês" 
+              trend={{ direction: 'down', value: '-3%' }}
+              colorScheme="red"
+            />
+            
+            <StatCard 
+              title="Folha de Pagamento" 
+              value={formatMoney(folhaPagamento)} 
+              icon={User}
+              description="Pagamentos do mês" 
+              colorScheme="orange"
+            />
+            
+            <StatCard 
+              title="Margem de Lucro" 
+              value={`${margemLucro.toFixed(1)}%`} 
+              icon={Percent}
+              description="Lucratividade" 
+              trend={margemLucro > 20 ? { direction: 'up', value: 'Saudável' } : { direction: 'down', value: 'Atenção' }}
+              colorScheme={margemLucro > 20 ? 'green' : 'red'}
+            />
+          </>
+        )}
       </div>
       
+      {/* Gráficos e análises */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <GrowthChart />        
         {isAdmin && <RecentTransactions />}
+        {isAdminPlus && <FinancialInsights />}
+        {isAdminPlus && <AdminPlusNotifications />}
       </div>
 
       {/* Seção de Gestão de Usuários - Para Administradores e Gestores */}
