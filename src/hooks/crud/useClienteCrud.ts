@@ -20,7 +20,40 @@ export const useClienteCrud = (
   };
 
   const deleteCliente = async (id: string) => {
-    // Primeiro deletar tarefas dos cuidadores associados ao cliente
+    // Primeiro deletar transações associadas ao cliente
+    const { error: transacoesError } = await supabase
+      .from('transacoes')
+      .delete()
+      .eq('cliente_id', id);
+      
+    if (transacoesError) throw transacoesError;
+    
+    // Deletar boletos associados ao cliente
+    const { error: boletosError } = await supabase
+      .from('boletos')
+      .delete()
+      .eq('cliente_id', id);
+      
+    if (boletosError) throw boletosError;
+    
+    // Primeiro buscar os IDs das transações para deletar entradas financeiras
+    const { data: transacaoIds } = await supabase
+      .from('transacoes')
+      .select('id')
+      .eq('cliente_id', id);
+    
+    // Deletar entradas financeiras relacionadas se existirem transações
+    if (transacaoIds && transacaoIds.length > 0) {
+      const { error: financeiroError } = await supabase
+        .from('financeiro')
+        .delete()
+        .eq('referencia_tipo', 'transacao_cliente')
+        .in('referencia_id', transacaoIds.map(t => t.id));
+        
+      if (financeiroError) console.warn('Erro ao deletar entradas financeiras:', financeiroError);
+    }
+    
+    // Deletar tarefas dos cuidadores associados ao cliente
     const { error: tarefasError } = await supabase
       .from('tarefas')
       .delete()
