@@ -202,45 +202,68 @@ export type Database = {
       }
       financeiro: {
         Row: {
+          aprovado_por: string | null
           categoria: string
+          centro_custo: string | null
           created_at: string
           created_by: string | null
+          data_aprovacao: string | null
           data_transacao: string
           descricao: string
           id: string
           referencia_id: string | null
           referencia_tipo: string | null
+          subcategoria: string | null
+          tags: string[] | null
           tipo: string
           updated_at: string
           valor: number
         }
         Insert: {
+          aprovado_por?: string | null
           categoria: string
+          centro_custo?: string | null
           created_at?: string
           created_by?: string | null
+          data_aprovacao?: string | null
           data_transacao: string
           descricao: string
           id?: string
           referencia_id?: string | null
           referencia_tipo?: string | null
+          subcategoria?: string | null
+          tags?: string[] | null
           tipo: string
           updated_at?: string
           valor: number
         }
         Update: {
+          aprovado_por?: string | null
           categoria?: string
+          centro_custo?: string | null
           created_at?: string
           created_by?: string | null
+          data_aprovacao?: string | null
           data_transacao?: string
           descricao?: string
           id?: string
           referencia_id?: string | null
           referencia_tipo?: string | null
+          subcategoria?: string | null
+          tags?: string[] | null
           tipo?: string
           updated_at?: string
           valor?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_aprovado_por_fkey"
+            columns: ["aprovado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       grupos_chat: {
         Row: {
@@ -827,6 +850,14 @@ export type Database = {
         Returns: boolean
       }
       criar_lembretes_boletos: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      criar_lembretes_boletos_automaticos: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      executar_automacao_boletos: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
