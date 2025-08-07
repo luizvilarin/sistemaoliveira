@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, TrendingUp, TrendingDown, DollarSign, Calendar } from 'lucide-react';
 import { formatMoney } from '@/lib/utils';
 import FinanceiroForm from '@/components/financeiro/FinanceiroForm';
+import FinanceiroAdvancedReports from '@/components/financeiro/FinanceiroAdvancedReports';
+import FinanceiroFluxoCaixa from '@/components/financeiro/FinanceiroFluxoCaixa';
 
 const FinanceiroPage = () => {
   const { financeiro } = useData();
@@ -170,6 +172,8 @@ const FinanceiroPage = () => {
           <TabsTrigger value="receitas">Receitas ({receitas.length})</TabsTrigger>
           <TabsTrigger value="despesas">Despesas ({despesas.length})</TabsTrigger>
           <TabsTrigger value="todas">Todas as Transações ({financeiro.length})</TabsTrigger>
+          <TabsTrigger value="relatorios">Relatórios Avançados</TabsTrigger>
+          <TabsTrigger value="fluxo">Fluxo de Caixa</TabsTrigger>
         </TabsList>
 
         <TabsContent value="receitas">
@@ -252,6 +256,14 @@ const FinanceiroPage = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="relatorios">
+          <FinanceiroAdvancedReports />
+        </TabsContent>
+
+        <TabsContent value="fluxo">
+          <FinanceiroFluxoCaixa />
         </TabsContent>
       </Tabs>
 

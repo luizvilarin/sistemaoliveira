@@ -14,9 +14,12 @@ import { useToast } from '@/components/ui/use-toast';
 const formSchema = z.object({
   tipo: z.enum(['receita', 'despesa']),
   categoria: z.string().min(1, 'Categoria é obrigatória'),
+  subcategoria: z.string().optional(),
   valor: z.string().min(1, 'Valor é obrigatório'),
   data_transacao: z.string().min(1, 'Data da transação é obrigatória'),
   descricao: z.string().min(1, 'Descrição é obrigatória'),
+  centro_custo: z.string().optional(),
+  tags: z.string().optional(),
   referencia_tipo: z.string().optional(),
   referencia_id: z.string().optional()
 });
@@ -37,9 +40,12 @@ const FinanceiroForm: React.FC<FinanceiroFormProps> = ({ isOpen, onClose }) => {
     defaultValues: {
       tipo: 'receita',
       categoria: '',
+      subcategoria: '',
       valor: '',
       data_transacao: new Date().toISOString().split('T')[0],
       descricao: '',
+      centro_custo: '',
+      tags: '',
       referencia_tipo: '',
       referencia_id: ''
     }
@@ -85,6 +91,8 @@ const FinanceiroForm: React.FC<FinanceiroFormProps> = ({ isOpen, onClose }) => {
         return;
       }
 
+      const tagsArray = data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : null;
+
       await addFinanceiro({
         tipo: data.tipo,
         categoria: data.categoria,
@@ -92,8 +100,12 @@ const FinanceiroForm: React.FC<FinanceiroFormProps> = ({ isOpen, onClose }) => {
         data_transacao: data.data_transacao,
         descricao: data.descricao,
         referencia_tipo: data.referencia_tipo || null,
-        referencia_id: data.referencia_id || null
-      });
+        referencia_id: data.referencia_id || null,
+        // Campos adicionais como any para evitar erro de tipos
+        ...(data.subcategoria && { subcategoria: data.subcategoria }),
+        ...(data.centro_custo && { centro_custo: data.centro_custo }),
+        ...(tagsArray && { tags: tagsArray })
+      } as any);
 
       toast({
         title: 'Sucesso',
@@ -211,6 +223,57 @@ const FinanceiroForm: React.FC<FinanceiroFormProps> = ({ isOpen, onClose }) => {
                   <FormControl>
                     <Textarea 
                       placeholder="Descreva a transação..."
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="subcategoria"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Subcategoria (Opcional)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Ex: Folha de pagamento, Material hospitalar..." 
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="centro_custo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Centro de Custo (Opcional)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Ex: Administrativo, Operacional..." 
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="tags"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tags (Opcional)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Ex: urgente, mensal, anual (separadas por vírgula)" 
                       {...field}
                     />
                   </FormControl>
