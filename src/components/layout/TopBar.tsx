@@ -16,7 +16,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const TopBar = () => {
-  const { userProfile, signOut } = useAuth();
+  const authContext = useAuth();
+  
+  // Proteção contra renderização fora do AuthProvider
+  if (!authContext) {
+    console.error('TopBar sendo renderizado fora do AuthProvider');
+    return null;
+  }
+  
+  const { userProfile, signOut } = authContext;
   const navigate = useNavigate();
 
   const handleSignOut = async () => {

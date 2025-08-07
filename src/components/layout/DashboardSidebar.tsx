@@ -38,7 +38,15 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
   gestorAndAdminOnly = false,
   excludeCuidador = false 
 }) => {
-  const { userProfile } = useAuth();
+  const authContext = useAuth();
+  
+  // Proteção contra renderização fora do AuthProvider
+  if (!authContext) {
+    console.error('SidebarLink sendo renderizado fora do AuthProvider');
+    return null;
+  }
+  
+  const { userProfile } = authContext;
   const perfil = userProfile?.perfil;
 
   // Admin pode ver tudo
@@ -73,7 +81,15 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
 };
 
 const DashboardSidebar = () => {
-  const { userProfile, signOut } = useAuth();
+  const authContext = useAuth();
+  
+  // Proteção contra renderização fora do AuthProvider
+  if (!authContext) {
+    console.error('DashboardSidebar sendo renderizado fora do AuthProvider');
+    return null;
+  }
+  
+  const { userProfile, signOut } = authContext;
   const { setUserStatus } = useUserStatus();
   const [currentStatus, setCurrentStatus] = useState<'online' | 'offline' | 'ausente' | 'ocupado'>(
     userProfile?.status_online as 'online' | 'offline' | 'ausente' | 'ocupado' || 'online'

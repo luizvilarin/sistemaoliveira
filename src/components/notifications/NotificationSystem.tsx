@@ -16,7 +16,15 @@ import {
 import { NotificacaoSistema } from '@/types/chat';
 
 const NotificationSystem = () => {
-  const { user } = useAuth();
+  const authContext = useAuth();
+  
+  // Proteção contra renderização fora do AuthProvider
+  if (!authContext) {
+    console.error('NotificationSystem sendo renderizado fora do AuthProvider');
+    return null;
+  }
+  
+  const { user } = authContext;
   const { toast } = useToast();
   const navigate = useNavigate();
   const [notificacoes, setNotificacoes] = useState<NotificacaoSistema[]>([]);
