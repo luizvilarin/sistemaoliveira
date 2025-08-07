@@ -42,12 +42,12 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
   const perfil = userProfile?.perfil;
 
   // Admin pode ver tudo
-  if (adminOnly && perfil !== 'admin') {
+  if (adminOnly && !['admin', 'admin_plus'].includes(perfil || '')) {
     return null;
   }
 
   // Gestor e Admin podem ver
-  if (gestorAndAdminOnly && !['admin', 'gestor'].includes(perfil || '')) {
+  if (gestorAndAdminOnly && !['admin', 'admin_plus', 'gestor'].includes(perfil || '')) {
     return null;
   }
 
@@ -140,6 +140,24 @@ const DashboardSidebar = () => {
           icon={<DollarSign size={18} />} 
           label="Transações" 
           adminOnly={true} 
+        />
+        <SidebarLink 
+          to="/boletos" 
+          icon={<FileText size={18} />} 
+          label="Boletos" 
+          gestorAndAdminOnly={true}
+        />
+        <SidebarLink 
+          to="/pagamentos-funcionarios" 
+          icon={<DollarSign size={18} />} 
+          label="Pagamentos" 
+          adminOnly={true}
+        />
+        <SidebarLink 
+          to="/financeiro" 
+          icon={<DollarSign size={18} />} 
+          label="Financeiro" 
+          adminOnly={true}
         />
         <SidebarLink to="/suporte" icon={<HelpCircle size={18} />} label="Suporte" />
         <SidebarLink to="/configuracoes" icon={<Settings size={18} />} label="Configurações" />

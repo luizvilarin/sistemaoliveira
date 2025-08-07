@@ -20,6 +20,9 @@ import MensagensPage from "./pages/MensagensPage";
 import RelatoriosPage from "./pages/RelatoriosPage";
 import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 import SuportePage from "./pages/SuportePage";
+import BoletosPage from "./pages/BoletosPage";
+import PagamentosFuncionariosPage from "./pages/PagamentosFuncionariosPage";
+import FinanceiroPage from "./pages/FinanceiroPage";
 import NotFound from "./pages/NotFound";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
 import CompleteSignupPage from "./pages/CompleteSignupPage";
@@ -51,6 +54,9 @@ const App = () => (
                 <Route path="/tarefas" element={<TarefasPage />} />
                 <Route path="/mensagens" element={<MensagensPage />} />
                 <Route path="/relatorios" element={<RelatoriosPage />} />
+                <Route path="/boletos" element={<BoletosPage />} />
+                <Route path="/pagamentos-funcionarios" element={<PagamentosFuncionariosPage />} />
+                <Route path="/financeiro" element={<FinanceiroPage />} />
                 <Route path="/suporte" element={<SuportePage />} />
                 <Route path="/configuracoes" element={<ConfiguracoesPage />} />
               </Route>

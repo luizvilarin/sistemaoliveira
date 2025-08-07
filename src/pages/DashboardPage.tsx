@@ -24,7 +24,7 @@ import { useToast } from '@/components/ui/use-toast';
 
 const DashboardPage = () => {
   const { isAdmin, userProfile } = useAuth();
-  const { clientes, pacientes, cuidadores, transacoes, lembretes } = useData();
+  const { clientes, pacientes, cuidadores, transacoes, lembretes, financeiro, pagamentosFuncionarios } = useData();
   const { toast } = useToast();
   
   // Inicializar hook de status do usuário
@@ -36,6 +36,7 @@ const DashboardPage = () => {
   const [loadingUsers, setLoadingUsers] = useState(false);
   
   const isGestor = userProfile?.perfil === 'gestor';
+  const isAdminPlus = userProfile?.perfil === 'admin_plus';
   const canManageUsers = isAdmin || isGestor;
   
   const today = new Date();
@@ -160,6 +161,34 @@ const DashboardPage = () => {
             description="Receita confirmada hoje" 
             colorScheme="orange"
           />
+        )}
+
+        {isAdminPlus && (
+          <>
+            <StatCard 
+              title="Total Receitas" 
+              value={formatMoney(financeiro.filter(f => f.tipo === 'receita').reduce((sum, f) => sum + Number(f.valor), 0))} 
+              icon={DollarSign}
+              description="Receitas registradas" 
+              colorScheme="green"
+            />
+            
+            <StatCard 
+              title="Total Despesas" 
+              value={formatMoney(financeiro.filter(f => f.tipo === 'despesa').reduce((sum, f) => sum + Number(f.valor), 0))} 
+              icon={DollarSign}
+              description="Despesas registradas" 
+              colorScheme="red"
+            />
+            
+            <StatCard 
+              title="Pagamentos Funcionários" 
+              value={formatMoney(pagamentosFuncionarios.reduce((sum, p) => sum + Number(p.valor), 0))} 
+              icon={DollarSign}
+              description="Total pago aos funcionários" 
+              colorScheme="purple"
+            />
+          </>
         )}
         
         <StatCard 

@@ -23,7 +23,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const isAdmin = userProfile?.perfil === 'admin';
+  const isAdmin = userProfile?.perfil === 'admin' || userProfile?.perfil === 'admin_plus';
 
   const fetchUserProfile = async (userId: string) => {
     try {
