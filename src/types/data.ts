@@ -30,9 +30,7 @@ export type Boleto = Tables<'boletos'> & {
   cliente?: Cliente | null;
 };
 
-export type PagamentoFuncionario = Tables<'pagamentos_funcionarios'> & {
-  cuidador?: Cuidador | null;
-};
+export type PagamentoFuncionario = Tables<'pagamentos_funcionarios'>;
 
 export type Financeiro = Tables<'financeiro'>;
 

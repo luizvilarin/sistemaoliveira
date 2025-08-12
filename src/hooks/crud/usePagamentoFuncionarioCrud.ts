@@ -14,13 +14,36 @@ export const usePagamentoFuncionarioCrud = (setPagamentos: React.Dispatch<React.
       const { data, error } = await supabase
         .from('pagamentos_funcionarios')
         .insert(pagamento)
-        .select(`
-          *,
-          cuidador:cuidadores(*)
-        `)
+        .select('*')
         .single();
       
       if (error) throw error;
+      
+      // Sincronizar com o sistema financeiro se estiver pago
+      if (data.status === 'pago') {
+        try {
+          const financeiroEntry = {
+            tipo: 'despesa',
+            categoria: data.tipo_pagamento === 'salario' ? 'Salários e Ordenados' :
+                      data.tipo_pagamento === 'bonus' ? 'Bonificações' :
+                      data.tipo_pagamento === 'comissao' ? 'Comissões' :
+                      data.tipo_pagamento === 'ajuda_custo' ? 'Ajuda de Custo' :
+                      'Outras Despesas com Pessoal',
+            valor: data.valor,
+            data_transacao: data.data_pagamento,
+            descricao: `Pagamento funcionário: ${(data as any).nome_funcionario}${data.descricao ? ' - ' + data.descricao : ''}`,
+            referencia_id: data.id,
+            referencia_tipo: 'pagamento_funcionario',
+            created_by: data.created_by
+          };
+
+          await supabase
+            .from('financeiro')
+            .insert(financeiroEntry);
+        } catch (financeiroError) {
+          console.warn('Erro ao sincronizar com financeiro:', financeiroError);
+        }
+      }
       
       setPagamentos(prev => [...prev, data]);
       toast({
@@ -47,13 +70,52 @@ export const usePagamentoFuncionarioCrud = (setPagamentos: React.Dispatch<React.
         .from('pagamentos_funcionarios')
         .update(updates)
         .eq('id', id)
-        .select(`
-          *,
-          cuidador:cuidadores(*)
-        `)
+        .select('*')
         .single();
       
       if (error) throw error;
+      
+      // Atualizar no sistema financeiro se necessário
+      if (updates.status === 'pago' || updates.valor || updates.data_pagamento) {
+        try {
+          if (updates.status === 'pago') {
+            // Se mudou para pago, criar entrada no financeiro
+            const financeiroEntry = {
+              tipo: 'despesa',
+              categoria: data.tipo_pagamento === 'salario' ? 'Salários e Ordenados' :
+                        data.tipo_pagamento === 'bonus' ? 'Bonificações' :
+                        data.tipo_pagamento === 'comissao' ? 'Comissões' :
+                        data.tipo_pagamento === 'ajuda_custo' ? 'Ajuda de Custo' :
+                        'Outras Despesas com Pessoal',
+              valor: data.valor,
+              data_transacao: data.data_pagamento,
+              descricao: `Pagamento funcionário: ${(data as any).nome_funcionario}${data.descricao ? ' - ' + data.descricao : ''}`,
+              referencia_id: data.id,
+              referencia_tipo: 'pagamento_funcionario',
+              created_by: data.created_by
+            };
+
+            await supabase
+              .from('financeiro')
+              .insert(financeiroEntry);
+          } else {
+            // Atualizar entrada existente
+            const financeiroUpdates: any = {};
+            if (updates.valor) financeiroUpdates.valor = updates.valor;
+            if (updates.data_pagamento) financeiroUpdates.data_transacao = updates.data_pagamento;
+            
+            if (Object.keys(financeiroUpdates).length > 0) {
+              await supabase
+                .from('financeiro')
+                .update(financeiroUpdates)
+                .eq('referencia_id', id)
+                .eq('referencia_tipo', 'pagamento_funcionario');
+            }
+          }
+        } catch (financeiroError) {
+          console.warn('Erro ao sincronizar com financeiro:', financeiroError);
+        }
+      }
       
       setPagamentos(prev => prev.map(p => p.id === id ? data : p));
       toast({
@@ -76,6 +138,17 @@ export const usePagamentoFuncionarioCrud = (setPagamentos: React.Dispatch<React.
   const deletePagamento = async (id: string) => {
     setIsLoading(true);
     try {
+      // Remover do sistema financeiro primeiro
+      try {
+        await supabase
+          .from('financeiro')
+          .delete()
+          .eq('referencia_id', id)
+          .eq('referencia_tipo', 'pagamento_funcionario');
+      } catch (financeiroError) {
+        console.warn('Erro ao remover do financeiro:', financeiroError);
+      }
+      
       const { error } = await supabase.from('pagamentos_funcionarios').delete().eq('id', id);
       if (error) throw error;
       

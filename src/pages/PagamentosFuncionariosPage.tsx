@@ -117,7 +117,8 @@ const PagamentosFuncionariosPage = () => {
                   <div key={pagamento.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-medium">{getCuidadorNome(pagamento.cuidador_id)}</h3>
+                       <h3 className="font-medium">{(pagamento as any).nome_funcionario || 'Funcionário'}</h3>
+                         <span className="text-sm text-gray-500">({(pagamento as any).cargo || 'Cargo não especificado'})</span>
                         <Badge variant={pagamento.status === 'pago' ? 'default' : 'secondary'}>
                           {pagamento.status}
                         </Badge>

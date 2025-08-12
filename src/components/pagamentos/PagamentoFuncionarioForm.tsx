@@ -12,7 +12,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useToast } from '@/components/ui/use-toast';
 
 const formSchema = z.object({
-  cuidador_id: z.string().min(1, 'Selecione um cuidador'),
+  nome_funcionario: z.string().min(1, 'Nome do funcionário é obrigatório'),
+  cargo: z.string().min(1, 'Cargo é obrigatório'),
   valor: z.string().min(1, 'Valor é obrigatório'),
   data_pagamento: z.string().min(1, 'Data do pagamento é obrigatória'),
   tipo_pagamento: z.enum(['salario', 'bonus', 'comissao', 'ajuda_custo', 'outros']),
@@ -29,13 +30,14 @@ interface PagamentoFuncionarioFormProps {
 }
 
 const PagamentoFuncionarioForm: React.FC<PagamentoFuncionarioFormProps> = ({ isOpen, onClose }) => {
-  const { cuidadores, addPagamentoFuncionario } = useData();
+  const { addPagamentoFuncionario } = useData();
   const { toast } = useToast();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      cuidador_id: '',
+      nome_funcionario: '',
+      cargo: '',
       valor: '',
       data_pagamento: new Date().toISOString().split('T')[0],
       tipo_pagamento: 'salario',
@@ -59,14 +61,15 @@ const PagamentoFuncionarioForm: React.FC<PagamentoFuncionarioFormProps> = ({ isO
       }
 
       await addPagamentoFuncionario({
-        cuidador_id: data.cuidador_id,
+        nome_funcionario: data.nome_funcionario,
+        cargo: data.cargo,
         valor,
         data_pagamento: data.data_pagamento,
         tipo_pagamento: data.tipo_pagamento,
         descricao: data.descricao || null,
         referencia: data.referencia,
         status: data.status
-      });
+      } as any);
 
       toast({
         title: 'Sucesso',
@@ -99,24 +102,33 @@ const PagamentoFuncionarioForm: React.FC<PagamentoFuncionarioFormProps> = ({ isO
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="cuidador_id"
+              name="nome_funcionario"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Cuidador</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um cuidador" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {cuidadores.map((cuidador) => (
-                        <SelectItem key={cuidador.id} value={cuidador.id}>
-                          {cuidador.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Nome do Funcionário</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Digite o nome do funcionário" 
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="cargo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cargo</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Ex: Cuidador, Auxiliar de Enfermagem, Enfermeiro..." 
+                      {...field}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
