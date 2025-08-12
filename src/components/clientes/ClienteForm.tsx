@@ -26,6 +26,9 @@ const formSchema = z.object({
   status: z.enum(['ativo', 'pausado', 'terceirizado'], {
     required_error: 'Status é obrigatório',
   }),
+  endereco: z.string().optional(),
+  cpf_completo: z.string().optional(),
+  nome_completo_cliente: z.string().optional(),
   contrato_ativo: z.boolean().optional(),
   valor_contrato: z.string().optional(),
   status_pagamento: z.enum(['aguardando', 'vencido', 'confirmado'], {
@@ -44,6 +47,9 @@ interface ClienteFormProps {
     contato: string;
     tipo: 'fixo' | 'temporario';
     status: 'ativo' | 'pausado' | 'terceirizado';
+    endereco?: string;
+    cpf_completo?: string;
+    nome_completo_cliente?: string;
     contrato_ativo?: boolean;
     valor_contrato?: number;
     status_pagamento?: 'aguardando' | 'vencido' | 'confirmado';
@@ -62,6 +68,9 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ isOpen, onClose, clienteToEdi
       contato: '',
       tipo: 'fixo',
       status: 'ativo',
+      endereco: '',
+      cpf_completo: '',
+      nome_completo_cliente: '',
       contrato_ativo: false,
       valor_contrato: '',
       status_pagamento: 'aguardando',
@@ -77,6 +86,9 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ isOpen, onClose, clienteToEdi
         contato: clienteToEdit.contato,
         tipo: clienteToEdit.tipo,
         status: clienteToEdit.status,
+        endereco: clienteToEdit.endereco || '',
+        cpf_completo: clienteToEdit.cpf_completo || '',
+        nome_completo_cliente: clienteToEdit.nome_completo_cliente || '',
         contrato_ativo: clienteToEdit.contrato_ativo || false,
         valor_contrato: clienteToEdit.valor_contrato?.toString() || '',
         status_pagamento: clienteToEdit.status_pagamento || 'aguardando',
@@ -87,6 +99,9 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ isOpen, onClose, clienteToEdi
         contato: '',
         tipo: 'fixo',
         status: 'ativo',
+        endereco: '',
+        cpf_completo: '',
+        nome_completo_cliente: '',
         contrato_ativo: false,
         valor_contrato: '',
         status_pagamento: 'aguardando',
@@ -101,6 +116,9 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ isOpen, onClose, clienteToEdi
         contato: values.contato,
         tipo: values.tipo,
         status: values.status,
+        endereco: values.endereco || null,
+        cpf_completo: values.cpf_completo || null,
+        nome_completo_cliente: values.nome_completo_cliente || null,
         contrato_ativo: values.contrato_ativo || false,
         valor_contrato: values.valor_contrato ? parseFloat(values.valor_contrato) : null,
         status_pagamento: values.status_pagamento || 'aguardando',
@@ -170,6 +188,50 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ isOpen, onClose, clienteToEdi
                   <FormLabel>Contato</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="(xx) xxxxx-xxxx" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="cpf_completo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CPF</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="000.000.000-00" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="nome_completo_cliente"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome Completo</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Nome completo para notas fiscais" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="endereco"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Endereço</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Endereço completo" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

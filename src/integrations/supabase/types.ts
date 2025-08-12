@@ -55,13 +55,22 @@ export type Database = {
       boletos: {
         Row: {
           cliente_id: string
+          cor_status: string | null
           created_at: string
           cuidadoras: string[]
+          data_confirmacao_pago: string | null
           data_envio: string | null
+          data_envio_boleto: string | null
           data_pagamento: string | null
+          data_solicitacao: string | null
+          dia_cobranca_secundario: number | null
           dia_vencimento: number
+          frequencia_recorrencia: string | null
+          historico_lembretes: Json | null
           id: string
           observacoes: string | null
+          proxima_data_cobranca: string | null
+          recorrente: boolean | null
           status: string
           tipo_plantao: string
           updated_at: string
@@ -70,13 +79,22 @@ export type Database = {
         }
         Insert: {
           cliente_id: string
+          cor_status?: string | null
           created_at?: string
           cuidadoras?: string[]
+          data_confirmacao_pago?: string | null
           data_envio?: string | null
+          data_envio_boleto?: string | null
           data_pagamento?: string | null
+          data_solicitacao?: string | null
+          dia_cobranca_secundario?: number | null
           dia_vencimento: number
+          frequencia_recorrencia?: string | null
+          historico_lembretes?: Json | null
           id?: string
           observacoes?: string | null
+          proxima_data_cobranca?: string | null
+          recorrente?: boolean | null
           status?: string
           tipo_plantao: string
           updated_at?: string
@@ -85,13 +103,22 @@ export type Database = {
         }
         Update: {
           cliente_id?: string
+          cor_status?: string | null
           created_at?: string
           cuidadoras?: string[]
+          data_confirmacao_pago?: string | null
           data_envio?: string | null
+          data_envio_boleto?: string | null
           data_pagamento?: string | null
+          data_solicitacao?: string | null
+          dia_cobranca_secundario?: number | null
           dia_vencimento?: number
+          frequencia_recorrencia?: string | null
+          historico_lembretes?: Json | null
           id?: string
           observacoes?: string | null
+          proxima_data_cobranca?: string | null
+          recorrente?: boolean | null
           status?: string
           tipo_plantao?: string
           updated_at?: string
@@ -113,11 +140,13 @@ export type Database = {
           contato: string
           contrato_ativo: boolean | null
           cpf: string | null
+          cpf_completo: string | null
           created_at: string
           endereco: string | null
           id: string
           nome: string
           nome_completo: string | null
+          nome_completo_cliente: string | null
           status: string
           status_pagamento: string | null
           tipo: string
@@ -128,11 +157,13 @@ export type Database = {
           contato: string
           contrato_ativo?: boolean | null
           cpf?: string | null
+          cpf_completo?: string | null
           created_at?: string
           endereco?: string | null
           id?: string
           nome: string
           nome_completo?: string | null
+          nome_completo_cliente?: string | null
           status: string
           status_pagamento?: string | null
           tipo: string
@@ -143,11 +174,13 @@ export type Database = {
           contato?: string
           contrato_ativo?: boolean | null
           cpf?: string | null
+          cpf_completo?: string | null
           created_at?: string
           endereco?: string | null
           id?: string
           nome?: string
           nome_completo?: string | null
+          nome_completo_cliente?: string | null
           status?: string
           status_pagamento?: string | null
           tipo?: string
@@ -858,6 +891,10 @@ export type Database = {
         Returns: undefined
       }
       executar_automacao_boletos: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      gerar_lembretes_boletos_recorrentes: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }

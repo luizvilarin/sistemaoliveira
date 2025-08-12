@@ -36,9 +36,12 @@ const formSchema = z.object({
   }),
   tipo_plantao: z.string().min(1, { message: 'Tipo de plantão é obrigatório' }),
   cuidadoras: z.string().min(1, { message: 'Cuidadoras é obrigatório' }),
-  status: z.enum(['pendente', 'enviado', 'pago', 'vencido'], {
+  status: z.enum(['pendente', 'solicitado', 'enviado', 'pago', 'vencido', 'cancelado'], {
     required_error: 'Status é obrigatório',
   }),
+  recorrente: z.boolean().optional(),
+  frequencia_recorrencia: z.enum(['unico', 'quinzenal', 'mensal', 'personalizado']).optional(),
+  dia_cobranca_secundario: z.string().optional(),
   observacoes: z.string().optional(),
   data_envio: z.string().optional(),
   data_pagamento: z.string().optional(),
@@ -58,6 +61,9 @@ interface BoletoFormProps {
     tipo_plantao: string;
     cuidadoras: string[];
     status: string;
+    recorrente?: boolean;
+    frequencia_recorrencia?: string;
+    dia_cobranca_secundario?: number;
     observacoes?: string;
     data_envio?: string;
     data_pagamento?: string;
@@ -79,6 +85,9 @@ const BoletoForm: React.FC<BoletoFormProps> = ({ isOpen, onClose, boletoToEdit }
       tipo_plantao: '',
       cuidadoras: '',
       status: 'pendente',
+      recorrente: false,
+      frequencia_recorrencia: 'unico',
+      dia_cobranca_secundario: '',
       observacoes: '',
       data_envio: '',
       data_pagamento: '',
@@ -95,7 +104,10 @@ const BoletoForm: React.FC<BoletoFormProps> = ({ isOpen, onClose, boletoToEdit }
         dia_vencimento: boletoToEdit.dia_vencimento.toString(),
         tipo_plantao: boletoToEdit.tipo_plantao,
         cuidadoras: boletoToEdit.cuidadoras.join(', '),
-        status: boletoToEdit.status as 'pendente' | 'enviado' | 'pago' | 'vencido',
+        status: boletoToEdit.status as 'pendente' | 'solicitado' | 'enviado' | 'pago' | 'vencido' | 'cancelado',
+        recorrente: boletoToEdit.recorrente || false,
+        frequencia_recorrencia: boletoToEdit.frequencia_recorrencia as 'unico' | 'quinzenal' | 'mensal' | 'personalizado' || 'unico',
+        dia_cobranca_secundario: boletoToEdit.dia_cobranca_secundario?.toString() || '',
         observacoes: boletoToEdit.observacoes || '',
         data_envio: boletoToEdit.data_envio ? new Date(boletoToEdit.data_envio).toISOString().slice(0, 10) : '',
         data_pagamento: boletoToEdit.data_pagamento ? new Date(boletoToEdit.data_pagamento).toISOString().slice(0, 10) : '',
@@ -109,6 +121,9 @@ const BoletoForm: React.FC<BoletoFormProps> = ({ isOpen, onClose, boletoToEdit }
         tipo_plantao: '',
         cuidadoras: '',
         status: 'pendente',
+        recorrente: false,
+        frequencia_recorrencia: 'unico',
+        dia_cobranca_secundario: '',
         observacoes: '',
         data_envio: '',
         data_pagamento: '',
@@ -126,6 +141,9 @@ const BoletoForm: React.FC<BoletoFormProps> = ({ isOpen, onClose, boletoToEdit }
         tipo_plantao: values.tipo_plantao,
         cuidadoras: values.cuidadoras.split(',').map(c => c.trim()).filter(c => c),
         status: values.status,
+        recorrente: values.recorrente || false,
+        frequencia_recorrencia: values.frequencia_recorrencia || 'unico',
+        dia_cobranca_secundario: values.dia_cobranca_secundario ? parseInt(values.dia_cobranca_secundario) : null,
         observacoes: values.observacoes || null,
         data_envio: values.data_envio ? new Date(values.data_envio).toISOString().slice(0, 10) : null,
         data_pagamento: values.data_pagamento ? new Date(values.data_pagamento).toISOString().slice(0, 10) : null,
@@ -209,9 +227,11 @@ const BoletoForm: React.FC<BoletoFormProps> = ({ isOpen, onClose, boletoToEdit }
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="pendente">Pendente</SelectItem>
+                        <SelectItem value="solicitado">Solicitado</SelectItem>
                         <SelectItem value="enviado">Enviado</SelectItem>
                         <SelectItem value="pago">Pago</SelectItem>
                         <SelectItem value="vencido">Vencido</SelectItem>
+                        <SelectItem value="cancelado">Cancelado</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -335,6 +355,81 @@ const BoletoForm: React.FC<BoletoFormProps> = ({ isOpen, onClose, boletoToEdit }
                   </FormItem>
                 )}
               />
+            </div>
+
+            {/* Seção de Recorrência */}
+            <div className="border-t pt-4 mt-4">
+              <h3 className="text-lg font-medium mb-3">Configuração de Recorrência</h3>
+              
+              <FormField
+                control={form.control}
+                name="recorrente"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <input
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                        className="rounded border border-gray-300"
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Boleto Recorrente</FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        Gerar lembretes automáticos para próximas cobranças
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {form.watch('recorrente') && (
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <FormField
+                    control={form.control}
+                    name="frequencia_recorrencia"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Frequência</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione a frequência" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="unico">Único</SelectItem>
+                            <SelectItem value="quinzenal">Quinzenal (2x/mês)</SelectItem>
+                            <SelectItem value="mensal">Mensal</SelectItem>
+                            <SelectItem value="personalizado">Personalizado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {form.watch('frequencia_recorrencia') === 'personalizado' && (
+                    <FormField
+                      control={form.control}
+                      name="dia_cobranca_secundario"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Dia Secundário de Cobrança</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="number" min="1" max="31" placeholder="1-31" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
+              )}
             </div>
 
             <FormField

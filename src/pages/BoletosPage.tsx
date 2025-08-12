@@ -3,8 +3,10 @@ import { useData } from '@/contexts/DataContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Calendar, DollarSign, Edit, Trash2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Calendar, DollarSign, Edit, Trash2, FileSpreadsheet } from 'lucide-react';
 import BoletoForm from '@/components/boletos/BoletoForm';
+import ExportBoletos from '@/components/boletos/ExportBoletos';
 import { Boleto } from '@/types/data';
 
 export default function BoletosPage() {
@@ -36,6 +38,30 @@ export default function BoletosPage() {
     setBoletoToEdit(undefined);
   };
 
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      'pendente': '#f59e0b',
+      'solicitado': '#3b82f6',
+      'enviado': '#8b5cf6',
+      'pago': '#10b981',
+      'vencido': '#ef4444',
+      'cancelado': '#6b7280'
+    };
+    return colors[status] || '#6b7280';
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      'pendente': 'Pendente',
+      'solicitado': 'Solicitado',
+      'enviado': 'Boleto Enviado',
+      'pago': 'Pago',
+      'vencido': 'Vencido',
+      'cancelado': 'Cancelado'
+    };
+    return labels[status] || status;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -49,78 +75,115 @@ export default function BoletosPage() {
         </Button>
       </div>
 
-      <div className="grid gap-4">
-        {boletos.map((boleto) => (
-          <Card key={boleto.id}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {boleto.cliente?.nome || 'Cliente não encontrado'}
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <Badge variant={
-                  boleto.status === 'pago' ? 'default' : 
-                  boleto.status === 'vencido' ? 'destructive' : 'secondary'
-                }>
-                  {boleto.status}
-                </Badge>
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEditBoleto(boleto)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteBoleto(boleto.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                  <div className="flex items-center">
-                    <DollarSign className="mr-1 h-4 w-4" />
-                    R$ {boleto.valor_personalizado || boleto.valor}
-                  </div>
-                  <div className="flex items-center">
-                    <Calendar className="mr-1 h-4 w-4" />
-                    Vence dia {boleto.dia_vencimento}
-                  </div>
-                  <div>
-                    {boleto.tipo_plantao}
-                  </div>
-                </div>
-                {boleto.cuidadoras && boleto.cuidadoras.length > 0 && (
-                  <div className="text-sm text-muted-foreground">
-                    <span className="font-medium">Cuidadoras:</span> {boleto.cuidadoras.join(', ')}
-                  </div>
-                )}
-                {boleto.observacoes && (
-                  <div className="text-sm text-muted-foreground">
-                    <span className="font-medium">Obs:</span> {boleto.observacoes}
-                  </div>
-                )}
-                {(boleto.data_envio || boleto.data_pagamento) && (
-                  <div className="flex gap-4 text-xs text-muted-foreground">
-                    {boleto.data_envio && (
-                      <span>Enviado em: {new Date(boleto.data_envio).toLocaleDateString()}</span>
+      <Tabs defaultValue="lista" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="lista">Lista de Boletos</TabsTrigger>
+          <TabsTrigger value="relatorios">
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            Relatórios
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="lista" className="space-y-4">
+
+          <div className="grid gap-4">
+            {boletos.map((boleto) => (
+              <Card key={boleto.id}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    {boleto.cliente?.nome || 'Cliente não encontrado'}
+                    {boleto.recorrente && (
+                      <Badge variant="outline" className="ml-2">Recorrente</Badge>
                     )}
-                    {boleto.data_pagamento && (
-                      <span>Pago em: {new Date(boleto.data_pagamento).toLocaleDateString()}</span>
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      style={{ 
+                        backgroundColor: getStatusColor(boleto.status),
+                        color: 'white'
+                      }}
+                    >
+                      {getStatusLabel(boleto.status)}
+                    </Badge>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditBoleto(boleto)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteBoleto(boleto.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                      <div className="flex items-center">
+                        <DollarSign className="mr-1 h-4 w-4" />
+                        R$ {(boleto.valor_personalizado || boleto.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="flex items-center">
+                        <Calendar className="mr-1 h-4 w-4" />
+                        Vence dia {boleto.dia_vencimento}
+                      </div>
+                      <div>
+                        {boleto.tipo_plantao}
+                      </div>
+                    </div>
+                    
+                    {boleto.recorrente && (
+                      <div className="text-sm text-muted-foreground">
+                        <span className="font-medium">Recorrência:</span> {boleto.frequencia_recorrencia}
+                        {boleto.proxima_data_cobranca && (
+                          <span className="ml-2">• Próxima: {new Date(boleto.proxima_data_cobranca).toLocaleDateString()}</span>
+                        )}
+                      </div>
+                    )}
+                    
+                    {boleto.cuidadoras && boleto.cuidadoras.length > 0 && (
+                      <div className="text-sm text-muted-foreground">
+                        <span className="font-medium">Cuidadoras:</span> {boleto.cuidadoras.join(', ')}
+                      </div>
+                    )}
+                    
+                    {boleto.observacoes && (
+                      <div className="text-sm text-muted-foreground">
+                        <span className="font-medium">Obs:</span> {boleto.observacoes}
+                      </div>
+                    )}
+                    
+                    {(boleto.data_envio || boleto.data_pagamento || boleto.data_solicitacao || boleto.data_envio_boleto || boleto.data_confirmacao_pago) && (
+                      <div className="flex gap-4 text-xs text-muted-foreground">
+                        {boleto.data_solicitacao && (
+                          <span>Solicitado: {new Date(boleto.data_solicitacao).toLocaleDateString()}</span>
+                        )}
+                        {(boleto.data_envio_boleto || boleto.data_envio) && (
+                          <span>Enviado: {new Date(boleto.data_envio_boleto || boleto.data_envio!).toLocaleDateString()}</span>
+                        )}
+                        {(boleto.data_confirmacao_pago || boleto.data_pagamento) && (
+                          <span>Pago: {new Date(boleto.data_confirmacao_pago || boleto.data_pagamento!).toLocaleDateString()}</span>
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="relatorios">
+          <ExportBoletos />
+        </TabsContent>
+      </Tabs>
 
       {boletos.length === 0 && (
         <div className="text-center py-12">
