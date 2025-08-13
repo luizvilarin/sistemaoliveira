@@ -9,11 +9,22 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Eye, EyeOff } from 'lucide-react';
+import { RateLimiter } from '@/lib/security';
+import { toast } from 'sonner';
 
 const loginSchema = z.object({
-  email: z.string().email({ message: 'E-mail inválido' }),
-  senha: z.string().min(1, { message: 'Senha é obrigatória' }),
+  email: z.string()
+    .email({ message: 'E-mail inválido' })
+    .min(1, { message: 'E-mail é obrigatório' }),
+  senha: z.string()
+    .min(8, { message: 'Senha deve ter pelo menos 8 caracteres' })
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
+      message: 'Senha deve conter pelo menos: 1 maiúscula, 1 minúscula, 1 número e 1 símbolo'
+    }),
 });
+
+// Rate limiter for login attempts
+const loginRateLimiter = new RateLimiter(5, 15 * 60 * 1000); // 5 attempts per 15 minutes
 
 const LoginForm: React.FC = () => {
   const { signIn, isLoading } = useAuth();
@@ -28,7 +39,20 @@ const LoginForm: React.FC = () => {
   });
   
   async function onSubmit(values: z.infer<typeof loginSchema>) {
-    await signIn(values.email, values.senha);
+    // Check rate limiting
+    if (!loginRateLimiter.isAllowed(values.email)) {
+      toast.error("Muitas tentativas de login. Tente novamente em 15 minutos.");
+      return;
+    }
+
+    try {
+      await signIn(values.email, values.senha);
+      loginRateLimiter.reset(values.email); // Reset on successful login
+      toast.success("Login realizado com sucesso!");
+    } catch (error) {
+      console.error("Erro no login:", error);
+      toast.error("Erro ao fazer login. Verifique suas credenciais.");
+    }
   }
   
   return (

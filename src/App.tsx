@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { DataProvider } from "./contexts/DataContext";
 import { useUserActivity } from "./hooks/useUserActivity";
+import { useSessionTimeout } from "./hooks/useSessionTimeout";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Index from "./pages/Index";
@@ -33,6 +34,7 @@ const queryClient = new QueryClient();
 // Componente interno para usar os hooks
 const AppContent = () => {
   useUserActivity(); // Monitora atividade dos usuários para status offline/online
+  useSessionTimeout(); // Gerencia timeout de sessão por inatividade
   
   return (
     <Routes>
