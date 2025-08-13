@@ -2,9 +2,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { DataProvider } from "./contexts/DataContext";
+import { useUserActivity } from "./hooks/useUserActivity";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Index from "./pages/Index";
@@ -29,6 +30,41 @@ import CompleteSignupPage from "./pages/CompleteSignupPage";
 
 const queryClient = new QueryClient();
 
+// Componente interno para usar os hooks
+const AppContent = () => {
+  useUserActivity(); // Monitora atividade dos usuários para status offline/online
+  
+  return (
+    <Routes>
+      <Route path="/" element={<Index />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
+      <Route path="/complete-signup" element={<CompleteSignupPage />} />
+      
+      {/* Rotas protegidas - requer autenticação */}
+      <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/transacoes" element={<TransacoesPage />} />
+        <Route path="/clientes" element={<ClientesPage />} />
+        <Route path="/pacientes" element={<PacientesPage />} />
+        <Route path="/cuidadores" element={<CuidadoresPage />} />
+        <Route path="/calendario" element={<CalendarioPage />} />
+        <Route path="/tarefas" element={<TarefasPage />} />
+        <Route path="/mensagens" element={<MensagensPage />} />
+        <Route path="/relatorios" element={<RelatoriosPage />} />
+        <Route path="/boletos" element={<BoletosPage />} />
+        <Route path="/pagamentos-funcionarios" element={<PagamentosFuncionariosPage />} />
+        <Route path="/financeiro" element={<FinanceiroPage />} />
+        <Route path="/suporte" element={<SuportePage />} />
+        <Route path="/configuracoes" element={<ConfiguracoesPage />} />
+      </Route>
+      
+      {/* Redirecionar para a página not found */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -37,33 +73,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <DataProvider>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/auth/callback" element={<AuthCallbackPage />} />
-              <Route path="/complete-signup" element={<CompleteSignupPage />} />
-              
-              {/* Rotas protegidas - requer autenticação */}
-              <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/transacoes" element={<TransacoesPage />} />
-                <Route path="/clientes" element={<ClientesPage />} />
-                <Route path="/pacientes" element={<PacientesPage />} />
-                <Route path="/cuidadores" element={<CuidadoresPage />} />
-                <Route path="/calendario" element={<CalendarioPage />} />
-                <Route path="/tarefas" element={<TarefasPage />} />
-                <Route path="/mensagens" element={<MensagensPage />} />
-                <Route path="/relatorios" element={<RelatoriosPage />} />
-                <Route path="/boletos" element={<BoletosPage />} />
-                <Route path="/pagamentos-funcionarios" element={<PagamentosFuncionariosPage />} />
-                <Route path="/financeiro" element={<FinanceiroPage />} />
-                <Route path="/suporte" element={<SuportePage />} />
-                <Route path="/configuracoes" element={<ConfiguracoesPage />} />
-              </Route>
-              
-              {/* Redirecionar para a página not found */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <AppContent />
           </DataProvider>
         </AuthProvider>
       </BrowserRouter>

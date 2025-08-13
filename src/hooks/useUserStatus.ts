@@ -12,23 +12,40 @@ export const useUserStatus = () => {
     // Marcar como online quando conectar
     userService.updateUserStatus('online').catch(console.error);
 
-    // Atualizar atividade a cada 30 segundos
+    // Atualizar atividade a cada 30 segundos apenas se estiver ativo
     const interval = setInterval(() => {
-      userService.updateUserStatus('online').catch(console.error);
+      if (document.visibilityState === 'visible') {
+        userService.updateUserStatus('online').catch(console.error);
+      }
     }, 30000);
 
     // Marcar como offline ao sair
     const handleBeforeUnload = () => {
-      userService.updateUserStatus('offline').catch(console.error);
+      navigator.sendBeacon(`/api/user-status`, JSON.stringify({
+        userId: userProfile.id,
+        status: 'offline'
+      }));
+    };
+
+    // Detectar quando a página fica visível/oculta
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        userService.updateUserStatus('online').catch(console.error);
+      } else {
+        userService.updateUserStatus('ausente').catch(console.error);
+      }
     };
 
     // Detectar inatividade
     let inactivityTimer: NodeJS.Timeout;
     const resetInactivityTimer = () => {
       clearTimeout(inactivityTimer);
-      inactivityTimer = setTimeout(() => {
-        userService.updateUserStatus('ausente').catch(console.error);
-      }, 5 * 60 * 1000); // 5 minutos
+      if (document.visibilityState === 'visible') {
+        userService.updateUserStatus('online').catch(console.error);
+        inactivityTimer = setTimeout(() => {
+          userService.updateUserStatus('ausente').catch(console.error);
+        }, 5 * 60 * 1000); // 5 minutos
+      }
     };
 
     // Eventos para detectar atividade
@@ -40,11 +57,13 @@ export const useUserStatus = () => {
     resetInactivityTimer();
 
     window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       clearInterval(interval);
       clearTimeout(inactivityTimer);
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       events.forEach(event => {
         document.removeEventListener(event, resetInactivityTimer, true);
       });
@@ -54,7 +73,7 @@ export const useUserStatus = () => {
     };
   }, [userProfile]);
 
-  const setUserStatus = async (status: 'online' | 'offline' | 'ausente' | 'ocupado') => {
+  const setUserStatus = async (status: 'online' | 'offline' | 'ausente' | 'ocupado' | 'invisivel') => {
     try {
       await userService.updateUserStatus(status);
     } catch (error) {

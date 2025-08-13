@@ -37,6 +37,6 @@ export type Financeiro = Tables<'financeiro'>;
 // Usuario type combining profile with auth info
 export type Usuario = Profile & {
   canDelete?: boolean;
-  status_online?: 'online' | 'offline' | 'ausente' | 'ocupado';
+  status_online?: 'online' | 'offline' | 'ausente' | 'ocupado' | 'invisivel';
   ultima_atividade?: string;
 };

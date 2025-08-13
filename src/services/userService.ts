@@ -132,7 +132,7 @@ export const userService = {
     return data;
   },
 
-  async updateUserStatus(status: 'online' | 'offline' | 'ausente' | 'ocupado') {
+  async updateUserStatus(status: 'online' | 'offline' | 'ausente' | 'ocupado' | 'invisivel') {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Não autenticado');
 
@@ -171,7 +171,7 @@ export const userService = {
         updated_at: user.updated_at,
         ativo: user.ativo || false,
         canDelete: user.email !== 'luizvilarinho.nave@gmail.com',
-        status_online: (user.status_online as 'online' | 'offline' | 'ausente' | 'ocupado') || 'offline',
+        status_online: (user.status_online as 'online' | 'offline' | 'ausente' | 'ocupado' | 'invisivel') || 'offline',
         ultima_atividade: user.ultima_atividade || undefined,
         senha_hash: user.senha_hash || undefined
       }));

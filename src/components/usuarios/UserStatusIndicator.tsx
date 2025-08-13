@@ -3,7 +3,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 
 interface UserStatusIndicatorProps {
-  status: 'online' | 'offline' | 'ausente' | 'ocupado';
+  status: 'online' | 'offline' | 'ausente' | 'ocupado' | 'invisivel';
   size?: 'sm' | 'md' | 'lg';
   showText?: boolean;
   className?: string;
@@ -23,6 +23,8 @@ const UserStatusIndicator: React.FC<UserStatusIndicatorProps> = ({
         return 'bg-red-500';
       case 'ausente':
         return 'bg-yellow-500';
+      case 'invisivel':
+        return 'bg-gray-400';
       case 'offline':
       default:
         return 'bg-gray-400';
@@ -37,6 +39,8 @@ const UserStatusIndicator: React.FC<UserStatusIndicatorProps> = ({
         return 'Ocupado';
       case 'ausente':
         return 'Ausente';
+      case 'invisivel':
+        return 'Invisível';
       case 'offline':
       default:
         return 'Offline';

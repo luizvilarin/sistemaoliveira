@@ -99,7 +99,7 @@ export const useChatData = (userProfile: any) => {
         email: user.email,
         perfil: user.perfil as 'admin' | 'gestor' | 'cuidador',
         avatar_url: user.avatar_url || undefined,
-        status_online: (user.status_online as 'online' | 'offline' | 'ausente' | 'ocupado') || 'offline',
+        status_online: (user.status_online as 'online' | 'offline' | 'ausente' | 'ocupado' | 'invisivel') || 'offline',
         ultima_atividade: user.ultima_atividade || undefined,
         created_at: user.created_at,
         ativo: user.ativo || false

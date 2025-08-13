@@ -75,8 +75,8 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
 const DashboardSidebar = () => {
   const { userProfile, signOut } = useAuth();
   const { setUserStatus } = useUserStatus();
-  const [currentStatus, setCurrentStatus] = useState<'online' | 'offline' | 'ausente' | 'ocupado'>(
-    userProfile?.status_online as 'online' | 'offline' | 'ausente' | 'ocupado' || 'online'
+  const [currentStatus, setCurrentStatus] = useState<'online' | 'offline' | 'ausente' | 'ocupado' | 'invisivel'>(
+    userProfile?.status_online as 'online' | 'offline' | 'ausente' | 'ocupado' | 'invisivel' || 'online'
   );
 
   const getInitials = (name: string) => {

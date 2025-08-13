@@ -124,7 +124,7 @@ const UsuariosList: React.FC<UsersListProps> = ({
                     <div className="flex items-center gap-2">
                       <h4 className="font-medium">{user.nome}</h4>
                       <UserStatusIndicator 
-                        status={user.status_online as 'online' | 'offline' | 'ausente' | 'ocupado' || 'offline'} 
+                        status={user.status_online as 'online' | 'offline' | 'ausente' | 'ocupado' | 'invisivel' || 'offline'} 
                         size="sm" 
                       />
                       {user.email === 'luizvilarinho.nave@gmail.com' && (

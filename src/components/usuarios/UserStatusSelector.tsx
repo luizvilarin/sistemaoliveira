@@ -6,8 +6,8 @@ import { useToast } from '@/hooks/use-toast';
 import UserStatusIndicator from './UserStatusIndicator';
 
 interface UserStatusSelectorProps {
-  currentStatus: 'online' | 'offline' | 'ausente' | 'ocupado';
-  onStatusChange?: (status: 'online' | 'offline' | 'ausente' | 'ocupado') => void;
+  currentStatus: 'online' | 'offline' | 'ausente' | 'ocupado' | 'invisivel';
+  onStatusChange?: (status: 'online' | 'offline' | 'ausente' | 'ocupado' | 'invisivel') => void;
 }
 
 const UserStatusSelector: React.FC<UserStatusSelectorProps> = ({ 
@@ -16,7 +16,7 @@ const UserStatusSelector: React.FC<UserStatusSelectorProps> = ({
 }) => {
   const { toast } = useToast();
 
-  const handleStatusChange = async (newStatus: 'online' | 'offline' | 'ausente' | 'ocupado') => {
+  const handleStatusChange = async (newStatus: 'online' | 'offline' | 'ausente' | 'ocupado' | 'invisivel') => {
     try {
       await userService.updateUserStatus(newStatus);
       onStatusChange?.(newStatus);
@@ -62,6 +62,12 @@ const UserStatusSelector: React.FC<UserStatusSelectorProps> = ({
           <div className="flex items-center gap-2">
             <UserStatusIndicator status="ausente" size="sm" />
             <span>Ausente</span>
+          </div>
+        </SelectItem>
+        <SelectItem value="invisivel">
+          <div className="flex items-center gap-2">
+            <UserStatusIndicator status="offline" size="sm" />
+            <span>Invisível</span>
           </div>
         </SelectItem>
         <SelectItem value="offline">

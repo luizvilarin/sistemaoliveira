@@ -32,7 +32,7 @@ export interface UserProfile {
   email: string;
   avatar_url?: string;
   perfil: 'admin' | 'gestor' | 'cuidador';
-  status_online?: 'online' | 'offline' | 'ausente' | 'ocupado';
+  status_online?: 'online' | 'offline' | 'ausente' | 'ocupado' | 'invisivel';
   ultima_atividade?: string;
   created_at: string;
   ativo?: boolean;
