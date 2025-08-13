@@ -74,28 +74,52 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const color =
-      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
-      itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
-  })
-  .join("\n")}
-}
-`
-          )
-          .join("\n"),
-      }}
-    />
-  )
+  // Create safe CSS content without dangerouslySetInnerHTML
+  const styleContent = React.useMemo(() => {
+    return Object.entries(THEMES)
+      .map(([theme, prefix]) => {
+        const validColorRules = colorConfig
+          .map(([key, itemConfig]) => {
+            const color =
+              itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
+              itemConfig.color
+            
+            // Sanitize color value to prevent CSS injection
+            if (!color || typeof color !== 'string') return null
+            
+            // Only allow valid CSS color formats
+            const sanitizedColor = color.replace(/[^a-zA-Z0-9#().,\s%-]/g, '')
+            if (sanitizedColor !== color) return null // Invalid characters found
+            
+            // Sanitize key to prevent CSS injection
+            const sanitizedKey = key.replace(/[^a-zA-Z0-9-_]/g, '')
+            if (sanitizedKey !== key) return null // Invalid characters found
+            
+            return `  --color-${sanitizedKey}: ${sanitizedColor};`
+          })
+          .filter(Boolean)
+          .join("\n")
+        
+        // Sanitize chart ID
+        const sanitizedId = id.replace(/[^a-zA-Z0-9-_]/g, '')
+        if (sanitizedId !== id) return '' // Invalid characters found
+        
+        return `${prefix} [data-chart="${sanitizedId}"] {\n${validColorRules}\n}`
+      })
+      .filter(Boolean)
+      .join("\n")
+  }, [id, colorConfig])
+
+  // Use a ref to safely inject CSS
+  const styleRef = React.useRef<HTMLStyleElement>(null)
+  
+  React.useEffect(() => {
+    if (styleRef.current) {
+      styleRef.current.textContent = styleContent
+    }
+  }, [styleContent])
+
+  return <style ref={styleRef} />
 }
 
 const ChartTooltip = RechartsPrimitive.Tooltip
