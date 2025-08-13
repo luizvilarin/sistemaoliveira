@@ -91,12 +91,7 @@ const LoginForm: React.FC = () => {
       </CardContent>
       <CardFooter className="flex flex-col space-y-2">
         <div className="text-sm text-center text-muted-foreground">
-          Para demonstração, use:
-        </div>
-        <div className="text-xs text-center text-muted-foreground">
-          Admin: admin@sgc.com / admin123<br />
-          Gestor: gestor@sgc.com / gestor123<br />
-          Cuidador: cuidador@sgc.com / cuidador123
+          Entre com suas credenciais para acessar o sistema
         </div>
       </CardFooter>
     </Card>
