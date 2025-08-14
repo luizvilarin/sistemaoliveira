@@ -23,28 +23,7 @@ export const useTransacaoCrud = (
       throw error;
     }
     
-    // Sincronizar com o sistema financeiro
-    try {
-      const financeiroEntry = {
-        tipo: 'receita',
-        categoria: 'Receitas de Clientes',
-        valor: transacao.valor,
-        data_transacao: new Date(transacao.data).toISOString().split('T')[0],
-        descricao: `Transação do cliente: ${data.cliente?.nome || 'Cliente não identificado'}`,
-        referencia_id: data.id,
-        referencia_tipo: 'transacao_cliente',
-        created_by: data.cliente_id
-      };
-
-      await supabase
-        .from('financeiro')
-        .insert(financeiroEntry);
-        
-      console.log('Transação sincronizada com o financeiro');
-    } catch (financeiroError) {
-      console.warn('Erro ao sincronizar com financeiro:', financeiroError);
-      // Não falha a transação principal se a sincronização falhar
-    }
+    // Não mais sincronizar com financeiro - módulos agora são independentes
     
     console.log('Transação adicionada com sucesso:', data);
     setTransacoes(prev => [...prev, data]);
@@ -69,32 +48,7 @@ export const useTransacaoCrud = (
       throw error;
     }
     
-    // Atualizar no sistema financeiro se existir
-    try {
-      if (updates.valor || updates.data) {
-        const financeiroUpdates: any = {};
-        
-        if (updates.valor) {
-          financeiroUpdates.valor = updates.valor;
-        }
-        
-        if (updates.data) {
-          financeiroUpdates.data_transacao = new Date(updates.data).toISOString().split('T')[0];
-        }
-        
-        if (Object.keys(financeiroUpdates).length > 0) {
-          await supabase
-            .from('financeiro')
-            .update(financeiroUpdates)
-            .eq('referencia_id', id)
-            .eq('referencia_tipo', 'transacao_cliente');
-            
-          console.log('Transação sincronizada no financeiro');
-        }
-      }
-    } catch (financeiroError) {
-      console.warn('Erro ao sincronizar atualização com financeiro:', financeiroError);
-    }
+    // Não mais sincronizar com financeiro - módulos agora são independentes
     
     console.log('Transação atualizada com sucesso:', data);
     setTransacoes(prev => prev.map(t => t.id === id ? data : t));
@@ -104,18 +58,7 @@ export const useTransacaoCrud = (
   const deleteTransacao = async (id: string) => {
     console.log('Deletando transação:', id);
     
-    // Primeiro remover do sistema financeiro
-    try {
-      await supabase
-        .from('financeiro')
-        .delete()
-        .eq('referencia_id', id)
-        .eq('referencia_tipo', 'transacao_cliente');
-        
-      console.log('Registro financeiro relacionado removido');
-    } catch (financeiroError) {
-      console.warn('Erro ao remover do financeiro:', financeiroError);
-    }
+    // Não mais sincronizar com financeiro - módulos agora são independentes
     
     const { error } = await supabase
       .from('transacoes')

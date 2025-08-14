@@ -18,7 +18,8 @@ import {
   NotificacaoSistema,
   Boleto,
   PagamentoFuncionario,
-  Financeiro
+  Financeiro,
+  NotaFiscal
 } from '@/types/data';
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -43,6 +44,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [boletos, setBoletos] = useState<Boleto[]>([]);
   const [pagamentosFuncionarios, setPagamentosFuncionarios] = useState<PagamentoFuncionario[]>([]);
   const [financeiro, setFinanceiro] = useState<Financeiro[]>([]);
+  const [notasFiscais, setNotasFiscais] = useState<NotaFiscal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Get CRUD operations
@@ -58,7 +60,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setNotificacoesSistema,
     setBoletos,
     setPagamentosFuncionarios,
-    setFinanceiro
+    setFinanceiro,
+    setNotasFiscais
   );
 
   // Fetch all data
@@ -82,6 +85,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setBoletos(data.boletos);
         setPagamentosFuncionarios(data.pagamentosFuncionarios);
         setFinanceiro(data.financeiro);
+        setNotasFiscais(data.notasFiscais);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -118,6 +122,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setBoletos([]);
       setPagamentosFuncionarios([]);
       setFinanceiro([]);
+      setNotasFiscais([]);
       setIsLoading(false);
     }
   }, [user]);
@@ -138,6 +143,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         boletos,
         pagamentosFuncionarios,
         financeiro,
+        notasFiscais,
         
         // Loading
         isLoading,

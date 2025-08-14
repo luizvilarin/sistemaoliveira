@@ -19,7 +19,8 @@ export const fetchAllData = async (user: User | null) => {
       notificacoesSistemaRes,
       boletosRes,
       pagamentosFuncionariosRes,
-      financeiroRes
+      financeiroRes,
+      notasFiscaisRes
     ] = await Promise.all([
       supabase.from('clientes').select('*'),
       supabase.from('cuidadores').select(`
@@ -47,7 +48,8 @@ export const fetchAllData = async (user: User | null) => {
       supabase.from('notificacoes_sistema').select('*').eq('usuario_id', user.id),
       supabase.from('boletos').select(`*, cliente:clientes(*)`),
       supabase.from('pagamentos_funcionarios').select(`*, cuidador:cuidadores(*)`),
-      supabase.from('financeiro').select('*')
+      supabase.from('financeiro').select('*'),
+      supabase.from('notas_fiscais').select('*')
     ]);
 
     return {
@@ -62,7 +64,8 @@ export const fetchAllData = async (user: User | null) => {
       notificacoesSistema: notificacoesSistemaRes.data || [],
       boletos: boletosRes.data || [],
       pagamentosFuncionarios: pagamentosFuncionariosRes.data || [],
-      financeiro: financeiroRes.data || []
+      financeiro: financeiroRes.data || [],
+      notasFiscais: notasFiscaisRes.data || []
     };
   } catch (error) {
     console.error('Error fetching data:', error);

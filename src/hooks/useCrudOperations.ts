@@ -1,4 +1,3 @@
-
 import {
   Cliente,
   Cuidador,
@@ -11,7 +10,8 @@ import {
   NotificacaoSistema,
   Boleto,
   PagamentoFuncionario,
-  Financeiro
+  Financeiro,
+  NotaFiscal
 } from '@/types/data';
 import { useClienteCrud } from './crud/useClienteCrud';
 import { useCuidadorCrud } from './crud/useCuidadorCrud';
@@ -24,6 +24,7 @@ import { useNotificacaoCrud } from './crud/useNotificacaoCrud';
 import { useBoletoCrud } from './crud/useBoletoCrud';
 import { usePagamentoFuncionarioCrud } from './crud/usePagamentoFuncionarioCrud';
 import { useFinanceiroCrud } from './crud/useFinanceiroCrud';
+import { useNotaFiscalCrud } from './crud/useNotaFiscalCrud';
 
 export const useCrudOperations = (
   setClientes: React.Dispatch<React.SetStateAction<Cliente[]>>,
@@ -37,7 +38,8 @@ export const useCrudOperations = (
   setNotificacoesSistema: React.Dispatch<React.SetStateAction<NotificacaoSistema[]>>,
   setBoletos: React.Dispatch<React.SetStateAction<Boleto[]>>,
   setPagamentosFuncionarios: React.Dispatch<React.SetStateAction<PagamentoFuncionario[]>>,
-  setFinanceiro: React.Dispatch<React.SetStateAction<Financeiro[]>>
+  setFinanceiro: React.Dispatch<React.SetStateAction<Financeiro[]>>,
+  setNotasFiscais: React.Dispatch<React.SetStateAction<NotaFiscal[]>>
 ) => {
   const clienteCrud = useClienteCrud(setClientes);
   const cuidadorCrud = useCuidadorCrud(setCuidadores);
@@ -50,6 +52,7 @@ export const useCrudOperations = (
   const boletoCrud = useBoletoCrud(setBoletos);
   const pagamentoFuncionarioCrud = usePagamentoFuncionarioCrud(setPagamentosFuncionarios);
   const financeiroCrud = useFinanceiroCrud(setFinanceiro);
+  const notaFiscalCrud = useNotaFiscalCrud(setNotasFiscais);
 
   return {
     ...clienteCrud,
@@ -69,5 +72,8 @@ export const useCrudOperations = (
     addFinanceiro: financeiroCrud.addFinanceiro,
     updateFinanceiro: financeiroCrud.updateFinanceiro,
     deleteFinanceiro: financeiroCrud.deleteFinanceiro,
+    addNotaFiscal: notaFiscalCrud.addNotaFiscal,
+    updateNotaFiscal: notaFiscalCrud.updateNotaFiscal,
+    deleteNotaFiscal: notaFiscalCrud.deleteNotaFiscal,
   };
 };

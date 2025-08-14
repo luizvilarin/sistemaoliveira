@@ -34,6 +34,10 @@ export type PagamentoFuncionario = Tables<'pagamentos_funcionarios'>;
 
 export type Financeiro = Tables<'financeiro'>;
 
+export type NotaFiscal = Tables<'notas_fiscais'> & {
+  cliente?: Cliente | null;
+};
+
 // Usuario type combining profile with auth info
 export type Usuario = Profile & {
   canDelete?: boolean;

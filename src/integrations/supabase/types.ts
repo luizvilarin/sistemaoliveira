@@ -90,6 +90,7 @@ export type Database = {
       }
       boletos: {
         Row: {
+          canal_envio: string | null
           cliente_id: string
           cor_status: string | null
           created_at: string
@@ -102,8 +103,10 @@ export type Database = {
           dia_cobranca_secundario: number | null
           dia_vencimento: number
           frequencia_recorrencia: string | null
+          historico_ciclos: Json | null
           historico_lembretes: Json | null
           id: string
+          notificacao_dias_antes: number | null
           observacoes: string | null
           proxima_data_cobranca: string | null
           recorrente: boolean | null
@@ -114,6 +117,7 @@ export type Database = {
           valor_personalizado: number | null
         }
         Insert: {
+          canal_envio?: string | null
           cliente_id: string
           cor_status?: string | null
           created_at?: string
@@ -126,8 +130,10 @@ export type Database = {
           dia_cobranca_secundario?: number | null
           dia_vencimento: number
           frequencia_recorrencia?: string | null
+          historico_ciclos?: Json | null
           historico_lembretes?: Json | null
           id?: string
+          notificacao_dias_antes?: number | null
           observacoes?: string | null
           proxima_data_cobranca?: string | null
           recorrente?: boolean | null
@@ -138,6 +144,7 @@ export type Database = {
           valor_personalizado?: number | null
         }
         Update: {
+          canal_envio?: string | null
           cliente_id?: string
           cor_status?: string | null
           created_at?: string
@@ -150,8 +157,10 @@ export type Database = {
           dia_cobranca_secundario?: number | null
           dia_vencimento?: number
           frequencia_recorrencia?: string | null
+          historico_ciclos?: Json | null
           historico_lembretes?: Json | null
           id?: string
+          notificacao_dias_antes?: number | null
           observacoes?: string | null
           proxima_data_cobranca?: string | null
           recorrente?: boolean | null
@@ -536,6 +545,51 @@ export type Database = {
           },
         ]
       }
+      notas_fiscais: {
+        Row: {
+          cliente_id: string
+          cpf_tomador: string
+          created_at: string
+          data_emissao: string | null
+          emissor_nf: string
+          id: string
+          observacoes: string | null
+          periodo: string
+          responsavel_pagador: string
+          status_envio: string
+          updated_at: string
+          valor_nf: number
+        }
+        Insert: {
+          cliente_id: string
+          cpf_tomador: string
+          created_at?: string
+          data_emissao?: string | null
+          emissor_nf: string
+          id?: string
+          observacoes?: string | null
+          periodo: string
+          responsavel_pagador: string
+          status_envio?: string
+          updated_at?: string
+          valor_nf: number
+        }
+        Update: {
+          cliente_id?: string
+          cpf_tomador?: string
+          created_at?: string
+          data_emissao?: string | null
+          emissor_nf?: string
+          id?: string
+          observacoes?: string | null
+          periodo?: string
+          responsavel_pagador?: string
+          status_envio?: string
+          updated_at?: string
+          valor_nf?: number
+        }
+        Relationships: []
+      }
       notificacoes: {
         Row: {
           created_at: string
@@ -670,12 +724,15 @@ export type Database = {
       }
       pagamentos_funcionarios: {
         Row: {
+          comprovante_url: string | null
           created_at: string
           created_by: string | null
           cuidador_id: string
           data_pagamento: string
           descricao: string | null
           id: string
+          metodo_pagamento: string | null
+          periodo_competencia: string | null
           referencia: string
           status: string
           tipo_pagamento: string
@@ -683,12 +740,15 @@ export type Database = {
           valor: number
         }
         Insert: {
+          comprovante_url?: string | null
           created_at?: string
           created_by?: string | null
           cuidador_id: string
           data_pagamento: string
           descricao?: string | null
           id?: string
+          metodo_pagamento?: string | null
+          periodo_competencia?: string | null
           referencia: string
           status?: string
           tipo_pagamento?: string
@@ -696,12 +756,15 @@ export type Database = {
           valor: number
         }
         Update: {
+          comprovante_url?: string | null
           created_at?: string
           created_by?: string | null
           cuidador_id?: string
           data_pagamento?: string
           descricao?: string | null
           id?: string
+          metodo_pagamento?: string | null
+          periodo_competencia?: string | null
           referencia?: string
           status?: string
           tipo_pagamento?: string
@@ -927,6 +990,10 @@ export type Database = {
         Returns: undefined
       }
       criar_lembretes_boletos_automaticos: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      criar_notificacoes_boletos: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }

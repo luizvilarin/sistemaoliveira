@@ -12,7 +12,8 @@ import {
   NotificacaoSistema,
   Boleto,
   PagamentoFuncionario,
-  Financeiro
+  Financeiro,
+  NotaFiscal
 } from '@/types/data';
 
 export interface DataContextType {
@@ -29,6 +30,7 @@ export interface DataContextType {
   boletos: Boleto[];
   pagamentosFuncionarios: PagamentoFuncionario[];
   financeiro: Financeiro[];
+  notasFiscais: NotaFiscal[];
   
   // Loading states
   isLoading: boolean;
@@ -85,4 +87,9 @@ export interface DataContextType {
   addFinanceiro: (item: TablesInsert<'financeiro'>) => Promise<Financeiro>;
   updateFinanceiro: (id: string, updates: TablesUpdate<'financeiro'>) => Promise<Financeiro>;
   deleteFinanceiro: (id: string) => Promise<void>;
+  
+  // NotaFiscal operations
+  addNotaFiscal: (notaFiscal: TablesInsert<'notas_fiscais'>) => Promise<NotaFiscal>;
+  updateNotaFiscal: (id: string, updates: TablesUpdate<'notas_fiscais'>) => Promise<NotaFiscal>;
+  deleteNotaFiscal: (id: string) => Promise<void>;
 }
