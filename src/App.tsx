@@ -20,9 +20,10 @@ import CalendarioPage from "./pages/CalendarioPage";
 import TarefasPage from "./pages/TarefasPage";
 import MensagensPage from "./pages/MensagensPage";
 import RelatoriosPage from "./pages/RelatoriosPage";
-import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 import SuportePage from "./pages/SuportePage";
+import { NotasFiscaisPage } from "./pages/NotasFiscaisPage";
 import BoletosPage from "./pages/BoletosPage";
+import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 import PagamentosFuncionariosPage from "./pages/PagamentosFuncionariosPage";
 import FinanceiroPage from "./pages/FinanceiroPage";
 import NotFound from "./pages/NotFound";
@@ -55,9 +56,10 @@ const AppContent = () => {
         <Route path="/mensagens" element={<MensagensPage />} />
         <Route path="/relatorios" element={<RelatoriosPage />} />
         <Route path="/boletos" element={<BoletosPage />} />
-        <Route path="/pagamentos-funcionarios" element={<PagamentosFuncionariosPage />} />
-        <Route path="/financeiro" element={<FinanceiroPage />} />
-        <Route path="/suporte" element={<SuportePage />} />
+         <Route path="/pagamentos-funcionarios" element={<PagamentosFuncionariosPage />} />
+         <Route path="/financeiro" element={<FinanceiroPage />} />
+         <Route path="/notas-fiscais" element={<NotasFiscaisPage />} />
+         <Route path="/suporte" element={<SuportePage />} />
         <Route path="/configuracoes" element={<ConfiguracoesPage />} />
       </Route>
       

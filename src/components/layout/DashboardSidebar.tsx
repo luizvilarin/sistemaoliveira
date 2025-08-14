@@ -18,7 +18,8 @@ import {
   LogOut,
   List,
   Settings,
-  HelpCircle
+  HelpCircle,
+  TrendingUp
 } from 'lucide-react';
 
 interface SidebarLinkProps {
@@ -26,6 +27,7 @@ interface SidebarLinkProps {
   icon: React.ReactNode;
   label: string;
   adminOnly?: boolean;
+  adminPlusOnly?: boolean;
   gestorAndAdminOnly?: boolean;
   excludeCuidador?: boolean;
 }
@@ -34,7 +36,8 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
   to, 
   icon, 
   label, 
-  adminOnly = false, 
+  adminOnly = false,
+  adminPlusOnly = false,
   gestorAndAdminOnly = false,
   excludeCuidador = false 
 }) => {
@@ -43,6 +46,11 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
 
   // Admin pode ver tudo
   if (adminOnly && !['admin', 'admin_plus'].includes(perfil || '')) {
+    return null;
+  }
+
+  // Admin+ only
+  if (adminPlusOnly && perfil !== 'admin_plus') {
     return null;
   }
 
@@ -151,13 +159,19 @@ const DashboardSidebar = () => {
           to="/pagamentos-funcionarios" 
           icon={<DollarSign size={18} />} 
           label="Pagamentos" 
-          adminOnly={true}
+          adminPlusOnly={true}
+        />
+        <SidebarLink 
+          to="/notas-fiscais" 
+          icon={<TrendingUp size={18} />} 
+          label="Nota Fiscal" 
+          adminPlusOnly={true}
         />
         <SidebarLink 
           to="/financeiro" 
           icon={<DollarSign size={18} />} 
           label="Financeiro" 
-          adminOnly={true}
+          adminPlusOnly={true}
         />
         <SidebarLink to="/suporte" icon={<HelpCircle size={18} />} label="Suporte" />
         <SidebarLink to="/configuracoes" icon={<Settings size={18} />} label="Configurações" />
