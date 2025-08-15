@@ -139,13 +139,51 @@ const BoletoForm: React.FC<BoletoFormProps> = ({ isOpen, onClose, boletoToEdit }
 
   async function onSubmit(values: FormData) {
     try {
+      console.log('🔍 [BoletoForm] Dados do formulário recebidos:', values);
+      
+      // Validar campos obrigatórios antes do processamento
+      const errors = [];
+      if (!values.cliente_id) errors.push('Cliente é obrigatório');
+      if (!values.valor) errors.push('Valor é obrigatório');
+      if (!values.dia_vencimento) errors.push('Dia de vencimento é obrigatório');
+      if (!values.tipo_plantao) errors.push('Tipo de plantão é obrigatório');
+      if (!values.cuidadoras) errors.push('Cuidadoras é obrigatório');
+      if (!values.status) errors.push('Status é obrigatório');
+      
+      if (errors.length > 0) {
+        console.error('❌ [BoletoForm] Erros de validação:', errors);
+        toast({
+          variant: 'destructive',
+          title: 'Erro de validação',
+          description: errors.join(', '),
+        });
+        return;
+      }
+
+      // Processar cuidadoras com validação
+      let cuidadorasProcessadas = [];
+      try {
+        cuidadorasProcessadas = values.cuidadoras.split(',').map(c => c.trim()).filter(c => c);
+        if (cuidadorasProcessadas.length === 0) {
+          throw new Error('Lista de cuidadoras vazia após processamento');
+        }
+      } catch (error) {
+        console.error('❌ [BoletoForm] Erro ao processar cuidadoras:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Erro',
+          description: 'Erro ao processar lista de cuidadoras',
+        });
+        return;
+      }
+
       const boletoData = {
         cliente_id: values.cliente_id,
         valor: parseFloat(values.valor),
         valor_personalizado: values.valor_personalizado ? parseFloat(values.valor_personalizado) : null,
         dia_vencimento: parseInt(values.dia_vencimento),
         tipo_plantao: values.tipo_plantao,
-        cuidadoras: values.cuidadoras.split(',').map(c => c.trim()).filter(c => c),
+        cuidadoras: cuidadorasProcessadas,
         status: values.status,
         recorrente: values.recorrente || false,
         frequencia_recorrencia: values.frequencia_recorrencia || 'unico',
@@ -157,13 +195,17 @@ const BoletoForm: React.FC<BoletoFormProps> = ({ isOpen, onClose, boletoToEdit }
         data_pagamento: values.data_pagamento ? new Date(values.data_pagamento).toISOString().slice(0, 10) : null,
       };
       
+      console.log('📦 [BoletoForm] Dados processados para envio:', boletoData);
+      
       if (isEditing && boletoToEdit) {
+        console.log('✏️ [BoletoForm] Modo edição - ID:', boletoToEdit.id);
         await updateBoleto(boletoToEdit.id, boletoData);
         toast({
           title: 'Boleto atualizado',
           description: 'O boleto foi atualizado com sucesso!',
         });
       } else {
+        console.log('➕ [BoletoForm] Modo criação - chamando addBoleto');
         await addBoleto(boletoData);
         toast({
           title: 'Boleto criado',
@@ -172,11 +214,22 @@ const BoletoForm: React.FC<BoletoFormProps> = ({ isOpen, onClose, boletoToEdit }
       }
       onClose();
     } catch (error) {
-      console.error('Erro ao processar boleto:', error);
+      console.error('💥 [BoletoForm] Erro completo ao processar boleto:', error);
+      console.error('💥 [BoletoForm] Stack trace:', error.stack);
+      console.error('💥 [BoletoForm] Mensagem do erro:', error.message);
+      
+      // Tentar extrair mensagem mais específica do erro
+      let errorMessage = 'Erro desconhecido ao processar boleto';
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
       toast({
         variant: 'destructive',
-        title: 'Erro',
-        description: 'Ocorreu um erro ao processar o boleto.',
+        title: 'Erro ao processar boleto',
+        description: errorMessage,
       });
     }
   }
