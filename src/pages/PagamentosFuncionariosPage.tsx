@@ -4,14 +4,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, DollarSign, Calendar, User } from 'lucide-react';
+import { Plus, DollarSign, Calendar, User, Edit, Trash2 } from 'lucide-react';
 import { formatMoney } from '@/lib/utils';
 import PagamentoFuncionarioForm from '@/components/pagamentos/PagamentoFuncionarioForm';
+import { PagamentoFuncionario } from '@/types/data';
 
 const PagamentosFuncionariosPage = () => {
-  const { pagamentosFuncionarios, cuidadores } = useData();
+  const { pagamentosFuncionarios, cuidadores, deletePagamentoFuncionario } = useData();
   const { isAdmin } = useAuth();
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [pagamentoToEdit, setPagamentoToEdit] = useState<PagamentoFuncionario | undefined>(undefined);
 
   if (!isAdmin) {
     return (
@@ -30,6 +32,26 @@ const PagamentosFuncionariosPage = () => {
   };
 
   const totalPagamentos = pagamentosFuncionarios.reduce((sum, pagamento) => sum + Number(pagamento.valor), 0);
+
+  const handleEditPagamento = (pagamento: PagamentoFuncionario) => {
+    setPagamentoToEdit(pagamento);
+    setIsFormOpen(true);
+  };
+
+  const handleDeletePagamento = async (pagamentoId: string) => {
+    if (confirm('Tem certeza que deseja excluir este pagamento? Esta ação irá remover também a entrada correspondente no financeiro.')) {
+      try {
+        await deletePagamentoFuncionario(pagamentoId);
+      } catch (error) {
+        console.error('Erro ao excluir pagamento:', error);
+      }
+    }
+  };
+
+  const handleCloseForm = () => {
+    setIsFormOpen(false);
+    setPagamentoToEdit(undefined);
+  };
 
   return (
     <div className="space-y-6">
@@ -130,9 +152,27 @@ const PagamentosFuncionariosPage = () => {
                         <span>Data: {new Date(pagamento.data_pagamento).toLocaleDateString('pt-BR')}</span>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-lg font-semibold text-green-600">
-                        {formatMoney(Number(pagamento.valor))}
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <div className="text-lg font-semibold text-green-600">
+                          {formatMoney(Number(pagamento.valor))}
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditPagamento(pagamento)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeletePagamento(pagamento.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -144,7 +184,8 @@ const PagamentosFuncionariosPage = () => {
 
       <PagamentoFuncionarioForm
         isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
+        onClose={handleCloseForm}
+        pagamentoToEdit={pagamentoToEdit}
       />
     </div>
   );

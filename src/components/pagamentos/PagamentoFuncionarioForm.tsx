@@ -27,11 +27,30 @@ type FormData = z.infer<typeof formSchema>;
 interface PagamentoFuncionarioFormProps {
   isOpen: boolean;
   onClose: () => void;
+  pagamentoToEdit?: {
+    id: string;
+    cuidador_id?: string;
+    valor: number;
+    data_pagamento: string;
+    tipo_pagamento: string;
+    descricao?: string;
+    status: string;
+    referencia: string;
+    periodo_competencia?: string;
+    metodo_pagamento?: string;
+    nome_funcionario?: string;
+    cargo?: string;
+  };
 }
 
-const PagamentoFuncionarioForm: React.FC<PagamentoFuncionarioFormProps> = ({ isOpen, onClose }) => {
-  const { addPagamentoFuncionario } = useData();
+const PagamentoFuncionarioForm: React.FC<PagamentoFuncionarioFormProps> = ({ 
+  isOpen, 
+  onClose, 
+  pagamentoToEdit 
+}) => {
+  const { addPagamentoFuncionario, updatePagamentoFuncionario, cuidadores } = useData();
   const { toast } = useToast();
+  const isEditing = !!pagamentoToEdit;
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -47,6 +66,33 @@ const PagamentoFuncionarioForm: React.FC<PagamentoFuncionarioFormProps> = ({ isO
     }
   });
 
+  // Reset form when pagamentoToEdit changes
+  React.useEffect(() => {
+    if (pagamentoToEdit) {
+      form.reset({
+        nome_funcionario: pagamentoToEdit.nome_funcionario || '',
+        cargo: pagamentoToEdit.cargo || '',
+        valor: pagamentoToEdit.valor.toString(),
+        data_pagamento: pagamentoToEdit.data_pagamento,
+        tipo_pagamento: pagamentoToEdit.tipo_pagamento as 'salario' | 'bonus' | 'comissao' | 'ajuda_custo' | 'outros',
+        descricao: pagamentoToEdit.descricao || '',
+        referencia: pagamentoToEdit.referencia,
+        status: pagamentoToEdit.status as 'pago' | 'pendente' | 'cancelado',
+      });
+    } else {
+      form.reset({
+        nome_funcionario: '',
+        cargo: '',
+        valor: '',
+        data_pagamento: new Date().toISOString().split('T')[0],
+        tipo_pagamento: 'salario',
+        descricao: '',
+        referencia: '',
+        status: 'pago'
+      });
+    }
+  }, [pagamentoToEdit, form]);
+
   const onSubmit = async (data: FormData) => {
     try {
       const valor = parseFloat(data.valor.replace(',', '.'));
@@ -60,7 +106,7 @@ const PagamentoFuncionarioForm: React.FC<PagamentoFuncionarioFormProps> = ({ isO
         return;
       }
 
-      await addPagamentoFuncionario({
+      const paymentData = {
         nome_funcionario: data.nome_funcionario,
         cargo: data.cargo,
         valor,
@@ -70,21 +116,30 @@ const PagamentoFuncionarioForm: React.FC<PagamentoFuncionarioFormProps> = ({ isO
         referencia: data.referencia,
         status: data.status,
         cuidador_id: null // Set to null since we're using nome_funcionario
-      });
+      };
 
-      toast({
-        title: 'Sucesso',
-        description: 'Pagamento registrado com sucesso!'
-      });
+      if (isEditing && pagamentoToEdit) {
+        await updatePagamentoFuncionario(pagamentoToEdit.id, paymentData);
+        toast({
+          title: 'Sucesso',
+          description: 'Pagamento atualizado com sucesso!'
+        });
+      } else {
+        await addPagamentoFuncionario(paymentData);
+        toast({
+          title: 'Sucesso',
+          description: 'Pagamento registrado com sucesso!'
+        });
+      }
 
       form.reset();
       onClose();
     } catch (error: any) {
-      console.error('Erro ao registrar pagamento:', error);
+      console.error('Erro ao processar pagamento:', error);
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: error.message || 'Erro ao registrar pagamento.'
+        description: error.message || 'Erro ao processar pagamento.'
       });
     }
   };
@@ -93,9 +148,11 @@ const PagamentoFuncionarioForm: React.FC<PagamentoFuncionarioFormProps> = ({ isO
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Registrar Pagamento</DialogTitle>
+          <DialogTitle>
+            {isEditing ? 'Editar Pagamento de Funcionário' : 'Registrar Pagamento'}
+          </DialogTitle>
           <DialogDescription>
-            Registre um novo pagamento para funcionário
+            {isEditing ? 'Edite os dados do pagamento' : 'Registre um novo pagamento para funcionário'}
           </DialogDescription>
         </DialogHeader>
 
@@ -253,7 +310,7 @@ const PagamentoFuncionarioForm: React.FC<PagamentoFuncionarioFormProps> = ({ isO
                 Cancelar
               </Button>
               <Button type="submit">
-                Registrar Pagamento
+                {isEditing ? 'Atualizar Pagamento' : 'Registrar Pagamento'}
               </Button>
             </div>
           </form>

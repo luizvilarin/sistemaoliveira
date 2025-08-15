@@ -324,8 +324,7 @@ const BoletoForm: React.FC<BoletoFormProps> = ({ isOpen, onClose, boletoToEdit }
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="email">Email</SelectItem>
-                        <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                        <SelectItem value="sms">SMS</SelectItem>
+                        <SelectItem value="plataforma">Plataforma</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
