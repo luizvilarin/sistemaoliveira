@@ -11,6 +11,8 @@ export const useBoletoCrud = (setBoletos: React.Dispatch<React.SetStateAction<Bo
   const addBoleto = async (boleto: any) => {
     setIsLoading(true);
     try {
+      console.log('Dados recebidos para boleto:', boleto);
+      
       // Convert string values to proper types
       const boletoData = {
         ...boleto,
@@ -21,6 +23,8 @@ export const useBoletoCrud = (setBoletos: React.Dispatch<React.SetStateAction<Bo
         valor_personalizado: boleto.valor_personalizado ? (typeof boleto.valor_personalizado === 'string' ? parseFloat(boleto.valor_personalizado) : boleto.valor_personalizado) : null
       };
 
+      console.log('Dados processados para inserção:', boletoData);
+
       const { data, error } = await supabase
         .from('boletos')
         .insert(boletoData)
@@ -30,7 +34,12 @@ export const useBoletoCrud = (setBoletos: React.Dispatch<React.SetStateAction<Bo
         `)
         .single();
       
-      if (error) throw error;
+      console.log('Resultado da inserção:', { data, error });
+      
+      if (error) {
+        console.error('Erro detalhado da inserção:', error);
+        throw error;
+      }
       
       setBoletos(prev => [...prev, data]);
       toast({
