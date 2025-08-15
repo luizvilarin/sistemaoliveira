@@ -8,12 +8,22 @@ export const useBoletoCrud = (setBoletos: React.Dispatch<React.SetStateAction<Bo
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  const addBoleto = async (boleto: TablesInsert<'boletos'>) => {
+  const addBoleto = async (boleto: any) => {
     setIsLoading(true);
     try {
+      // Convert string values to proper types
+      const boletoData = {
+        ...boleto,
+        notificacao_dias_antes: boleto.notificacao_dias_antes ? parseInt(boleto.notificacao_dias_antes) : 2,
+        dia_vencimento: typeof boleto.dia_vencimento === 'string' ? parseInt(boleto.dia_vencimento) : boleto.dia_vencimento,
+        dia_cobranca_secundario: boleto.dia_cobranca_secundario ? parseInt(boleto.dia_cobranca_secundario) : null,
+        valor: typeof boleto.valor === 'string' ? parseFloat(boleto.valor) : boleto.valor,
+        valor_personalizado: boleto.valor_personalizado ? (typeof boleto.valor_personalizado === 'string' ? parseFloat(boleto.valor_personalizado) : boleto.valor_personalizado) : null
+      };
+
       const { data, error } = await supabase
         .from('boletos')
-        .insert(boleto)
+        .insert(boletoData)
         .select(`
           *,
           cliente:clientes(*)

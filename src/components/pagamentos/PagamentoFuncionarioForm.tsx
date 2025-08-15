@@ -68,8 +68,9 @@ const PagamentoFuncionarioForm: React.FC<PagamentoFuncionarioFormProps> = ({ isO
         tipo_pagamento: data.tipo_pagamento,
         descricao: data.descricao || null,
         referencia: data.referencia,
-        status: data.status
-      } as any);
+        status: data.status,
+        cuidador_id: null // Set to null since we're using nome_funcionario
+      });
 
       toast({
         title: 'Sucesso',

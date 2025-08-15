@@ -8,12 +8,22 @@ export const usePagamentoFuncionarioCrud = (setPagamentos: React.Dispatch<React.
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  const addPagamento = async (pagamento: TablesInsert<'pagamentos_funcionarios'>) => {
+  const addPagamento = async (pagamento: any) => {
     setIsLoading(true);
     try {
+      // Ensure we have the current user for created_by
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const paymentData = {
+        ...pagamento,
+        created_by: user?.id,
+        // Ensure cuidador_id is set to null if we're using nome_funcionario
+        cuidador_id: null
+      };
+
       const { data, error } = await supabase
         .from('pagamentos_funcionarios')
-        .insert(pagamento)
+        .insert(paymentData)
         .select('*')
         .single();
       
@@ -31,7 +41,7 @@ export const usePagamentoFuncionarioCrud = (setPagamentos: React.Dispatch<React.
                       'Outras Despesas com Pessoal',
             valor: data.valor,
             data_transacao: data.data_pagamento,
-            descricao: `Pagamento funcionário: ${(data as any).nome_funcionario}${data.descricao ? ' - ' + data.descricao : ''}`,
+            descricao: `Pagamento funcionário: ${data.nome_funcionario || 'N/A'}${data.descricao ? ' - ' + data.descricao : ''}`,
             referencia_id: data.id,
             referencia_tipo: 'pagamento_funcionario',
             created_by: data.created_by
@@ -89,7 +99,7 @@ export const usePagamentoFuncionarioCrud = (setPagamentos: React.Dispatch<React.
                         'Outras Despesas com Pessoal',
               valor: data.valor,
               data_transacao: data.data_pagamento,
-              descricao: `Pagamento funcionário: ${(data as any).nome_funcionario}${data.descricao ? ' - ' + data.descricao : ''}`,
+              descricao: `Pagamento funcionário: ${data.nome_funcionario || 'N/A'}${data.descricao ? ' - ' + data.descricao : ''}`,
               referencia_id: data.id,
               referencia_tipo: 'pagamento_funcionario',
               created_by: data.created_by

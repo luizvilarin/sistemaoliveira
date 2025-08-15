@@ -724,6 +724,7 @@ export type Database = {
       }
       pagamentos_funcionarios: {
         Row: {
+          cargo: string | null
           comprovante_url: string | null
           created_at: string
           created_by: string | null
@@ -732,6 +733,7 @@ export type Database = {
           descricao: string | null
           id: string
           metodo_pagamento: string | null
+          nome_funcionario: string | null
           periodo_competencia: string | null
           referencia: string
           status: string
@@ -740,6 +742,7 @@ export type Database = {
           valor: number
         }
         Insert: {
+          cargo?: string | null
           comprovante_url?: string | null
           created_at?: string
           created_by?: string | null
@@ -748,6 +751,7 @@ export type Database = {
           descricao?: string | null
           id?: string
           metodo_pagamento?: string | null
+          nome_funcionario?: string | null
           periodo_competencia?: string | null
           referencia: string
           status?: string
@@ -756,6 +760,7 @@ export type Database = {
           valor: number
         }
         Update: {
+          cargo?: string | null
           comprovante_url?: string | null
           created_at?: string
           created_by?: string | null
@@ -764,6 +769,7 @@ export type Database = {
           descricao?: string | null
           id?: string
           metodo_pagamento?: string | null
+          nome_funcionario?: string | null
           periodo_competencia?: string | null
           referencia?: string
           status?: string
