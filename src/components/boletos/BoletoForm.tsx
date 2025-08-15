@@ -110,6 +110,8 @@ const BoletoForm: React.FC<BoletoFormProps> = ({ isOpen, onClose, boletoToEdit }
         recorrente: boletoToEdit.recorrente || false,
         frequencia_recorrencia: boletoToEdit.frequencia_recorrencia as 'unico' | 'quinzenal' | 'mensal' | 'personalizado' || 'unico',
         dia_cobranca_secundario: boletoToEdit.dia_cobranca_secundario?.toString() || '',
+        notificacao_dias_antes: '2', // Default value for editing
+        canal_envio: 'email', // Default value for editing
         observacoes: boletoToEdit.observacoes || '',
         data_envio: boletoToEdit.data_envio ? new Date(boletoToEdit.data_envio).toISOString().slice(0, 10) : '',
         data_pagamento: boletoToEdit.data_pagamento ? new Date(boletoToEdit.data_pagamento).toISOString().slice(0, 10) : '',
@@ -148,6 +150,8 @@ const BoletoForm: React.FC<BoletoFormProps> = ({ isOpen, onClose, boletoToEdit }
         recorrente: values.recorrente || false,
         frequencia_recorrencia: values.frequencia_recorrencia || 'unico',
         dia_cobranca_secundario: values.dia_cobranca_secundario ? parseInt(values.dia_cobranca_secundario) : null,
+        notificacao_dias_antes: values.notificacao_dias_antes ? parseInt(values.notificacao_dias_antes) : 2,
+        canal_envio: values.canal_envio || 'email',
         observacoes: values.observacoes || null,
         data_envio: values.data_envio ? new Date(values.data_envio).toISOString().slice(0, 10) : null,
         data_pagamento: values.data_pagamento ? new Date(values.data_pagamento).toISOString().slice(0, 10) : null,
@@ -282,6 +286,48 @@ const BoletoForm: React.FC<BoletoFormProps> = ({ isOpen, onClose, boletoToEdit }
                     <FormControl>
                       <Input {...field} type="number" min="1" max="31" placeholder="1-31" />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="notificacao_dias_antes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notificação Dias Antes</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="number" min="1" max="30" placeholder="2" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="canal_envio"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Canal de Envio</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o canal" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="email">Email</SelectItem>
+                        <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                        <SelectItem value="sms">SMS</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -728,7 +728,7 @@ export type Database = {
           comprovante_url: string | null
           created_at: string
           created_by: string | null
-          cuidador_id: string
+          cuidador_id: string | null
           data_pagamento: string
           descricao: string | null
           id: string
@@ -746,7 +746,7 @@ export type Database = {
           comprovante_url?: string | null
           created_at?: string
           created_by?: string | null
-          cuidador_id: string
+          cuidador_id?: string | null
           data_pagamento: string
           descricao?: string | null
           id?: string
@@ -764,7 +764,7 @@ export type Database = {
           comprovante_url?: string | null
           created_at?: string
           created_by?: string | null
-          cuidador_id?: string
+          cuidador_id?: string | null
           data_pagamento?: string
           descricao?: string | null
           id?: string
