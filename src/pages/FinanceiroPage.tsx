@@ -5,16 +5,21 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, TrendingUp, TrendingDown, DollarSign, Calendar } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Plus, TrendingUp, TrendingDown, DollarSign, Calendar, Edit, Trash2 } from 'lucide-react';
 import { formatMoney } from '@/lib/utils';
+import { useFinanceiroCrud } from '@/hooks/crud/useFinanceiroCrud';
 import FinanceiroForm from '@/components/financeiro/FinanceiroForm';
 import FinanceiroAdvancedReports from '@/components/financeiro/FinanceiroAdvancedReports';
 import FinanceiroFluxoCaixa from '@/components/financeiro/FinanceiroFluxoCaixa';
+import { Financeiro } from '@/types/data';
 
 const FinanceiroPage = () => {
-  const { financeiro } = useData();
+  const { financeiro, setFinanceiro } = useData();
   const { userProfile } = useAuth();
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [itemToEdit, setItemToEdit] = useState<Financeiro | null>(null);
+  const { updateFinanceiro, deleteFinanceiro, isLoading } = useFinanceiroCrud(setFinanceiro);
 
   // Verificar se é admin_plus
   const isAdminPlus = userProfile?.perfil === 'admin_plus';
@@ -54,6 +59,24 @@ const FinanceiroPage = () => {
   const totalReceitasEsteMes = receitasEsteMes.reduce((sum, item) => sum + Number(item.valor), 0);
   const totalDespesasEsteMes = despesasEsteMes.reduce((sum, item) => sum + Number(item.valor), 0);
 
+  const handleEditItem = (item: Financeiro) => {
+    setItemToEdit(item);
+    setIsFormOpen(true);
+  };
+
+  const handleDeleteItem = async (id: string) => {
+    try {
+      await deleteFinanceiro(id);
+    } catch (error) {
+      console.error('Erro ao deletar item:', error);
+    }
+  };
+
+  const handleCloseForm = () => {
+    setIsFormOpen(false);
+    setItemToEdit(null);
+  };
+
   const renderFinanceiroList = (items: typeof financeiro, tipo: 'receita' | 'despesa') => (
     <div className="space-y-4">
       {items.length === 0 ? (
@@ -71,19 +94,64 @@ const FinanceiroPage = () => {
                   <Badge variant="outline">
                     {item.categoria}
                   </Badge>
+                  {item.referencia_tipo && (
+                    <Badge variant="secondary" className="text-xs">
+                      {item.referencia_tipo}
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex items-center gap-4 text-xs text-gray-500 mt-2">
                   <span>Data: {new Date(item.data_transacao).toLocaleDateString('pt-BR')}</span>
-                  {item.referencia_tipo && (
-                    <span>Ref: {item.referencia_tipo}</span>
+                  {item.subcategoria && (
+                    <span>Sub: {item.subcategoria}</span>
                   )}
                 </div>
               </div>
-              <div className="text-right">
-                <div className={`text-lg font-semibold ${
-                  tipo === 'receita' ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {tipo === 'receita' ? '+' : '-'} {formatMoney(Number(item.valor))}
+              <div className="flex items-center gap-2">
+                <div className="text-right">
+                  <div className={`text-lg font-semibold ${
+                    tipo === 'receita' ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {tipo === 'receita' ? '+' : '-'} {formatMoney(Number(item.valor))}
+                  </div>
+                </div>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleEditItem(item)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Tem certeza que deseja excluir este registro financeiro? Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDeleteItem(item.id)}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             </div>
@@ -101,7 +169,7 @@ const FinanceiroPage = () => {
             Controle completo das finanças da empresa
           </p>
         </div>
-        <Button onClick={() => setIsFormOpen(true)} className="flex items-center gap-2">
+        <Button onClick={() => setIsFormOpen(true)} className="flex items-center gap-2" disabled={isLoading}>
           <Plus size={16} />
           Nova Transação
         </Button>
@@ -217,7 +285,7 @@ const FinanceiroPage = () => {
                 {financeiro.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-gray-500">Nenhuma transação registrada ainda.</p>
-                    <Button onClick={() => setIsFormOpen(true)} className="mt-4">
+                    <Button onClick={() => setIsFormOpen(true)} className="mt-4" disabled={isLoading}>
                       Registrar Primeira Transação
                     </Button>
                   </div>
@@ -235,19 +303,64 @@ const FinanceiroPage = () => {
                             <Badge variant="outline">
                               {item.categoria}
                             </Badge>
+                            {item.referencia_tipo && (
+                              <Badge variant="secondary" className="text-xs">
+                                {item.referencia_tipo}
+                              </Badge>
+                            )}
                           </div>
                           <div className="flex items-center gap-4 text-xs text-gray-500 mt-2">
                             <span>Data: {new Date(item.data_transacao).toLocaleDateString('pt-BR')}</span>
-                            {item.referencia_tipo && (
-                              <span>Ref: {item.referencia_tipo}</span>
+                            {item.subcategoria && (
+                              <span>Sub: {item.subcategoria}</span>
                             )}
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className={`text-lg font-semibold ${
-                            item.tipo === 'receita' ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {item.tipo === 'receita' ? '+' : '-'} {formatMoney(Number(item.valor))}
+                        <div className="flex items-center gap-2">
+                          <div className="text-right">
+                            <div className={`text-lg font-semibold ${
+                              item.tipo === 'receita' ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {item.tipo === 'receita' ? '+' : '-'} {formatMoney(Number(item.valor))}
+                            </div>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditItem(item)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Tem certeza que deseja excluir este registro financeiro? Esta ação não pode ser desfeita.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteItem(item.id)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    Excluir
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </div>
                       </div>
@@ -269,7 +382,8 @@ const FinanceiroPage = () => {
 
       <FinanceiroForm
         isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
+        onClose={handleCloseForm}
+        itemToEdit={itemToEdit}
       />
     </div>
   );

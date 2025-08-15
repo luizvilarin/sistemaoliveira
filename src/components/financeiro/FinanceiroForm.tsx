@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useData } from '@/contexts/DataContext';
+import { useFinanceiroCrud } from '@/hooks/crud/useFinanceiroCrud';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,10 +30,12 @@ type FormData = z.infer<typeof formSchema>;
 interface FinanceiroFormProps {
   isOpen: boolean;
   onClose: () => void;
+  itemToEdit?: any;
 }
 
-const FinanceiroForm: React.FC<FinanceiroFormProps> = ({ isOpen, onClose }) => {
-  const { addFinanceiro } = useData();
+const FinanceiroForm: React.FC<FinanceiroFormProps> = ({ isOpen, onClose, itemToEdit }) => {
+  const { addFinanceiro, setFinanceiro } = useData();
+  const { updateFinanceiro } = useFinanceiroCrud(setFinanceiro);
   const { toast } = useToast();
 
   const form = useForm<FormData>({
@@ -78,6 +81,37 @@ const FinanceiroForm: React.FC<FinanceiroFormProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  // Effect to populate form when editing
+  useEffect(() => {
+    if (itemToEdit) {
+      form.reset({
+        tipo: itemToEdit.tipo as 'receita' | 'despesa',
+        categoria: itemToEdit.categoria,
+        subcategoria: itemToEdit.subcategoria || '',
+        valor: itemToEdit.valor.toString(),
+        data_transacao: itemToEdit.data_transacao,
+        descricao: itemToEdit.descricao,
+        centro_custo: itemToEdit.centro_custo || '',
+        tags: itemToEdit.tags ? itemToEdit.tags.join(', ') : '',
+        referencia_tipo: itemToEdit.referencia_tipo || '',
+        referencia_id: itemToEdit.referencia_id || ''
+      });
+    } else {
+      form.reset({
+        tipo: 'receita',
+        categoria: '',
+        subcategoria: '',
+        valor: '',
+        data_transacao: new Date().toISOString().split('T')[0],
+        descricao: '',
+        centro_custo: '',
+        tags: '',
+        referencia_tipo: '',
+        referencia_id: ''
+      });
+    }
+  }, [itemToEdit, form]);
+
   const onSubmit = async (data: FormData) => {
     try {
       const valor = parseFloat(data.valor.replace(',', '.'));
@@ -93,7 +127,7 @@ const FinanceiroForm: React.FC<FinanceiroFormProps> = ({ isOpen, onClose }) => {
 
       const tagsArray = data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : null;
 
-      await addFinanceiro({
+      const financeiroData = {
         tipo: data.tipo,
         categoria: data.categoria,
         valor,
@@ -105,21 +139,32 @@ const FinanceiroForm: React.FC<FinanceiroFormProps> = ({ isOpen, onClose }) => {
         ...(data.subcategoria && { subcategoria: data.subcategoria }),
         ...(data.centro_custo && { centro_custo: data.centro_custo }),
         ...(tagsArray && { tags: tagsArray })
-      } as any);
+      } as any;
 
-      toast({
-        title: 'Sucesso',
-        description: `${data.tipo === 'receita' ? 'Receita' : 'Despesa'} registrada com sucesso!`
-      });
+      if (itemToEdit) {
+        // Editing existing item
+        await updateFinanceiro(itemToEdit.id, financeiroData);
+        toast({
+          title: 'Sucesso',
+          description: `${data.tipo === 'receita' ? 'Receita' : 'Despesa'} atualizada com sucesso!`
+        });
+      } else {
+        // Adding new item
+        await addFinanceiro(financeiroData);
+        toast({
+          title: 'Sucesso',
+          description: `${data.tipo === 'receita' ? 'Receita' : 'Despesa'} registrada com sucesso!`
+        });
+      }
 
       form.reset();
       onClose();
     } catch (error: any) {
-      console.error('Erro ao registrar transação:', error);
+      console.error('Erro ao processar transação:', error);
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: error.message || 'Erro ao registrar transação.'
+        description: error.message || 'Erro ao processar transação.'
       });
     }
   };
@@ -128,9 +173,9 @@ const FinanceiroForm: React.FC<FinanceiroFormProps> = ({ isOpen, onClose }) => {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Nova Transação Financeira</DialogTitle>
+          <DialogTitle>{itemToEdit ? 'Editar Transação' : 'Nova Transação Financeira'}</DialogTitle>
           <DialogDescription>
-            Registre uma nova receita ou despesa
+            {itemToEdit ? 'Edite os dados da transação' : 'Registre uma nova receita ou despesa'}
           </DialogDescription>
         </DialogHeader>
 
@@ -304,7 +349,7 @@ const FinanceiroForm: React.FC<FinanceiroFormProps> = ({ isOpen, onClose }) => {
                 Cancelar
               </Button>
               <Button type="submit">
-                Registrar Transação
+                {itemToEdit ? 'Atualizar Transação' : 'Registrar Transação'}
               </Button>
             </div>
           </form>

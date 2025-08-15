@@ -151,6 +151,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         // Refresh method
         refreshData,
         
+        // State setters
+        setFinanceiro,
+        
         // CRUD operations
         ...crudOperations,
       }}

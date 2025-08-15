@@ -148,26 +148,33 @@ export const usePagamentoFuncionarioCrud = (setPagamentos: React.Dispatch<React.
   const deletePagamento = async (id: string) => {
     setIsLoading(true);
     try {
-      // Remover do sistema financeiro primeiro
-      try {
-        await supabase
-          .from('financeiro')
-          .delete()
-          .eq('referencia_id', id)
-          .eq('referencia_tipo', 'pagamento_funcionario');
-      } catch (financeiroError) {
-        console.warn('Erro ao remover do financeiro:', financeiroError);
+      console.log('Removendo pagamento:', id);
+      
+      // Primeiro, remover todas as entradas correspondentes no sistema financeiro
+      const { error: financeiroError, count } = await supabase
+        .from('financeiro')
+        .delete({ count: 'exact' })
+        .eq('referencia_id', id)
+        .eq('referencia_tipo', 'pagamento_funcionario');
+      
+      if (financeiroError) {
+        console.error('Erro ao remover do financeiro:', financeiroError);
+        throw new Error('Erro ao sincronizar com sistema financeiro');
       }
       
+      console.log(`Removidos ${count} registros do financeiro`);
+      
+      // Depois, remover o pagamento
       const { error } = await supabase.from('pagamentos_funcionarios').delete().eq('id', id);
       if (error) throw error;
       
       setPagamentos(prev => prev.filter(p => p.id !== id));
       toast({
         title: 'Sucesso',
-        description: 'Pagamento excluído com sucesso!',
+        description: 'Pagamento e registros financeiros removidos com sucesso!',
       });
     } catch (error: any) {
+      console.error('Erro completo ao deletar:', error);
       toast({
         variant: 'destructive',
         title: 'Erro',
