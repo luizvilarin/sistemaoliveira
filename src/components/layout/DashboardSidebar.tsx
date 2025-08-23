@@ -45,7 +45,7 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
   const perfil = userProfile?.perfil;
 
   // Admin pode ver tudo
-  if (adminOnly && !['admin', 'admin_plus'].includes(perfil || '')) {
+  if (adminOnly && !['admin', 'admin_plus', 'financeiro'].includes(perfil || '')) {
     return null;
   }
 
@@ -55,7 +55,7 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
   }
 
   // Gestor e Admin podem ver
-  if (gestorAndAdminOnly && !['admin', 'admin_plus', 'gestor'].includes(perfil || '')) {
+  if (gestorAndAdminOnly && !['admin', 'admin_plus', 'gestor', 'financeiro'].includes(perfil || '')) {
     return null;
   }
 

@@ -435,7 +435,7 @@ const BoletoForm: React.FC<BoletoFormProps> = ({ isOpen, onClose, boletoToEdit }
                 name="data_envio"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Data de Envio</FormLabel>
+                    <FormLabel>Data de Envio do Boleto</FormLabel>
                     <FormControl>
                       <Input {...field} type="date" />
                     </FormControl>
@@ -449,7 +449,7 @@ const BoletoForm: React.FC<BoletoFormProps> = ({ isOpen, onClose, boletoToEdit }
                 name="data_pagamento"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Data de Pagamento</FormLabel>
+                    <FormLabel>Data de Confirmação do Pagamento</FormLabel>
                     <FormControl>
                       <Input {...field} type="date" />
                     </FormControl>

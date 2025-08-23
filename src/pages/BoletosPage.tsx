@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Calendar, DollarSign, Edit, Trash2, FileSpreadsheet } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Calendar, DollarSign, Edit, Trash2, FileSpreadsheet, Filter } from 'lucide-react';
 import BoletoForm from '@/components/boletos/BoletoForm';
 import ExportBoletos from '@/components/boletos/ExportBoletos';
 import { Boleto } from '@/types/data';
@@ -13,6 +14,7 @@ export default function BoletosPage() {
   const { boletos, clientes, isLoading, deleteBoleto } = useData();
   const [isBoletoFormOpen, setIsBoletoFormOpen] = useState(false);
   const [boletoToEdit, setBoletoToEdit] = useState<Boleto | undefined>(undefined);
+  const [filtroFrequencia, setFiltroFrequencia] = useState<string>('todos');
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-64">Carregando boletos...</div>;
@@ -62,6 +64,11 @@ export default function BoletosPage() {
     return labels[status] || status;
   };
 
+  const boletosFiltrados = boletos.filter(boleto => {
+    if (filtroFrequencia === 'todos') return true;
+    return boleto.frequencia_recorrencia === filtroFrequencia;
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -85,9 +92,24 @@ export default function BoletosPage() {
         </TabsList>
 
         <TabsContent value="lista" className="space-y-4">
+          <div className="flex items-center gap-4 mb-4">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={filtroFrequencia} onValueChange={setFiltroFrequencia}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filtrar por frequência" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os boletos</SelectItem>
+                <SelectItem value="unico">Único</SelectItem>
+                <SelectItem value="quinzenal">Quinzenal</SelectItem>
+                <SelectItem value="mensal">Mensal</SelectItem>
+                <SelectItem value="personalizado">Personalizado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="grid gap-4">
-            {boletos.map((boleto) => (
+            {boletosFiltrados.map((boleto) => (
               <Card key={boleto.id}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
@@ -184,6 +206,12 @@ export default function BoletosPage() {
           <ExportBoletos />
         </TabsContent>
       </Tabs>
+
+      {boletosFiltrados.length === 0 && boletos.length > 0 && (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Nenhum boleto encontrado com o filtro selecionado.</p>
+        </div>
+      )}
 
       {boletos.length === 0 && (
         <div className="text-center py-12">
