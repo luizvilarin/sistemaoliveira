@@ -133,14 +133,19 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ isOpen, onClose, clienteToEdi
       } else {
         const novoCliente = await addCliente(clienteData);
         
-        // Se há valor de contrato, criar transação automaticamente
+        // Se há valor de contrato, tentar criar transação automaticamente
         if (clienteData.valor_contrato && clienteData.valor_contrato > 0) {
-          await addTransacao({
-            cliente_id: novoCliente.id,
-            valor: clienteData.valor_contrato,
-            status: clienteData.status_pagamento as 'confirmado' | 'aguardando' | 'expirado',
-            data: new Date().toISOString(),
-          });
+          try {
+            await addTransacao({
+              cliente_id: novoCliente.id,
+              valor: clienteData.valor_contrato,
+              status: clienteData.status_pagamento as 'confirmado' | 'aguardando' | 'expirado',
+              data: new Date().toISOString(),
+            });
+          } catch (transacaoError) {
+            console.warn('Não foi possível criar transação automática:', transacaoError);
+            // Cliente foi criado com sucesso, apenas a transação falhou
+          }
         }
         
         toast({
