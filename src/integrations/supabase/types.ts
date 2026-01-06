@@ -987,42 +987,15 @@ export type Database = {
         Args: { user_id_to_delete: string }
         Returns: boolean
       }
-      cleanup_old_audit_logs: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      criar_lembretes_boletos: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      criar_lembretes_boletos_automaticos: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      criar_notificacoes_boletos: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      executar_automacao_boletos: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      gerar_lembretes_boletos_recorrentes: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      is_current_user_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_current_user_admin_plus: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      cleanup_old_audit_logs: { Args: never; Returns: undefined }
+      criar_lembretes_boletos: { Args: never; Returns: undefined }
+      criar_lembretes_boletos_automaticos: { Args: never; Returns: undefined }
+      criar_notificacoes_boletos: { Args: never; Returns: undefined }
+      executar_automacao_boletos: { Args: never; Returns: undefined }
+      gerar_lembretes_boletos_recorrentes: { Args: never; Returns: undefined }
+      get_current_user_role: { Args: never; Returns: string }
+      is_current_user_admin: { Args: never; Returns: boolean }
+      is_current_user_admin_plus: { Args: never; Returns: boolean }
       is_group_admin: {
         Args: { group_id: string; user_id: string }
         Returns: boolean
@@ -1035,10 +1008,7 @@ export type Database = {
         Args: { group_id: string; user_id: string }
         Returns: boolean
       }
-      notificar_tarefas_pendentes: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      notificar_tarefas_pendentes: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
