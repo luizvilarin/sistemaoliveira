@@ -78,11 +78,11 @@ export const useChatData = (userProfile: any) => {
         .neq('id', userProfile.id)
         .order('nome');
 
-      // Aplicar filtros baseados no perfil do usuário
+      // Aplicar filtros baseados no perfil do usuário - incluir todos os perfis relevantes
       if (userProfile.perfil === 'gestor') {
-        query = query.in('perfil', ['admin', 'gestor', 'cuidador']);
+        query = query.in('perfil', ['admin', 'admin_plus', 'gestor', 'cuidador', 'financeiro']);
       } else if (userProfile.perfil === 'cuidador') {
-        query = query.in('perfil', ['gestor', 'cuidador']);
+        query = query.in('perfil', ['admin', 'admin_plus', 'gestor', 'cuidador', 'financeiro']);
       }
 
       const { data, error } = await query;
