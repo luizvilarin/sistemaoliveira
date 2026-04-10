@@ -90,106 +90,116 @@ export const TarefaCard: React.FC<TarefaCardProps> = ({
     if (!name) return '?';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
+  if (isDragging) {
+    return (
+      <div 
+        ref={setNodeRef} 
+        style={style} 
+        className="h-[180px] w-full border-2 border-dashed border-slate-200 rounded-[2rem] bg-slate-50 shadow-inner mb-5"
+      />
+    );
+  }
 
   return (
-    <div ref={setNodeRef} style={style} className={cn(isDragging && "pointer-events-none")}>
+    <div ref={setNodeRef} style={style} className="group">
       <Card className={cn(
-        "group relative overflow-hidden transition-all duration-300 hover:shadow-md border-l-4",
+        "relative overflow-hidden transition-all duration-300 hover:shadow-2xl border-l-[6px] rounded-[1.8rem] mb-5",
         tarefa.status === 'todo' ? "border-l-slate-400" : 
-        tarefa.status === 'inProgress' ? "border-l-blue-500" : "border-l-emerald-500",
-        viewType === 'list' ? "mb-3" : ""
+        tarefa.status === 'inProgress' ? "border-l-blue-500" : "border-l-emerald-500"
       )}>
-        <CardContent className="p-4">
-          <div className="flex justify-between items-start mb-3">
-            <div className="flex items-center gap-2">
-              <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600">
+        <CardContent className="p-6">
+          <div className="flex justify-between items-start mb-4">
+            <div className="flex items-center gap-3">
+              <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 transition-colors p-1.5 rounded-lg hover:bg-slate-50">
                 <GripVertical className="h-4 w-4" />
               </div>
-              <Badge variant="outline" className={cn("font-medium flex items-center gap-1", statusConfig.color)}>
-                <StatusIcon className="h-3 w-3" />
+              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <StatusIcon className="h-3.5 w-3.5" />
                 {statusConfig.label}
-              </Badge>
+              </div>
             </div>
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button variant="ghost" size="sm" className="h-9 w-9 p-0 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-white/90 backdrop-blur-sm shadow-md rounded-xl hover:bg-primary hover:text-white">
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEdit(tarefa)}>
-                  <Edit className="h-4 w-4 mr-2" />
+              <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl p-2 min-w-[160px]">
+                <DropdownMenuItem onClick={() => onEdit(tarefa)} className="rounded-xl gap-3 py-2.5 font-bold cursor-pointer">
+                  <Edit className="h-4 w-4" />
                   Editar
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onArchive(tarefa.id)}>
-                  <Archive className="h-4 w-4 mr-2 text-amber-500" />
+                <DropdownMenuItem onClick={() => onArchive(tarefa.id)} className="rounded-xl gap-3 py-2.5 font-bold text-amber-500 cursor-pointer">
+                  <Archive className="h-4 w-4" />
                   Arquivar
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="bg-slate-50 my-1" />
                 <DropdownMenuItem 
                   onClick={() => onDelete(tarefa.id)}
-                  className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                  className="rounded-xl gap-3 py-2.5 font-bold text-red-600 focus:text-white focus:bg-red-500 cursor-pointer transition-colors"
                 >
-                  <TrashIcon className="h-4 w-4 mr-2" />
+                  <TrashIcon className="h-4 w-4" />
                   Excluir
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
 
-          <h3 className="font-bold text-gray-900 mb-1 leading-tight group-hover:text-primary transition-colors">
+          <h3 className="text-xl font-[800] text-gray-900 mb-2 leading-tight tracking-tight group-hover:text-primary transition-colors">
             {tarefa.titulo}
           </h3>
           
-          <p className="text-sm text-gray-600 line-clamp-2 mb-4 italic min-h-[40px]">
+          <p className="text-sm text-slate-400 font-medium line-clamp-2 mb-6 italic min-h-[40px] leading-relaxed">
             {tarefa.descricao || 'Sem descrição detalhada.'}
           </p>
 
-          <div className="space-y-2 pt-3 border-t border-gray-100">
-            {cliente && (
-              <div className="flex items-center gap-2">
-                <Avatar className="h-6 w-6 ring-2 ring-white shadow-sm">
-                  <AvatarFallback className="text-[10px] bg-indigo-100 text-indigo-700 font-bold">
-                    {getInitials(cliente.nome)}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-xs text-gray-700 font-semibold truncate">
-                  {cliente.nome}
-                </span>
-              </div>
-            )}
-            
-            {cuidador && (
-              <div className="flex items-center gap-2">
-                <Avatar className="h-6 w-6 ring-2 ring-white shadow-sm">
-                  <AvatarFallback className="text-[10px] bg-teal-100 text-teal-700 font-bold">
-                    {getInitials(cuidador.nome)}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-xs text-gray-600 truncate">
-                  {cuidador.nome}
-                </span>
-              </div>
-            )}
+          <div className="space-y-3 pt-5 border-t border-slate-50">
+            <div className="flex flex-wrap gap-2.5">
+              {cliente && (
+                <div className="flex items-center gap-2 bg-indigo-50/50 pr-3 pl-1.5 py-1.5 rounded-full border border-indigo-100/20">
+                  <Avatar className="h-6 w-6 shadow-sm border border-white">
+                    <AvatarFallback className="text-[10px] bg-indigo-100 text-indigo-700 font-black">
+                      {getInitials(cliente.nome)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-[11px] text-indigo-700 font-black truncate max-w-[90px]">
+                    {cliente.nome}
+                  </span>
+                </div>
+              )}
+              
+              {cuidador && (
+                <div className="flex items-center gap-2 bg-teal-50/50 pr-3 pl-1.5 py-1.5 rounded-full border border-teal-100/20">
+                  <Avatar className="h-6 w-6 shadow-sm border border-white">
+                    <AvatarFallback className="text-[10px] bg-teal-100 text-teal-700 font-black">
+                      {getInitials(cuidador.nome)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-[11px] text-teal-700 font-black truncate max-w-[90px]">
+                    {cuidador.nome}
+                  </span>
+                </div>
+              )}
 
-            {tarefa.responsavel && (
-              <div className="flex items-center gap-2">
-                <Avatar className="h-6 w-6 ring-2 ring-primary/10 shadow-sm">
-                  <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-bold">
-                    {getInitials(tarefa.responsavel.nome)}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-xs text-primary font-bold truncate">
-                  Responsável: {tarefa.responsavel.nome}
-                </span>
-              </div>
-            )}
+              {tarefa.responsavel && (
+                <div className="flex items-center gap-2 bg-primary/5 pr-3 pl-1.5 py-1.5 rounded-full border border-primary/10">
+                  <Avatar className="h-6 w-6 shadow-sm border border-white">
+                    <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-black">
+                      {getInitials(tarefa.responsavel.nome)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-[11px] text-primary font-black truncate max-w-[110px]">
+                    {tarefa.responsavel.nome}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="mt-4 flex items-center justify-between text-[10px] text-gray-400 font-medium">
-            <span className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-full border border-gray-100">
-              <Calendar className="h-3 w-3" />
+          <div className="mt-6 flex items-center justify-between">
+            <span className="flex items-center gap-1.5 text-[10px] text-slate-400 font-black uppercase tracking-widest bg-slate-50/80 px-4 py-2 rounded-full border border-slate-100/50 shadow-sm">
+              <Calendar className="h-3.5 w-3.5" />
               {formatDate(tarefa.created_at)}
             </span>
           </div>

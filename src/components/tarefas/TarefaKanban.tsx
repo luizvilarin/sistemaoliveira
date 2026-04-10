@@ -205,47 +205,51 @@ export const TarefaKanban: React.FC<TarefaKanbanProps> = ({
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
       >
-        {/* Desktop View: Responsive Grid instead of pure horizontal scroll */}
-        <div className="hidden lg:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 items-start">
-          {kanbanColunas.map(column => renderColumn(column))}
+        {/* Desktop View: Horizontal Flex Flow */}
+        <div className="hidden lg:flex overflow-x-auto pb-8 gap-8 items-start no-scrollbar min-h-[600px] px-2">
+          {kanbanColunas.map(column => (
+            <div key={column.id} className="flex-shrink-0 w-[340px] h-full">
+              {renderColumn(column)}
+            </div>
+          ))}
           
-          <div className="mt-0">
+          <div className="flex-shrink-0 w-[300px]">
             <Dialog open={isAddingColumn} onOpenChange={setIsAddingColumn}>
               <DialogTrigger asChild>
                 <Button 
                   variant="outline" 
-                  className="w-full h-[120px] border-dashed border-2 rounded-[3rem] hover:border-primary hover:bg-primary/5 text-gray-400 hover:text-primary transition-all duration-500 gap-3 font-black text-lg shadow-sm"
+                  className="w-full h-[140px] border-dashed border-2 rounded-[2.5rem] bg-white/50 border-slate-200 hover:border-primary hover:bg-primary/5 text-slate-400 hover:text-primary transition-all duration-500 gap-4 font-black text-xl shadow-sm hover:shadow-md"
                 >
-                  <Plus className="h-7 w-7" />
+                  <Plus className="h-8 w-8" />
                   Nova Coluna
                 </Button>
               </DialogTrigger>
-              <DialogContent className="rounded-[3rem] p-8">
+              <DialogContent className="rounded-[3rem] p-10 border-none shadow-2xl">
                 <DialogHeader>
-                  <DialogTitle className="text-3xl font-black tracking-tighter">Criar Coluna</DialogTitle>
+                  <DialogTitle className="text-4xl font-black tracking-tighter text-gray-900">Nova Coluna</DialogTitle>
                 </DialogHeader>
-                <div className="py-8 space-y-6">
-                  <div className="space-y-3">
-                    <Label htmlFor="title" className="font-extrabold text-gray-700 text-lg ml-1">Título da Coluna</Label>
+                <div className="py-10 space-y-8">
+                  <div className="space-y-4">
+                    <Label htmlFor="title" className="font-black text-gray-700 text-xl ml-2">Nome da Coluna</Label>
                     <Input 
                       id="title" 
-                      placeholder="Ex: Em Revisão, Impedido..." 
+                      placeholder="Ex: Em Revisão, Validando..." 
                       value={newColumnTitle}
                       onChange={(e) => setNewColumnTitle(e.target.value)}
-                      className="rounded-2xl h-14 bg-gray-50 border-gray-100 focus:bg-white text-lg px-6 font-medium transition-all"
+                      className="rounded-[1.5rem] h-16 bg-slate-50 border-slate-100 focus:ring-4 focus:ring-primary/10 focus:bg-white text-xl px-8 font-bold transition-all"
                     />
                   </div>
                 </div>
-                <DialogFooter className="gap-3 sm:justify-center">
-                  <Button variant="ghost" onClick={() => setIsAddingColumn(false)} className="rounded-2xl font-black h-12 px-8">Cancelar</Button>
-                  <Button onClick={handleAddColumn} className="rounded-2xl px-12 h-12 font-black shadow-xl shadow-primary/20 bg-primary hover:scale-105 transition-transform">Criar Coluna</Button>
+                <DialogFooter className="gap-4 sm:justify-center">
+                  <Button variant="ghost" onClick={() => setIsAddingColumn(false)} className="rounded-2xl font-black h-14 px-10 text-lg">Cancelar</Button>
+                  <Button onClick={handleAddColumn} className="rounded-2xl px-14 h-14 font-black text-lg shadow-xl shadow-primary/20 bg-primary hover:scale-105 active:scale-95 transition-all">Criar Coluna</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
           </div>
         </div>
 
-        {/* Mobile/Tablet Tabbed View for Better Responsiveness */}
+        {/* Mobile/Tablet Tabbed View */}
         <div className="lg:hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="relative mb-8">
@@ -257,7 +261,7 @@ export const TarefaKanban: React.FC<TarefaKanbanProps> = ({
                     className="flex-shrink-0 gap-3 px-8 rounded-2xl data-[state=active]:bg-white data-[state=active]:shadow-xl data-[state=active]:text-primary font-black h-full transition-all"
                   >
                     {column.titulo}
-                    <Badge variant="secondary" className="bg-slate-200/50 text-slate-600 text-[10px] ml-1 px-2">
+                    <Badge variant="secondary" className="bg-slate-200/50 text-slate-600 font-bold text-[10px] ml-1 px-2.5 py-0.5 rounded-full">
                       {getTarefasByStatus(column.slug).length}
                     </Badge>
                   </TabsTrigger>
@@ -265,17 +269,19 @@ export const TarefaKanban: React.FC<TarefaKanbanProps> = ({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="h-full px-6 rounded-2xl text-primary/40 hover:text-primary transition-colors"
+                  className="h-full px-8 rounded-2xl text-primary/40 hover:text-primary transition-colors hover:bg-white/50"
                   onClick={() => setIsAddingColumn(true)}
                 >
-                  <Plus className="h-6 w-6" />
+                  <Plus className="h-7 w-7" />
                 </Button>
               </TabsList>
             </div>
 
             {kanbanColunas.map(column => (
               <TabsContent key={column.id} value={column.slug} className="mt-0 focus-visible:outline-none">
-                {renderColumn(column)}
+                <div className="px-1">
+                  {renderColumn(column)}
+                </div>
               </TabsContent>
             ))}
           </Tabs>
@@ -285,13 +291,13 @@ export const TarefaKanban: React.FC<TarefaKanbanProps> = ({
           sideEffects: defaultDropAnimationSideEffects({
             styles: {
               active: {
-                opacity: '0.6',
+                opacity: '0.4',
               },
             },
           }),
         }}>
           {activeTarefa ? (
-            <div className="rotate-2 scale-105 transition-transform duration-200">
+            <div className="rotate-[3deg] scale-[1.05] transition-transform duration-200 cursor-grabbing drop-shadow-[0_25px_25px_rgba(0,0,0,0.15)]">
               <TarefaCard
                 tarefa={activeTarefa}
                 onEdit={() => {}}

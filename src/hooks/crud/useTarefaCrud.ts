@@ -13,9 +13,22 @@ export const useTarefaCrud = (
   };
 
   const updateTarefa = async (id: string, updates: TablesUpdate<'tarefas'>) => {
-    const { data, error } = await supabase.from('tarefas').update(updates).eq('id', id).select().single();
-    if (error) throw error;
-    setTarefas(prev => prev.map(t => t.id === id ? data : t));
+    // Atualização otimista do estado local para feedback instantâneo
+    setTarefas(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+    
+    try {
+      const { data, error } = await supabase.from('tarefas').update(updates).eq('id', id).select().single();
+      if (error) {
+        // Reverter em caso de erro (opcional, ou apenas logar)
+        console.error("Erro ao atualizar tarefa, revertendo estado local", error);
+        // Aqui poderíamos ter uma lógica de reversão mais complexa se necessário
+        throw error;
+      }
+      // Sincronizar com os dados reais do servidor (que podem ter outros campos calculados)
+      setTarefas(prev => prev.map(t => t.id === id ? data : t));
+    } catch (error) {
+      throw error;
+    }
   };
 
   const deleteTarefa = async (id: string) => {
