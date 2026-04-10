@@ -44,3 +44,12 @@ export type Usuario = Profile & {
   status_online?: 'online' | 'offline' | 'ausente' | 'ocupado' | 'invisivel';
   ultima_atividade?: string;
 };
+
+export type KanbanColuna = {
+  id: string;
+  titulo: string;
+  slug: string;
+  cor: string;
+  ordem: number;
+  created_at?: string;
+};

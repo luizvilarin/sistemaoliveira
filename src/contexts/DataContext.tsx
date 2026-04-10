@@ -45,6 +45,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [pagamentosFuncionarios, setPagamentosFuncionarios] = useState<PagamentoFuncionario[]>([]);
   const [financeiro, setFinanceiro] = useState<Financeiro[]>([]);
   const [notasFiscais, setNotasFiscais] = useState<NotaFiscal[]>([]);
+  const [kanbanColunas, setKanbanColunas] = useState<KanbanColuna[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Get CRUD operations
@@ -61,7 +62,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setBoletos,
     setPagamentosFuncionarios,
     setFinanceiro,
-    setNotasFiscais
+    setNotasFiscais,
+    setKanbanColunas
   );
 
   // Fetch all data
@@ -86,6 +88,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setPagamentosFuncionarios(data.pagamentosFuncionarios);
         setFinanceiro(data.financeiro);
         setNotasFiscais(data.notasFiscais);
+        setKanbanColunas(data.kanbanColunas);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -144,6 +147,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         pagamentosFuncionarios,
         financeiro,
         notasFiscais,
+        kanbanColunas,
         
         // Loading
         isLoading,

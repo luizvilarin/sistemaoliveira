@@ -49,7 +49,8 @@ export const fetchAllData = async (user: User | null) => {
       supabase.from('boletos').select(`*, cliente:clientes(*)`),
       supabase.from('pagamentos_funcionarios').select(`*, cuidador:cuidadores(*)`),
       supabase.from('financeiro').select('*'),
-      supabase.from('notas_fiscais').select('*')
+      supabase.from('notas_fiscais').select('*'),
+      supabase.from('kanban_colunas').select('*').order('ordem', { ascending: true })
     ]);
 
     return {
@@ -65,7 +66,8 @@ export const fetchAllData = async (user: User | null) => {
       boletos: boletosRes.data || [],
       pagamentosFuncionarios: pagamentosFuncionariosRes.data || [],
       financeiro: financeiroRes.data || [],
-      notasFiscais: notasFiscaisRes.data || []
+      notasFiscais: notasFiscaisRes.data || [],
+      kanbanColunas: data[13].data || []
     };
   } catch (error) {
     console.error('Error fetching data:', error);

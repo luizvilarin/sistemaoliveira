@@ -11,7 +11,8 @@ import {
   Boleto,
   PagamentoFuncionario,
   Financeiro,
-  NotaFiscal
+  NotaFiscal,
+  KanbanColuna
 } from '@/types/data';
 import { useClienteCrud } from './crud/useClienteCrud';
 import { useCuidadorCrud } from './crud/useCuidadorCrud';
@@ -25,6 +26,7 @@ import { useBoletoCrud } from './crud/useBoletoCrud';
 import { usePagamentoFuncionarioCrud } from './crud/usePagamentoFuncionarioCrud';
 import { useFinanceiroCrud } from './crud/useFinanceiroCrud';
 import { useNotaFiscalCrud } from './crud/useNotaFiscalCrud';
+import { useKanbanColunaCrud } from './crud/useKanbanColunaCrud';
 
 export const useCrudOperations = (
   setClientes: React.Dispatch<React.SetStateAction<Cliente[]>>,
@@ -39,7 +41,8 @@ export const useCrudOperations = (
   setBoletos: React.Dispatch<React.SetStateAction<Boleto[]>>,
   setPagamentosFuncionarios: React.Dispatch<React.SetStateAction<PagamentoFuncionario[]>>,
   setFinanceiro: React.Dispatch<React.SetStateAction<Financeiro[]>>,
-  setNotasFiscais: React.Dispatch<React.SetStateAction<NotaFiscal[]>>
+  setNotasFiscais: React.Dispatch<React.SetStateAction<NotaFiscal[]>>,
+  setKanbanColunas: React.Dispatch<React.SetStateAction<KanbanColuna[]>>
 ) => {
   const clienteCrud = useClienteCrud(setClientes);
   const cuidadorCrud = useCuidadorCrud(setCuidadores);
@@ -53,6 +56,7 @@ export const useCrudOperations = (
   const pagamentoFuncionarioCrud = usePagamentoFuncionarioCrud(setPagamentosFuncionarios);
   const financeiroCrud = useFinanceiroCrud(setFinanceiro);
   const notaFiscalCrud = useNotaFiscalCrud(setNotasFiscais);
+  const kanbanColunaCrud = useKanbanColunaCrud(setKanbanColunas);
 
   return {
     ...clienteCrud,
@@ -75,5 +79,6 @@ export const useCrudOperations = (
     addNotaFiscal: notaFiscalCrud.addNotaFiscal,
     updateNotaFiscal: notaFiscalCrud.updateNotaFiscal,
     deleteNotaFiscal: notaFiscalCrud.deleteNotaFiscal,
+    ...kanbanColunaCrud,
   };
 };

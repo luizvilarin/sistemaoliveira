@@ -31,6 +31,7 @@ export interface DataContextType {
   pagamentosFuncionarios: PagamentoFuncionario[];
   financeiro: Financeiro[];
   notasFiscais: NotaFiscal[];
+  kanbanColunas: KanbanColuna[];
   
   // Loading states
   isLoading: boolean;
@@ -95,4 +96,9 @@ export interface DataContextType {
   addNotaFiscal: (notaFiscal: TablesInsert<'notas_fiscais'>) => Promise<NotaFiscal>;
   updateNotaFiscal: (id: string, updates: TablesUpdate<'notas_fiscais'>) => Promise<NotaFiscal>;
   deleteNotaFiscal: (id: string) => Promise<void>;
+
+  // Kanban Column operations
+  addKanbanColuna: (coluna: Partial<KanbanColuna>) => Promise<void>;
+  updateKanbanColuna: (id: string, updates: Partial<KanbanColuna>) => Promise<void>;
+  deleteKanbanColuna: (id: string) => Promise<void>;
 }
