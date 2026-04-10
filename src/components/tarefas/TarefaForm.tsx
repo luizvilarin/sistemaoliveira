@@ -21,9 +21,10 @@ import { ListTodo, AlignLeft, User, Briefcase, Info } from 'lucide-react';
 
 const formSchema = z.object({
   titulo: z.string().min(3, { message: 'Título deve ter pelo menos 3 caracteres' }),
-  descricao: z.string().min(5, { message: 'Descrição deve ter pelo menos 5 caracteres' }),
-  cliente_id: z.string().min(1, { message: 'Cliente é obrigatório' }),
-  cuidador_id: z.string().min(1, { message: 'Cuidador é obrigatório' }),
+  descricao: z.string().optional(),
+  cliente_id: z.string().optional(),
+  cuidador_id: z.string().optional(),
+  responsavel_id: z.string().optional(),
   status: z.enum(['todo', 'inProgress', 'done'], {
     required_error: 'Status é obrigatório',
   }),
@@ -38,7 +39,7 @@ interface TarefaFormProps {
 }
 
 const TarefaForm: React.FC<TarefaFormProps> = ({ isOpen, onClose, tarefaToEdit }) => {
-  const { addTarefa, updateTarefa, clientes, cuidadores } = useData();
+  const { addTarefa, updateTarefa, clientes, cuidadores, usuarios } = useData();
   const { toast } = useToast();
   const isEditing = !!tarefaToEdit;
 
@@ -49,6 +50,7 @@ const TarefaForm: React.FC<TarefaFormProps> = ({ isOpen, onClose, tarefaToEdit }
       descricao: tarefaToEdit?.descricao || '',
       cliente_id: tarefaToEdit?.cliente_id || '',
       cuidador_id: tarefaToEdit?.cuidador_id || '',
+      responsavel_id: tarefaToEdit?.responsavel_id || '',
       status: tarefaToEdit?.status || 'todo',
     },
   });
@@ -59,8 +61,9 @@ const TarefaForm: React.FC<TarefaFormProps> = ({ isOpen, onClose, tarefaToEdit }
       form.reset({
         titulo: tarefaToEdit.titulo,
         descricao: tarefaToEdit.descricao || '',
-        cliente_id: tarefaToEdit.cliente_id,
-        cuidador_id: tarefaToEdit.cuidador_id,
+        cliente_id: tarefaToEdit.cliente_id || '',
+        cuidador_id: tarefaToEdit.cuidador_id || '',
+        responsavel_id: tarefaToEdit.responsavel_id || '',
         status: tarefaToEdit.status,
       });
     } else {
@@ -69,6 +72,7 @@ const TarefaForm: React.FC<TarefaFormProps> = ({ isOpen, onClose, tarefaToEdit }
         descricao: '',
         cliente_id: '',
         cuidador_id: '',
+        responsavel_id: '',
         status: 'todo',
       });
     }
@@ -76,14 +80,23 @@ const TarefaForm: React.FC<TarefaFormProps> = ({ isOpen, onClose, tarefaToEdit }
 
   function onSubmit(values: FormData) {
     try {
+      // Garantir que strings vazias de campos opcionais sejam enviadas como null
+      const processedValues = {
+        ...values,
+        cliente_id: values.cliente_id || null,
+        cuidador_id: values.cuidador_id || null,
+        responsavel_id: values.responsavel_id || null,
+        descricao: values.descricao || null,
+      };
+
       if (isEditing && tarefaToEdit) {
-        updateTarefa(tarefaToEdit.id, values);
+        updateTarefa(tarefaToEdit.id, processedValues);
         toast({
           title: 'Tarefa atualizada',
           description: 'A tarefa foi atualizada com sucesso!',
         });
       } else {
-        addTarefa(values);
+        addTarefa(processedValues);
         toast({
           title: 'Tarefa adicionada',
           description: 'A tarefa foi adicionada com sucesso!',
@@ -226,9 +239,38 @@ const TarefaForm: React.FC<TarefaFormProps> = ({ isOpen, onClose, tarefaToEdit }
 
                 <FormField
                   control={form.control}
+                  name="responsavel_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2 text-gray-700 font-semibold mb-2">
+                        <User className="h-4 w-4 text-primary" />
+                        Responsável
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                        <FormControl>
+                          <SelectTrigger className="bg-gray-50 border-gray-200">
+                            <SelectValue placeholder="Selecione um responsável" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">Ninguém</SelectItem>
+                          {usuarios.map((usuario) => (
+                            <SelectItem key={usuario.id} value={usuario.id}>
+                              {usuario.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="status"
                   render={({ field }) => (
-                    <FormItem className="col-span-2">
+                    <FormItem>
                       <FormLabel className="flex items-center gap-2 text-gray-700 font-semibold mb-2">
                         Status Inicial
                       </FormLabel>

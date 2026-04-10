@@ -13,7 +13,9 @@ import {
   Boleto,
   PagamentoFuncionario,
   Financeiro,
-  NotaFiscal
+  NotaFiscal,
+  KanbanColuna,
+  Profile
 } from '@/types/data';
 
 export interface DataContextType {
@@ -32,6 +34,7 @@ export interface DataContextType {
   financeiro: Financeiro[];
   notasFiscais: NotaFiscal[];
   kanbanColunas: KanbanColuna[];
+  usuarios: Profile[];
   
   // Loading states
   isLoading: boolean;

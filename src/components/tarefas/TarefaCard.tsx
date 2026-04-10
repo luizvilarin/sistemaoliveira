@@ -8,7 +8,7 @@ import { formatDate } from '@/lib/utils';
 import { 
   Clock, CheckCircle, AlertCircle, User, Briefcase, 
   Calendar, MoreVertical, Edit, Play, Check, 
-  Trash2, Archive, GripVertical 
+  Trash2 as TrashIcon, Archive, GripVertical 
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -131,7 +131,7 @@ export const TarefaCard: React.FC<TarefaCardProps> = ({
                   onClick={() => onDelete(tarefa.id)}
                   className="text-red-600 focus:text-red-600 focus:bg-red-50"
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <TrashIcon className="h-4 w-4 mr-2" />
                   Excluir
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -146,34 +146,51 @@ export const TarefaCard: React.FC<TarefaCardProps> = ({
             {tarefa.descricao || 'Sem descrição detalhada.'}
           </p>
 
-          <div className="space-y-2 pt-2 border-t border-gray-100">
-            <div className="flex items-center gap-2">
-              <Avatar className="h-6 w-6">
-                <AvatarFallback className="text-[10px] bg-indigo-50 text-indigo-700">
-                  {getInitials(cliente?.nome)}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-xs text-gray-700 font-medium truncate">
-                {cliente?.nome || 'Cliente não definido'}
-              </span>
-            </div>
+          <div className="space-y-2 pt-3 border-t border-gray-100">
+            {cliente && (
+              <div className="flex items-center gap-2">
+                <Avatar className="h-6 w-6 ring-2 ring-white shadow-sm">
+                  <AvatarFallback className="text-[10px] bg-indigo-100 text-indigo-700 font-bold">
+                    {getInitials(cliente.nome)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-xs text-gray-700 font-semibold truncate">
+                  {cliente.nome}
+                </span>
+              </div>
+            )}
             
-            <div className="flex items-center gap-2">
-              <Avatar className="h-6 w-6">
-                <AvatarFallback className="text-[10px] bg-teal-50 text-teal-700">
-                  {getInitials(cuidador?.nome)}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-xs text-gray-500 truncate">
-                {cuidador?.nome || 'Cuidador não definido'}
-              </span>
-            </div>
+            {cuidador && (
+              <div className="flex items-center gap-2">
+                <Avatar className="h-6 w-6 ring-2 ring-white shadow-sm">
+                  <AvatarFallback className="text-[10px] bg-teal-100 text-teal-700 font-bold">
+                    {getInitials(cuidador.nome)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-xs text-gray-600 truncate">
+                  {cuidador.nome}
+                </span>
+              </div>
+            )}
+
+            {tarefa.responsavel && (
+              <div className="flex items-center gap-2">
+                <Avatar className="h-6 w-6 ring-2 ring-primary/10 shadow-sm">
+                  <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-bold">
+                    {getInitials(tarefa.responsavel.nome)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-xs text-primary font-bold truncate">
+                  Responsável: {tarefa.responsavel.nome}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="mt-4 flex items-center justify-between text-[10px] text-gray-400 font-medium">
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-full border border-gray-100">
               <Calendar className="h-3 w-3" />
-              Criado: {formatDate(tarefa.created_at)}
+              {formatDate(tarefa.created_at)}
             </span>
           </div>
         </CardContent>

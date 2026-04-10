@@ -21,7 +21,8 @@ export const fetchAllData = async (user: User | null) => {
       pagamentosFuncionariosRes,
       financeiroRes,
       notasFiscaisRes,
-      kanbanColunasRes
+      kanbanColunasRes,
+      usuariosRes
     ] = await Promise.all([
       supabase.from('clientes').select('*'),
       supabase.from('cuidadores').select(`
@@ -37,7 +38,10 @@ export const fetchAllData = async (user: User | null) => {
         *,
         cliente:clientes(*)
       `),
-      supabase.from('tarefas').select('*'),
+      supabase.from('tarefas').select(`
+        *,
+        responsavel:profiles(*)
+      `),
       supabase.from('lembretes').select(`
         *,
         cliente:clientes(*),
@@ -51,7 +55,8 @@ export const fetchAllData = async (user: User | null) => {
       supabase.from('pagamentos_funcionarios').select(`*, cuidador:cuidadores(*)`),
       supabase.from('financeiro').select('*'),
       supabase.from('notas_fiscais').select('*'),
-      supabase.from('kanban_colunas').select('*').order('ordem', { ascending: true })
+      supabase.from('kanban_colunas').select('*').order('ordem', { ascending: true }),
+      supabase.from('profiles').select('*')
     ]);
 
     return {
@@ -68,7 +73,8 @@ export const fetchAllData = async (user: User | null) => {
       pagamentosFuncionarios: pagamentosFuncionariosRes.data || [],
       financeiro: financeiroRes.data || [],
       notasFiscais: notasFiscaisRes.data || [],
-      kanbanColunas: kanbanColunasRes.data || []
+      kanbanColunas: kanbanColunasRes.data || [],
+      usuarios: usuariosRes.data || []
     };
   } catch (error) {
     console.error('Error fetching data:', error);

@@ -13,7 +13,9 @@ export type Paciente = Tables<'pacientes'> & {
 export type Transacao = Tables<'transacoes'> & {
   cliente?: Cliente | null;
 };
-export type Tarefa = Tables<'tarefas'>;
+export type Tarefa = Tables<'tarefas'> & {
+  responsavel?: Profile | null;
+};
 export type Lembrete = Tables<'lembretes'> & {
   cliente?: Cliente | null;
   cuidador?: Cuidador | null;

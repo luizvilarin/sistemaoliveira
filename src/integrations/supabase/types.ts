@@ -864,34 +864,40 @@ export type Database = {
       }
       tarefas: {
         Row: {
-          cliente_id: string
+          cliente_id: string | null
           created_at: string
-          cuidador_id: string
+          cuidador_id: string | null
           descricao: string | null
           id: string
+          responsavel_id: string | null
           status: string
           titulo: string
           updated_at: string
+          arquivada: boolean | null
         }
         Insert: {
-          cliente_id: string
+          cliente_id?: string | null
           created_at?: string
-          cuidador_id: string
+          cuidador_id?: string | null
           descricao?: string | null
           id?: string
+          responsavel_id?: string | null
           status: string
           titulo: string
           updated_at?: string
+          arquivada?: boolean | null
         }
         Update: {
-          cliente_id?: string
+          cliente_id?: string | null
           created_at?: string
-          cuidador_id?: string
+          cuidador_id?: string | null
           descricao?: string | null
           id?: string
+          responsavel_id?: string | null
           status?: string
           titulo?: string
           updated_at?: string
+          arquivada?: boolean | null
         }
         Relationships: [
           {
@@ -906,6 +912,13 @@ export type Database = {
             columns: ["cuidador_id"]
             isOneToOne: false
             referencedRelation: "cuidadores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tarefas_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
