@@ -3,7 +3,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -17,10 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ListTodo, AlignLeft, User, Briefcase, Info } from 'lucide-react';
 
 const formSchema = z.object({
   titulo: z.string().min(3, { message: 'Título deve ter pelo menos 3 caracteres' }),
-  descricao: z.string().min(10, { message: 'Descrição deve ter pelo menos 10 caracteres' }),
+  descricao: z.string().min(5, { message: 'Descrição deve ter pelo menos 5 caracteres' }),
   cliente_id: z.string().min(1, { message: 'Cliente é obrigatório' }),
   cuidador_id: z.string().min(1, { message: 'Cuidador é obrigatório' }),
   status: z.enum(['todo', 'inProgress', 'done'], {
@@ -52,18 +53,37 @@ const TarefaForm: React.FC<TarefaFormProps> = ({ isOpen, onClose, tarefaToEdit }
     },
   });
 
+  // Update form values when editing changes
+  React.useEffect(() => {
+    if (tarefaToEdit) {
+      form.reset({
+        titulo: tarefaToEdit.titulo,
+        descricao: tarefaToEdit.descricao || '',
+        cliente_id: tarefaToEdit.cliente_id,
+        cuidador_id: tarefaToEdit.cuidador_id,
+        status: tarefaToEdit.status,
+      });
+    } else {
+      form.reset({
+        titulo: '',
+        descricao: '',
+        cliente_id: '',
+        cuidador_id: '',
+        status: 'todo',
+      });
+    }
+  }, [tarefaToEdit, form]);
+
   function onSubmit(values: FormData) {
     try {
-      const tarefaData = values as Required<FormData>;
-      
       if (isEditing && tarefaToEdit) {
-        updateTarefa(tarefaToEdit.id, tarefaData);
+        updateTarefa(tarefaToEdit.id, values);
         toast({
           title: 'Tarefa atualizada',
           description: 'A tarefa foi atualizada com sucesso!',
         });
       } else {
-        addTarefa(tarefaData);
+        addTarefa(values);
         toast({
           title: 'Tarefa adicionada',
           description: 'A tarefa foi adicionada com sucesso!',
@@ -84,130 +104,163 @@ const TarefaForm: React.FC<TarefaFormProps> = ({ isOpen, onClose, tarefaToEdit }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? 'Editar Tarefa' : 'Nova Tarefa'}</DialogTitle>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="titulo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Título</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="descricao"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} rows={3} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="cliente_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cliente</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o cliente" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {clientes.map((cliente) => (
-                        <SelectItem key={cliente.id} value={cliente.id}>
-                          {cliente.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="cuidador_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cuidador</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o cuidador" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {cuidadores.map((cuidador) => (
-                        <SelectItem key={cuidador.id} value={cuidador.id}>
-                          {cuidador.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="todo">A Fazer</SelectItem>
-                      <SelectItem value="inProgress">Em Progresso</SelectItem>
-                      <SelectItem value="done">Concluída</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" type="button" onClick={onClose}>
-                Cancelar
-              </Button>
-              <Button type="submit">
-                {isEditing ? 'Atualizar' : 'Adicionar'}
-              </Button>
+      <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden border-none shadow-2xl">
+        <div className="bg-primary px-6 py-8 text-white">
+          <DialogHeader>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-2 bg-white/20 rounded-lg">
+                <ListTodo className="h-5 w-5 text-white" />
+              </div>
+              <DialogTitle className="text-2xl font-bold text-white">
+                {isEditing ? 'Editar Tarefa' : 'Criar Nova Tarefa'}
+              </DialogTitle>
             </div>
-          </form>
-        </Form>
+            <DialogDescription className="text-white/80">
+              Preencha os detalhes abaixo para {isEditing ? 'atualizar a' : 'registrar uma nova'} atividade.
+            </DialogDescription>
+          </DialogHeader>
+        </div>
+
+        <div className="p-6 bg-white">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="titulo"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel className="flex items-center gap-2 text-gray-700 font-semibold mb-2">
+                        <Info className="h-4 w-4 text-primary" />
+                        Título da Tarefa
+                      </FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Ex: Mandar boleto de Fevereiro" 
+                          {...field} 
+                          className="bg-gray-50 border-gray-200 focus:bg-white transition-all"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="descricao"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel className="flex items-center gap-2 text-gray-700 font-semibold mb-2">
+                        <AlignLeft className="h-4 w-4 text-primary" />
+                        Descrição Detalhada
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Descreva as instruções para esta tarefa..." 
+                          {...field} 
+                          rows={4} 
+                          className="bg-gray-50 border-gray-200 focus:bg-white transition-all resize-none"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="cliente_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2 text-gray-700 font-semibold mb-2">
+                        <User className="h-4 w-4 text-primary" />
+                        Cliente
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="bg-gray-50 border-gray-200">
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {clientes.map((cliente) => (
+                            <SelectItem key={cliente.id} value={cliente.id}>
+                              {cliente.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="cuidador_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2 text-gray-700 font-semibold mb-2">
+                        <Briefcase className="h-4 w-4 text-primary" />
+                        Cuidador
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="bg-gray-50 border-gray-200">
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {cuidadores.map((cuidador) => (
+                            <SelectItem key={cuidador.id} value={cuidador.id}>
+                              {cuidador.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel className="flex items-center gap-2 text-gray-700 font-semibold mb-2">
+                        Status Inicial
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="bg-gray-50 border-gray-200">
+                            <SelectValue placeholder="Defina o status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="todo">A Fazer</SelectItem>
+                          <SelectItem value="inProgress">Em Progresso</SelectItem>
+                          <SelectItem value="done">Concluída</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <Button variant="ghost" type="button" onClick={onClose} className="hover:bg-gray-100">
+                  Cancelar
+                </Button>
+                <Button type="submit" className="px-8 shadow-md">
+                  {isEditing ? 'Salvar Alterações' : 'Criar Tarefa'}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </div>
       </DialogContent>
     </Dialog>
   );
