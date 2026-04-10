@@ -47,7 +47,7 @@ export const TarefaKanban: React.FC<TarefaKanbanProps> = ({
   onDelete,
   onArchive
 }) => {
-  const { kanbanColunas, addKanbanColuna } = useData();
+  const { kanbanColunas, addKanbanColuna, deleteKanbanColuna } = useData();
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const [activeTarefa, setActiveTarefa] = useState<Tarefa | null>(null);
@@ -63,10 +63,19 @@ export const TarefaKanban: React.FC<TarefaKanbanProps> = ({
     })
   );
 
+  // Helper to find which column a task or ID belongs to
+  const findContainer = (id: string) => {
+    // If id is a column slug, return it
+    if (kanbanColunas.some(c => c.slug === id)) return id;
+    
+    // If id is a task ID, find the task and return its status (column slug)
+    const tarefa = tarefas.find(t => t.id === id);
+    return tarefa ? tarefa.status : null;
+  };
+
   const handleAddColumn = async () => {
     if (!newColumnTitle.trim()) return;
     
-    // Create slug from title
     const slug = newColumnTitle
       .toLowerCase()
       .normalize('NFD')
@@ -84,6 +93,18 @@ export const TarefaKanban: React.FC<TarefaKanbanProps> = ({
     setIsAddingColumn(false);
   };
 
+  const handleDeleteColumn = async (id: string, slug: string) => {
+    const hasTasks = tarefas.some(t => t.status === slug);
+    if (hasTasks) {
+      alert("Não é possível excluir uma coluna que possui tarefas. Mova as tarefas primeiro.");
+      return;
+    }
+
+    if (window.confirm("Deseja excluir esta coluna?")) {
+      await deleteKanbanColuna(id);
+    }
+  };
+
   const onDragStart = (event: any) => {
     const { active } = event;
     const tarefa = tarefas.find(t => t.id === active.id);
@@ -97,12 +118,13 @@ export const TarefaKanban: React.FC<TarefaKanbanProps> = ({
     if (!over) return;
 
     const activeId = active.id;
-    const overId = over.id; // This will be the column slug
+    const overId = over.id;
 
-    // If we dropped over a column, update the task status
-    const column = kanbanColunas.find(c => c.slug === overId);
-    if (column) {
-      onStatusChange(activeId, column.slug);
+    const activeContainer = findContainer(activeId);
+    const overContainer = findContainer(overId);
+
+    if (activeContainer && overContainer && activeContainer !== overContainer) {
+      onStatusChange(activeId, overContainer);
     }
   };
 
@@ -133,9 +155,20 @@ export const TarefaKanban: React.FC<TarefaKanbanProps> = ({
                   </div>
                   <h3 className="font-bold text-gray-700">{column.titulo}</h3>
                 </div>
-                <Badge className="bg-white text-gray-400 border-gray-200">
-                  {columnTarefas.length}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-white text-gray-400 border-gray-200">
+                    {columnTarefas.length}
+                  </Badge>
+                  {/* Impedir exclusão das colunas padrão se desejado, aqui permitirei para todas por enquanto */}
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-7 w-7 text-gray-400 hover:text-red-500"
+                    onClick={() => handleDeleteColumn(column.id, column.slug)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
               <div className="flex-1 space-y-4 overflow-y-auto">

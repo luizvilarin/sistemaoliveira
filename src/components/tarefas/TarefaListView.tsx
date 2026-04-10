@@ -6,10 +6,18 @@ import { TarefaCard } from './TarefaCard';
 interface TarefaListViewProps {
   tarefas: Tarefa[];
   onEdit: (tarefa: Tarefa) => void;
-  onStatusChange: (id: string, status: 'todo' | 'inProgress' | 'done') => void;
+  onStatusChange: (id: string, status: string) => void;
+  onDelete: (id: string) => void;
+  onArchive: (id: string) => void;
 }
 
-export const TarefaListView: React.FC<TarefaListViewProps> = ({ tarefas, onEdit, onStatusChange }) => {
+export const TarefaListView: React.FC<TarefaListViewProps> = ({ 
+  tarefas, 
+  onEdit, 
+  onStatusChange,
+  onDelete,
+  onArchive
+}) => {
   if (tarefas.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50/50">
@@ -26,6 +34,8 @@ export const TarefaListView: React.FC<TarefaListViewProps> = ({ tarefas, onEdit,
           tarefa={tarefa}
           onEdit={onEdit}
           onStatusChange={onStatusChange}
+          onDelete={onDelete}
+          onArchive={onArchive}
           viewType="list"
         />
       ))}
