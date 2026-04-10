@@ -19,7 +19,8 @@ import {
   Boleto,
   PagamentoFuncionario,
   Financeiro,
-  NotaFiscal
+  NotaFiscal,
+  KanbanColuna
 } from '@/types/data';
 
 const DataContext = createContext<DataContextType | undefined>(undefined);

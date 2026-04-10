@@ -20,7 +20,8 @@ export const fetchAllData = async (user: User | null) => {
       boletosRes,
       pagamentosFuncionariosRes,
       financeiroRes,
-      notasFiscaisRes
+      notasFiscaisRes,
+      kanbanColunasRes
     ] = await Promise.all([
       supabase.from('clientes').select('*'),
       supabase.from('cuidadores').select(`
@@ -67,7 +68,7 @@ export const fetchAllData = async (user: User | null) => {
       pagamentosFuncionarios: pagamentosFuncionariosRes.data || [],
       financeiro: financeiroRes.data || [],
       notasFiscais: notasFiscaisRes.data || [],
-      kanbanColunas: data[13].data || []
+      kanbanColunas: kanbanColunasRes.data || []
     };
   } catch (error) {
     console.error('Error fetching data:', error);
