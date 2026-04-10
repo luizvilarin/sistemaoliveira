@@ -8,6 +8,7 @@ import { Plus, Edit, List, CheckCircle, Clock, AlertCircle } from 'lucide-react'
 import { formatDate } from '@/lib/utils';
 import TarefaForm from '@/components/tarefas/TarefaForm';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const TarefasPage = () => {
   const { tarefas, clientes, cuidadores, updateTarefa, isLoading } = useData();
