@@ -8,6 +8,7 @@ import { Plus, Edit, List, CheckCircle, Clock, AlertCircle } from 'lucide-react'
 import { formatDate } from '@/lib/utils';
 import TarefaForm from '@/components/tarefas/TarefaForm';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const TarefasPage = () => {
   const { tarefas, clientes, cuidadores, updateTarefa, isLoading } = useData();
@@ -126,6 +127,7 @@ const TarefasPage = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Título</TableHead>
+                <TableHead>Descrição</TableHead>
                 <TableHead>Cliente</TableHead>
                 <TableHead>Cuidador</TableHead>
                 <TableHead>Status</TableHead>
@@ -137,6 +139,22 @@ const TarefasPage = () => {
               {tarefas.map((tarefa) => (
                 <TableRow key={tarefa.id}>
                   <TableCell className="font-medium">{tarefa.titulo}</TableCell>
+                  <TableCell className="max-w-[200px]">
+                    {tarefa.descricao ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="block truncate cursor-help">{tarefa.descricao}</span>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-[300px] whitespace-pre-wrap">
+                            {tarefa.descricao}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <span className="text-muted-foreground italic">Sem descrição</span>
+                    )}
+                  </TableCell>
                   <TableCell>{getClienteNome(tarefa.cliente_id)}</TableCell>
                   <TableCell>{getCuidadorNome(tarefa.cuidador_id)}</TableCell>
                   <TableCell>{getStatusBadge(tarefa.status)}</TableCell>
