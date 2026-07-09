@@ -43,6 +43,7 @@ interface TarefaKanbanProps {
   onStatusChange: (id: string, status: string) => void;
   onDelete: (id: string) => void;
   onArchive: (id: string) => void;
+  onAddInColumn?: (status: string) => void;
 }
 
 export const TarefaKanban: React.FC<TarefaKanbanProps> = ({ 
@@ -50,7 +51,8 @@ export const TarefaKanban: React.FC<TarefaKanbanProps> = ({
   onEdit, 
   onStatusChange,
   onDelete,
-  onArchive
+  onArchive,
+  onAddInColumn
 }) => {
   const { kanbanColunas, addKanbanColuna, deleteKanbanColuna } = useData();
   const [isAddingColumn, setIsAddingColumn] = useState(false);
@@ -139,37 +141,49 @@ export const TarefaKanban: React.FC<TarefaKanbanProps> = ({
     return (
       <div 
         key={column.id} 
-        className="flex flex-col h-full bg-slate-50/50 rounded-[2.5rem] border border-slate-100/50 p-5 transition-all duration-500 hover:bg-slate-100/40"
+        className={cn(
+          "flex flex-col h-full bg-slate-50/40 rounded-2xl border border-slate-100/50 p-4 transition-all duration-300 hover:bg-slate-100/30 border-t-4",
+          column.slug === 'todo' ? "border-t-slate-400" :
+          column.slug === 'inProgress' ? "border-t-blue-500" :
+          column.slug === 'done' ? "border-t-emerald-500" : "border-t-primary"
+        )}
       >
-        <div className="flex items-center justify-between mb-6 px-1">
-          <div className="flex items-center gap-3">
-            <div className={cn("p-2.5 rounded-2xl shadow-sm text-gray-700 bg-white border border-slate-100", column.cor)}>
-              <Layout className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="font-extrabold text-gray-900 tracking-tight">{column.titulo}</h3>
-              <p className="text-[11px] text-gray-400 font-black uppercase tracking-widest mt-0.5">
-                {columnTarefas.length} {columnTarefas.length === 1 ? 'Tarefa' : 'Tarefas'}
-              </p>
-            </div>
+        <div className="flex items-center justify-between mb-3 px-1">
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold text-slate-800 text-sm tracking-tight">{column.titulo}</h3>
+            <span className="bg-slate-200/50 text-slate-600 text-[10.5px] font-bold px-2 py-0.5 rounded-full">
+              {columnTarefas.length}
+            </span>
           </div>
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-9 w-9 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all"
+            className="h-8 w-8 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
             onClick={() => handleDeleteColumn(column.id, column.slug)}
           >
             <TrashIcon className="h-4 w-4" />
           </Button>
         </div>
 
-        <div className="flex-1 space-y-4 px-1 min-h-[300px]">
+        {onAddInColumn && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="w-full py-1.5 h-8 border-dashed border-2 rounded-xl text-slate-400 hover:text-primary hover:border-primary hover:bg-primary/5 transition-all gap-1.5 text-xs font-bold mb-3 shadow-none bg-white"
+            onClick={() => onAddInColumn(column.slug)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Adicionar Tarefa
+          </Button>
+        )}
+
+        <div className="flex-1 space-y-3 px-1 min-h-[300px]">
           <SortableContext 
             id={column.slug}
             items={columnTarefas.map(t => t.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-3">
               {columnTarefas.length > 0 ? (
                 columnTarefas.map(tarefa => (
                   <TarefaCard
@@ -183,11 +197,11 @@ export const TarefaKanban: React.FC<TarefaKanbanProps> = ({
                   />
                 ))
               ) : (
-                <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-slate-200 rounded-[3rem] bg-white/40 group hover:border-primary/30 transition-colors">
-                  <div className="p-4 bg-white rounded-2xl shadow-sm mb-4 group-hover:scale-110 transition-transform">
-                    <Plus className="h-6 w-6 text-slate-200 group-hover:text-primary transition-colors" />
+                <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 rounded-xl bg-white/40 group hover:border-primary/30 transition-colors">
+                  <div className="p-2.5 bg-white rounded-lg shadow-sm mb-3 group-hover:scale-110 transition-transform">
+                    <Plus className="h-5 w-5 text-slate-200 group-hover:text-primary transition-colors" />
                   </div>
-                  <p className="text-sm text-slate-400 font-black tracking-tight">Vazio por aqui</p>
+                  <p className="text-xs text-slate-400 font-bold tracking-tight">Vazio por aqui</p>
                 </div>
               )}
             </div>
@@ -213,36 +227,36 @@ export const TarefaKanban: React.FC<TarefaKanbanProps> = ({
             </div>
           ))}
           
-          <div className="flex-1 min-w-[250px] max-w-[300px]">
+          <div className="flex-1 min-w-[240px] max-w-[280px]">
             <Dialog open={isAddingColumn} onOpenChange={setIsAddingColumn}>
               <DialogTrigger asChild>
                 <Button 
                   variant="outline" 
-                  className="w-full h-[140px] border-dashed border-2 rounded-[2.5rem] bg-white/50 border-slate-200 hover:border-primary hover:bg-primary/5 text-slate-400 hover:text-primary transition-all duration-500 gap-4 font-black text-xl shadow-sm hover:shadow-md"
+                  className="w-full h-24 border-dashed border-2 rounded-2xl bg-white/50 border-slate-200 hover:border-primary hover:bg-primary/5 text-slate-400 hover:text-primary transition-all duration-300 gap-2 font-bold text-sm shadow-none"
                 >
-                  <Plus className="h-8 w-8" />
+                  <Plus className="h-5 w-5" />
                   Nova Coluna
                 </Button>
               </DialogTrigger>
-              <DialogContent className="rounded-[3rem] p-10 border-none shadow-2xl">
+              <DialogContent className="rounded-[2rem] p-8 border-none shadow-2xl">
                 <DialogHeader>
-                  <DialogTitle className="text-4xl font-black tracking-tighter text-gray-900">Nova Coluna</DialogTitle>
+                  <DialogTitle className="text-2xl font-black tracking-tight text-gray-900">Nova Coluna</DialogTitle>
                 </DialogHeader>
-                <div className="py-10 space-y-8">
-                  <div className="space-y-4">
-                    <Label htmlFor="title" className="font-black text-gray-700 text-xl ml-2">Nome da Coluna</Label>
+                <div className="py-6 space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title" className="font-bold text-gray-700 text-sm ml-1">Nome da Coluna</Label>
                     <Input 
                       id="title" 
                       placeholder="Ex: Em Revisão, Validando..." 
                       value={newColumnTitle}
                       onChange={(e) => setNewColumnTitle(e.target.value)}
-                      className="rounded-[1.5rem] h-16 bg-slate-50 border-slate-100 focus:ring-4 focus:ring-primary/10 focus:bg-white text-xl px-8 font-bold transition-all"
+                      className="rounded-xl h-12 bg-slate-50 border-slate-100 focus:ring-2 focus:ring-primary/15 focus:bg-white text-sm px-4 font-semibold transition-all"
                     />
                   </div>
                 </div>
-                <DialogFooter className="gap-4 sm:justify-center">
-                  <Button variant="ghost" onClick={() => setIsAddingColumn(false)} className="rounded-2xl font-black h-14 px-10 text-lg">Cancelar</Button>
-                  <Button onClick={handleAddColumn} className="rounded-2xl px-14 h-14 font-black text-lg shadow-xl shadow-primary/20 bg-primary hover:scale-105 active:scale-95 transition-all">Criar Coluna</Button>
+                <DialogFooter className="gap-3 sm:justify-end">
+                  <Button variant="ghost" onClick={() => setIsAddingColumn(false)} className="rounded-xl font-bold h-10 px-6 text-sm">Cancelar</Button>
+                  <Button onClick={handleAddColumn} className="rounded-xl px-8 h-10 font-bold text-sm bg-primary hover:scale-105 active:scale-95 transition-all">Criar Coluna</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>

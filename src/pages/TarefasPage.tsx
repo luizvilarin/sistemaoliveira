@@ -166,7 +166,7 @@ const TarefasPage = () => {
   };
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-8 animate-in fade-in duration-500 pb-10">
+    <div className="max-w-[1400px] mx-auto px-4 lg:px-6 space-y-6 animate-in fade-in duration-500 pb-10">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-primary font-semibold mb-1">
@@ -206,8 +206,8 @@ const TarefasPage = () => {
           { label: 'Concluídas', value: stats.done, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
         ].map((stat, i) => (
           <Card key={i} className="border-none shadow-sm hover:shadow-md transition-all group overflow-hidden">
-            <CardContent className="p-6 flex items-center gap-4 relative">
-              <div className={cn("p-3 rounded-2xl transition-transform group-hover:scale-110", stat.bg, stat.color)}>
+            <CardContent className="p-4 flex items-center gap-3 relative">
+              <div className={cn("p-2.5 rounded-xl transition-transform group-hover:scale-110", stat.bg, stat.color)}>
                 <stat.icon className="h-6 w-6" />
               </div>
               <div>
@@ -328,7 +328,7 @@ const TarefasPage = () => {
           </div>
         </div>
 
-        <div className="min-h-[600px] bg-slate-50/30 rounded-3xl p-1">
+        <div className="min-h-[600px] bg-slate-50/10 rounded-2xl p-1">
           {view === 'board' ? (
             <TarefaKanban 
               tarefas={processedTarefas} 
@@ -336,6 +336,10 @@ const TarefasPage = () => {
               onStatusChange={handleStatusChange}
               onDelete={handleDelete}
               onArchive={handleArchive}
+              onAddInColumn={(status) => {
+                setEditingTarefa({ status });
+                setIsFormOpen(true);
+              }}
             />
           ) : (
             <TarefaListView 

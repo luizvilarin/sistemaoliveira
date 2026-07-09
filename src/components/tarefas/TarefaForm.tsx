@@ -41,7 +41,7 @@ interface TarefaFormProps {
 const TarefaForm: React.FC<TarefaFormProps> = ({ isOpen, onClose, tarefaToEdit }) => {
   const { addTarefa, updateTarefa, clientes, cuidadores, usuarios } = useData();
   const { toast } = useToast();
-  const isEditing = !!tarefaToEdit;
+  const isEditing = !!(tarefaToEdit && tarefaToEdit.id);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
