@@ -163,7 +163,7 @@ export const TarefaKanban: React.FC<TarefaKanbanProps> = ({
           </Button>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto px-1 max-h-[calc(100vh-420px)] min-h-[300px] no-scrollbar">
+        <div className="flex-1 space-y-4 px-1 min-h-[300px]">
           <SortableContext 
             id={column.slug}
             items={columnTarefas.map(t => t.id)}
@@ -205,15 +205,15 @@ export const TarefaKanban: React.FC<TarefaKanbanProps> = ({
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
       >
-        {/* Desktop View: Horizontal Flex Flow */}
-        <div className="hidden lg:flex overflow-x-auto pb-8 gap-8 items-start no-scrollbar min-h-[600px] px-2">
+        {/* Desktop View: Horizontal Flex Flow with responsive stretching */}
+        <div className="hidden lg:flex overflow-x-auto pb-8 gap-8 items-stretch no-scrollbar min-h-[600px] px-2 w-full">
           {kanbanColunas.map(column => (
-            <div key={column.id} className="flex-shrink-0 w-[340px] h-full">
+            <div key={column.id} className="flex-1 min-w-[280px] max-w-[360px] h-full">
               {renderColumn(column)}
             </div>
           ))}
           
-          <div className="flex-shrink-0 w-[300px]">
+          <div className="flex-1 min-w-[250px] max-w-[300px]">
             <Dialog open={isAddingColumn} onOpenChange={setIsAddingColumn}>
               <DialogTrigger asChild>
                 <Button 

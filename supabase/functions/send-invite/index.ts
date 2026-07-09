@@ -117,8 +117,11 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Convite criado, enviando email...');
 
-    // URL correta para o domínio personalizado
-    const redirectUrl = 'https://paineloliveira.nexumagencia.com.br/auth/callback';
+    // URL dinâmica baseada no origin da requisição (Vercel, Localhost ou Domínio Personalizado)
+    const requestOrigin = req.headers.get('origin');
+    const redirectUrl = requestOrigin 
+      ? `${requestOrigin}/auth/callback` 
+      : 'https://paineloliveira.nexumagencia.com.br/auth/callback';
 
     // Enviar convite usando a API admin do Supabase
     const { data: inviteData, error: adminError } = await supabase.auth.admin.inviteUserByEmail(email, {

@@ -412,3 +412,13 @@
     box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
   }
 }
+
+/* Utilitário para ocultar barra de rolagem */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
