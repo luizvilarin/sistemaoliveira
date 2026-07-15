@@ -11,7 +11,7 @@ interface InviteRequest {
   email: string;
   nome: string;
   perfil: 'admin' | 'gestor' | 'cuidador';
-  resend?: boolean;
+  password?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -29,11 +29,11 @@ const handler = async (req: Request): Promise<Response> => {
       }
     });
 
-    const { email, nome, perfil, resend = false }: InviteRequest = await req.json();
+    const { email, nome, perfil, password }: InviteRequest = await req.json();
 
-    console.log('Processando convite para:', email, resend ? '(reenvio)' : '');
+    console.log('Criando usuário:', email);
 
-    // Verificar se é admin
+    // Verificar token de autorização
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('Token de autorização necessário');
@@ -64,7 +64,11 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Profile do usuário:', profile);
 
     if (profile?.perfil !== 'admin') {
-      throw new Error('Apenas administradores podem enviar convites');
+      throw new Error('Apenas administradores podem criar usuários');
+    }
+
+    if (!password || password.length < 6) {
+      throw new Error('Senha deve ter pelo menos 6 caracteres');
     }
 
     // Verificar se o usuário já existe
@@ -78,81 +82,29 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Este email já possui uma conta no sistema');
     }
 
-    // Verificar se já existe um convite ativo
-    const { data: existingInvite } = await supabase
-      .from('user_invites')
-      .select('*')
-      .eq('email', email)
-      .eq('accepted', false)
-      .gt('expires_at', new Date().toISOString())
-      .single();
-
-    if (existingInvite && !resend) {
-      throw new Error('Já existe um convite ativo para este email. Use a opção de reenvio se necessário.');
-    }
-
-    // Remover convites antigos (expirados ou se for reenvio)
-    if (resend || existingInvite) {
-      console.log('Removendo convites antigos para:', email);
-      await supabase
-        .from('user_invites')
-        .delete()
-        .eq('email', email);
-    }
-
-    // Criar novo convite na tabela
-    const { error: inviteError } = await supabase
-      .from('user_invites')
-      .insert({
-        email,
-        nome,
-        perfil,
-        invited_by: user.user.id
-      });
-
-    if (inviteError) {
-      console.error('Erro ao criar convite:', inviteError);
-      throw new Error('Erro ao criar convite no banco de dados');
-    }
-
-    console.log('Convite criado, enviando email...');
-
-    // URL dinâmica baseada no origin da requisição (Vercel, Localhost ou Domínio Personalizado)
-    const requestOrigin = req.headers.get('origin');
-    const redirectUrl = requestOrigin 
-      ? `${requestOrigin}/auth/callback` 
-      : 'https://paineloliveira.nexumagencia.com.br/auth/callback';
-
-    // Enviar convite usando a API admin do Supabase
-    const { data: inviteData, error: adminError } = await supabase.auth.admin.inviteUserByEmail(email, {
-      data: {
+    // Criar o usuário diretamente no Auth
+    const { data: authUser, error: adminError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: {
         nome,
         perfil
-      },
-      redirectTo: redirectUrl
+      }
     });
 
     if (adminError) {
-      console.error('Erro ao enviar email:', adminError);
-      
-      // Remover o convite que criamos se o email falhar
-      await supabase
-        .from('user_invites')
-        .delete()
-        .eq('email', email);
-      
-      throw new Error('Erro ao enviar email de convite: ' + adminError.message);
+      console.error('Erro ao criar usuário:', adminError);
+      throw new Error('Erro ao criar usuário: ' + adminError.message);
     }
 
-    console.log('Email enviado com sucesso para:', email);
-    console.log('Redirect URL configurada:', redirectUrl);
+    console.log('Usuário criado com sucesso:', authUser.user.id);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: resend ? 'Convite reenviado com sucesso' : 'Convite enviado com sucesso',
-        data: inviteData,
-        redirectUrl: redirectUrl
+        message: 'Usuário criado com sucesso',
+        data: authUser
       }),
       {
         status: 200,
@@ -161,7 +113,7 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
   } catch (error: any) {
-    console.error('Erro ao enviar convite:', error);
+    console.error('Erro ao processar criação de usuário:', error);
     return new Response(
       JSON.stringify({ 
         error: error.message || 'Erro interno do servidor',

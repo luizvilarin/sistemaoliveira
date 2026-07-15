@@ -3,15 +3,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { Usuario, UserInvite } from '@/types/data';
 
 export const userService = {
-  async sendInvite(email: string, nome: string, perfil: 'admin' | 'gestor' | 'cuidador', resend = false) {
+  async sendInvite(email: string, nome: string, perfil: 'admin' | 'gestor' | 'cuidador', password?: string, resend = false) {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Não autenticado');
 
-    console.log('Enviando convite via Edge Function...', resend ? '(reenvio)' : '');
+    console.log('Criando usuário via Edge Function...');
 
     // Chamar a edge function
     const { data, error } = await supabase.functions.invoke('send-invite', {
-      body: { email, nome, perfil, resend },
+      body: { email, nome, perfil, password, resend },
       headers: {
         Authorization: `Bearer ${session.access_token}`,
       },
@@ -19,7 +19,7 @@ export const userService = {
 
     if (error) {
       console.error('Erro da Edge Function:', error);
-      throw new Error(error.message || 'Erro ao enviar convite');
+      throw new Error(error.message || 'Erro ao criar usuário');
     }
 
     if (data?.error) {
@@ -27,7 +27,7 @@ export const userService = {
       throw new Error(data.error);
     }
 
-    console.log('Convite enviado com sucesso:', data);
+    console.log('Usuário criado com sucesso:', data);
     return data;
   },
 

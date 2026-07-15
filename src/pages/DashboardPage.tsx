@@ -150,17 +150,18 @@ const DashboardPage = () => {
 
   const handleResendInvite = async (email: string, nome: string, perfil: 'admin' | 'gestor' | 'cuidador') => {
     try {
-      await userService.sendInvite(email, nome, perfil, true);
+      const tempPassword = Math.random().toString(36).slice(-8);
+      await userService.sendInvite(email, nome, perfil, tempPassword, true);
       toast({
-        title: 'Convite reenviado',
-        description: `Convite reenviado para ${email} com sucesso!`,
+        title: 'Usuário criado',
+        description: `O convite pendente foi convertido. Usuário ativo com senha provisória: ${tempPassword}`,
       });
       loadUsers();
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Erro ao reenviar convite',
-        description: error.message || 'Não foi possível reenviar o convite.',
+        title: 'Erro ao criar usuário',
+        description: error.message || 'Não foi possível criar o usuário.',
       });
     }
   };
