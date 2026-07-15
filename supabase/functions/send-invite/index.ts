@@ -63,7 +63,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Profile do usuário:', profile);
 
-    if (profile?.perfil !== 'admin') {
+    if (profile?.perfil !== 'admin' && profile?.perfil !== 'admin_plus') {
       throw new Error('Apenas administradores podem criar usuários');
     }
 
