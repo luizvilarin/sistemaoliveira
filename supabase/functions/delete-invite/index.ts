@@ -47,7 +47,7 @@ const handler = async (req: Request): Promise<Response> => {
       .eq('id', user.user.id)
       .single();
 
-    if (profile?.perfil !== 'admin') {
+    if (profile?.perfil !== 'admin' && profile?.perfil !== 'admin_plus') {
       throw new Error('Apenas administradores podem deletar convites');
     }
 

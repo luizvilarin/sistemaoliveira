@@ -189,6 +189,33 @@ export const userService = {
     return data || [];
   },
 
+  async resetPassword(userId: string, newPassword: string) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Não autenticado');
+
+    console.log('Solicitando redefinição de senha para:', userId);
+
+    const { data, error } = await supabase.functions.invoke('admin-reset-password', {
+      body: { userId, newPassword },
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (error) {
+      console.error('Erro ao redefinir senha:', error);
+      throw new Error(error.message || 'Erro ao redefinir senha');
+    }
+
+    if (data?.error) {
+      console.error('Erro retornado pela função:', data.error);
+      throw new Error(data.error);
+    }
+
+    console.log('Senha redefinida com sucesso:', data);
+    return data;
+  },
+
   // Função para verificar se um usuário pode ser deletado por um gestor
   canGestorDeleteUser(currentUserPerfil: string, targetUserPerfil: string): boolean {
     if (currentUserPerfil === 'admin') return true;

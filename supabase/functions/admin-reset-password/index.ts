@@ -18,10 +18,19 @@ serve(async (req) => {
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Verificar se o usuário que está fazendo a requisição é admin
-    const authHeader = req.headers.get('Authorization')!
+    // Verificar se o usuário que está fazendo a requisição está autenticado
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Token de autorização necessário' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
     const token = authHeader.replace('Bearer ', '')
-    
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
     
     if (authError || !user) {
@@ -34,14 +43,14 @@ serve(async (req) => {
       )
     }
 
-    // Verificar se o usuário é admin
+    // Verificar se o usuário é admin ou admin_plus
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('perfil')
       .eq('id', user.id)
       .single()
 
-    if (!profile || profile.perfil !== 'admin') {
+    if (!profile || (profile.perfil !== 'admin' && profile.perfil !== 'admin_plus')) {
       return new Response(
         JSON.stringify({ error: 'Apenas administradores podem alterar senhas de outros usuários' }),
         { 
@@ -51,11 +60,11 @@ serve(async (req) => {
       )
     }
 
-    const { email, newPassword } = await req.json()
+    const { userId, newPassword } = await req.json()
 
-    if (!email || !newPassword) {
+    if (!userId || !newPassword) {
       return new Response(
-        JSON.stringify({ error: 'Email e nova senha são obrigatórios' }),
+        JSON.stringify({ error: 'ID do usuário e nova senha são obrigatórios' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -73,28 +82,9 @@ serve(async (req) => {
       )
     }
 
-    // Buscar o usuário pelo email
-    const { data: users, error: getUserError } = await supabaseAdmin.auth.admin.listUsers()
-    
-    if (getUserError) {
-      throw getUserError
-    }
-
-    const targetUser = users.users.find(u => u.email === email)
-    
-    if (!targetUser) {
-      return new Response(
-        JSON.stringify({ error: 'Usuário não encontrado' }),
-        { 
-          status: 404, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-
-    // Alterar a senha do usuário
+    // Alterar a senha do usuário usando a API admin diretamente
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-      targetUser.id,
+      userId,
       { password: newPassword }
     )
 
@@ -102,12 +92,12 @@ serve(async (req) => {
       throw updateError
     }
 
-    console.log(`Senha alterada para usuário: ${email}`)
+    console.log(`Senha alterada com sucesso para o usuário com ID: ${userId}`)
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Senha do usuário ${email} alterada com sucesso` 
+        message: 'Senha alterada com sucesso!' 
       }),
       { 
         status: 200, 
@@ -115,7 +105,7 @@ serve(async (req) => {
       }
     )
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro ao alterar senha:', error)
     
     return new Response(

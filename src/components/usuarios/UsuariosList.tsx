@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { UserPlus, Trash2, Users } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { UserPlus, Trash2, Users, KeyRound, Loader2 } from 'lucide-react';
 import { Usuario } from '@/types/data';
 import { userService } from '@/services/userService';
 import { useToast } from '@/hooks/use-toast';
@@ -29,6 +31,43 @@ const UsuariosList: React.FC<UsersListProps> = ({
   const { toast } = useToast();
   const { userProfile } = useAuth();
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [resettingUser, setResettingUser] = useState<Usuario | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
+
+  const handleResetPassword = async () => {
+    if (!resettingUser) return;
+    if (newPassword.length < 6) {
+      toast({
+        variant: 'destructive',
+        title: 'Senha fraca',
+        description: 'A senha deve ter pelo menos 6 caracteres.',
+      });
+      return;
+    }
+    
+    setIsResetting(true);
+    try {
+      await userService.resetPassword(resettingUser.id, newPassword);
+      
+      toast({
+        title: 'Senha alterada',
+        description: `A senha de ${resettingUser.nome} foi alterada com sucesso!`,
+      });
+      
+      setResettingUser(null);
+      setNewPassword('');
+    } catch (error: any) {
+      console.error('Erro ao redefinir senha:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao alterar senha',
+        description: error.message || 'Não foi possível alterar a senha. Tente novamente.',
+      });
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   const handleDeleteUser = async (userId: string, userName: string, userProfile: string) => {
     setDeletingUserId(userId);
@@ -93,8 +132,11 @@ const UsuariosList: React.FC<UsersListProps> = ({
     }
   };
 
+  const isAdminOrAdminPlus = userProfile?.perfil === 'admin' || userProfile?.perfil === 'admin_plus';
+
   return (
-    <Card>
+    <>
+      <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -152,6 +194,18 @@ const UsuariosList: React.FC<UsersListProps> = ({
                     user={user} 
                     onRoleUpdated={onRefresh}
                   />
+
+                  {isAdminOrAdminPlus && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                      onClick={() => setResettingUser(user)}
+                      title="Alterar Senha"
+                    >
+                      <KeyRound className="h-4 w-4" />
+                    </Button>
+                  )}
                   
                   {user.canDelete && canDeleteUser(user.perfil) && (
                     <AlertDialog>
@@ -198,6 +252,36 @@ const UsuariosList: React.FC<UsersListProps> = ({
         )}
       </CardContent>
     </Card>
+
+    {/* Reset Password Dialog */}
+    <Dialog open={resettingUser !== null} onOpenChange={(open) => { if (!open) { setResettingUser(null); setNewPassword(''); } }}>
+      <DialogContent className="sm:max-w-[400px]">
+        <DialogHeader>
+          <DialogTitle>Alterar Senha de {resettingUser?.nome}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Nova Senha</label>
+            <Input 
+              type="password" 
+              value={newPassword} 
+              onChange={(e) => setNewPassword(e.target.value)} 
+              placeholder="Mínimo 6 caracteres" 
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={() => { setResettingUser(null); setNewPassword(''); }} disabled={isResetting}>
+              Cancelar
+            </Button>
+            <Button onClick={handleResetPassword} disabled={isResetting || newPassword.length < 6}>
+              {isResetting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Alterar Senha
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  </>
   );
 };
 
